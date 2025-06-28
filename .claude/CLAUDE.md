@@ -1,0 +1,5 @@
+-   Before implementing anything present a detailed, step-by-step implementaton plan to me
+-   If you are not very sure about an approach offer me several options, each with a confidence on 1 to 10-scale
+-   Always backup factual claims with sources
+-   Ask me questions if you are not sure about requirements or what best to do
+-   Always run tests you have edited before

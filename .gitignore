@@ -1,0 +1,32 @@
+# Folder view configuration files
+.DS_Store
+Desktop.ini
+
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+.svn
+*~
+*.swp
+*.rbc
+node_modules/
+.sass-cache/
+.coffee-cache/
+.idea/
+*.iml
+
+npm-debug.log
+
+.local_env
+
+docs/agent
+
+.vim/plugged
+.claude/*
+!.claude/CLAUDE.md
+!.claude/.claude.json
