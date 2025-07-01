@@ -161,7 +161,6 @@ function gitstashapply() {
 # remap of native tools for better experience
 alias cat='bat'
 alias ll='eza -lag'
-alias du='ncdu --color dark -rr -x --exclude .git --exclude node_modules'
 # commented because it breaks other tools that use find
 # alias find='fd'
 
@@ -297,7 +296,7 @@ cc() {
 }
 
 # ----------------------------------------------------
-# gtw  – create + enter a git work-tree for <branch>
+# gtw  reate + enter a git work-tree for <branch>
 # ----------------------------------------------------
 gtw () {
   local branch=$1
@@ -333,7 +332,7 @@ gtw () {
 }
 
 # ----------------------------------------------------
-# rmwt  – remove a git work-tree
+# rmwt - remove a git work-tree
 # ----------------------------------------------------
 rmwt () {
   local target=$1
@@ -346,10 +345,14 @@ rmwt () {
   fi
 
   [[ -z $target ]] && { echo "Usage: rmwt [worktree-path]"; return 1 }
-  [[ ! -d $target/.git ]] && { echo "❌  $target is not a git dir"; return 1 }
+  ! git -C "$target" rev-parse --git-dir &>/dev/null && { echo "❌  $target is not a git dir"; return 1 }
 
   read -q "REPLY?⚠️  Remove work-tree $target ? [y/N] " || { echo; return 1 }
   echo
+
+  # Change away from target directory if we're currently in it
+  [[ "$(pwd)" == "$target"* ]] && cd ..
+
   git worktree remove --force "$target" && rm -rf "$target"
   echo "🗑  Work-tree removed"
 }
@@ -364,194 +367,3 @@ _gtw_complete () {
   _describe 'branch' branches
 }
 compdef _gtw_complete gtw
-
-# ~/.zshrc ────────────────────────────────────────────────────────────────────
-dg_db_tunnel () {
-  local stage="${1:-umg79}"
-  local profile="${2:-production}"
-
-  local base="$HOME/Dev/dg/dg-stage-deploy"
-  local workdir="$base/.rds-tunnel"               # folder that contains Makefile
-  local kube="$base/.eks-tunnel/kubeconfig-${stage}.yml"
-
-  [[ -d "$workdir" ]] || { echo "[db-tunnel] workdir not found: $workdir"; return 1; }
-
-  # colour for banner (red when the stage looks like production)
-  local colour reset msg
-  reset=$'\e[0m'
-  if [[ "$stage" =~ (prod|umg79) ]]; then
-    colour=$'\e[1;31m'; msg="💣 PRODUCTION"
-  else
-    colour=$'\e[1;32m'; msg="staging/test system"
-  fi
-
-  #############################################################################
-  # Everything inside this parenthesis is a sub-shell:
-  # • we cd into $workdir
-  # • we set/alter env vars
-  # • when we exit, PWD and env of the caller are untouched
-  #############################################################################
-  (
-    cd "$workdir" || exit 1
-    export KUBECONFIG="$kube"
-
-    # helper to read Make variables silently
-    local namespace host
-    namespace=$(STAGE="$stage" make --silent -f - <<< 'print-%:\n\t@printf $($*)\n' print-NAMESPACE)
-    host=$(STAGE="$stage"  make --silent -f - <<< 'print-%:\n\t@printf $($*)\n' print-SOCAT_ARGS)
-    host=${host#tcp-connect:}; host=${host%%:*}
-
-    # ── banner ──────────────────────────────────────────────────────────────
-    printf '\n%s┌──────────────────────────────────────────────────────────┐%s\n' "$colour" "$reset"
-    printf '%s│  Connected to %-43s│%s\n'   "$colour" "$msg"       "$reset"
-    printf '%s│  stage     : %-43s│%s\n'     "$colour" "$stage"     "$reset"
-    printf '%s│  profile   : %-43s│%s\n'     "$colour" "$profile"   "$reset"
-    printf '%s│  namespace : %-43s│%s\n'     "$colour" "$namespace" "$reset"
-    printf '%s│  host      : %-43s│%s\n'     "$colour" "$host"      "$reset"
-    printf '%s└──────────────────────────────────────────────────────────┘%s\n\n' "$colour" "$reset"
-
-    # ── cleanup handler (EXIT + Ctrl-C) ────────────────────────────────────
-    cleanup() {
-      printf '\n[%sdb-tunnel%s] cleaning up …\n' "$colour" "$reset"
-      STAGE="$stage" AWS_PROFILE="$profile" make --silent stop-db-tunnel || true
-    }
-    trap cleanup EXIT INT TERM
-
-    # ── start pod and port-forward (blocks) ────────────────────────────────
-    STAGE="$stage" AWS_PROFILE="$profile" make --silent start-db-tunnel
-    STAGE="$stage" AWS_PROFILE="$profile" make --silent port-forward-db-tunnel
-  )
-}
-
-# ──────────────────────────────────────────────────────────────────────────────
-#  db-dump  [stage] [aws_profile]
-# ──────────────────────────────────────────────────────────────────────────────
-# Default stage  : umg79
-# Default profile: production
-# Produces       : <namespace>-YYYY-MM-DD.sql in the *calling* directory
-# ──────────────────────────────────────────────────────────────────────────────
-dg_db_dump () {
-  local stage="${1:-umg79}"
-  local profile="${2:-production}"
-
-  # directories
-  local tunnel_dir="$HOME/Dev/dg/dg-stage-deploy/.rds-tunnel"
-  local kube="$HOME/Dev/dg/dg-stage-deploy/.eks-tunnel/kubeconfig-${stage}.yml"
-
-  (
-    # remember where the user is, then cd into the tunnel dir
-    local caller_cwd="$PWD"
-    cd "$tunnel_dir" || { echo "❌  Cannot cd into $tunnel_dir" >&2; exit 1; }
-
-    # ────────────────────────── K8s config ──────────────────────────
-    export KUBECONFIG="$kube"
-
-    # 1. start the DB tunnel pod
-    STAGE="$stage" AWS_PROFILE="$profile"  make start-db-tunnel
-
-    # 2. port-forward in the background
-    STAGE="$stage" AWS_PROFILE="$profile"  make port-forward-db-tunnel &
-    local pf_pid=$!
-
-    sleep 3
-
-    # 3. get the full ecto URL (ecto://user:pass@host:port/db)
-    local url
-    url="$(STAGE="$stage" AWS_PROFILE="$profile" make --silent snatch-db-url)"
-
-    # 4. pull the individual parts out of the URL
-    #    scheme://user:pass@host:port/dbname
-    local no_scheme="${url#*://}"          # user:pass@host:port/db
-    local creds="${no_scheme%%@*}"         # user:pass
-    local rest="${no_scheme#*@}"           # host:port/db
-
-    local user="${creds%%:*}"              # user
-    local pass="${creds#*:}"               # pass
-
-    local hostport="${rest%%/*}"           # host:port/db
-    local host="${hostport%%:*}"           # host
-
-    # set port based on stage (matching Makefile logic)
-    local port
-    if [[ "$stage" == "umg79" ]]; then
-      port=5433
-    else
-      port=5434
-    fi
-
-    local db="${rest#*/}"                  # dbname (may contain %... → leave as-is)
-
-    # 5. create a temporary .pgpass file for non-interactive auth
-    local pgpass_file
-    pgpass_file="$(mktemp)"
-    # Use 127.0.0.1 in .pgpass since pg_dump connects to localhost
-    echo "127.0.0.1:${port}:${db}:${user}:${pass}" > "$pgpass_file"
-    chmod 600 "$pgpass_file"
-
-    # log connection info
-    echo "🔗 Database connection details:"
-    echo "   Connect to: 127.0.0.1:${port}"
-    echo "   Database: ${db}"
-    echo "   User: ${user}"
-    echo "   .pgpass entry: 127.0.0.1:${port}:${db}:${user}:***"
-    echo "   .pgpass file: ${pgpass_file}"
-
-    # cleanup handler for Ctrl+C and exit
-    cleanup() {
-      echo "Cleaning up..."
-      rm -f "$pgpass_file" 2>/dev/null
-
-      # Kill port-forward process and its children
-      if [[ -n "$pf_pid" ]]; then
-        kill "$pf_pid" 2>/dev/null || true
-        # Also kill any remaining kubectl port-forward processes on this port
-        pkill -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
-      fi
-
-      # Stop the tunnel pod
-      STAGE="$stage" AWS_PROFILE="$profile" make stop-db-tunnel 2>/dev/null || true
-
-      # Wait a moment for port to be freed
-      sleep 1
-    }
-    trap cleanup EXIT INT TERM
-
-    # 6. get namespace for output filename (simpler approach)
-    local namespace
-    if [[ "$stage" == "umg79" ]]; then
-      namespace="dg-stage-prod"
-    elif [[ "$stage" == "umg79hybrid" ]]; then
-      namespace="argo-workflows-prod"
-    else
-      namespace="dg-stage-staging"
-    fi
-
-    # 7. run sanitized dump inline (PGPASSFILE makes pg_dump skip the prompt)
-    PGPASSFILE="$pgpass_file" pg_dump -h 127.0.0.1 -p "$port" -U "$user" -d "$db" \
-        --exclude-table-data=users \
-        --exclude-table-data=device_identifiers \
-        --exclude-table-data=devices \
-        --exclude-table-data=favorites \
-        --exclude-table-data=live_concert_reminders \
-        --exclude-table-data=playback_progress \
-        --exclude-table-data=postal_addresses \
-        --exclude-table-data=tickets \
-        --exclude-table-data=user_codes \
-        --exclude-table-data=user_push_endpoints \
-        --exclude-table-data=voucher_redemptions \
-        --exclude-table-data=vouchers \
-        --exclude-table-data=payments \
-        --no-owner \
-        --no-privileges \
-        --clean \
-        --if-exists > "${namespace}-$(date '+%Y-%m-%d').sql"
-
-    # 8. cleanup (trap will also handle this, but explicit is better)
-    cleanup
-
-    # 8. return to the directory from which the user invoked db-dump
-    cd "$caller_cwd"
-  )
-}
-
-

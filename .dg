@@ -1,4 +1,3 @@
-# ~/.zshrc ────────────────────────────────────────────────────────────────────
 dg_db_tunnel () {
   local stage="${1:-umg79}"
   local profile="${2:-production}"
@@ -7,32 +6,86 @@ dg_db_tunnel () {
   local workdir="$base/.rds-tunnel"               # folder that contains Makefile
   local kube="$base/.eks-tunnel/kubeconfig-${stage}.yml"
 
-  [[ -d "$workdir" ]] || { echo "[db-tunnel] workdir not found: $workdir"; return 1; }
+  # Validate directories exist
+  if [[ ! -d "$workdir" ]]; then
+    echo "[db-tunnel] ❌ workdir not found: $workdir"
+    return 1
+  fi
+
+  if [[ ! -f "$kube" ]]; then
+    echo "[db-tunnel] ❌ kubeconfig not found: $kube"
+    return 1
+  fi
 
   # colour for banner (red when the stage looks like production)
   local colour reset msg
   reset=$'\e[0m'
-  if [[ "$stage" =~ (prod|umg79) ]]; then
+  if [[ "$stage" =~ (umg79) ]]; then
     colour=$'\e[1;31m'; msg="💣 PRODUCTION"
   else
     colour=$'\e[1;32m'; msg="staging/test system"
   fi
 
-  #############################################################################
-  # Everything inside this parenthesis is a sub-shell:
-  # • we cd into $workdir
-  # • we set/alter env vars
-  # • when we exit, PWD and env of the caller are untouched
-  #############################################################################
   (
     cd "$workdir" || exit 1
     export KUBECONFIG="$kube"
 
-    # helper to read Make variables silently
-    local namespace host
-    namespace=$(STAGE="$stage" make --silent -f - <<< 'print-%:\n\t@printf $($*)\n' print-NAMESPACE)
-    host=$(STAGE="$stage"  make --silent -f - <<< 'print-%:\n\t@printf $($*)\n' print-SOCAT_ARGS)
-    host=${host#tcp-connect:}; host=${host%%:*}
+    # Variables for cleanup tracking
+    local tunnel_started=false
+    local pf_pid=""
+    local namespace=""
+    local port=""
+
+    # Get namespace and port for this stage
+    if [[ "$stage" == "umg79" ]]; then
+      namespace="dg-stage-prod"
+      port=5433
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      namespace="argo-workflows-prod"
+      # port=5435
+    else
+      namespace="dg-stage-staging"
+      port=5434
+    fi
+
+    cleanup() {
+      printf '\n[%sdb-tunnel%s] 🧹 Cleaning up...\n' "$colour" "$reset"
+
+      # Kill port-forward process with retry
+      if [[ -n "$pf_pid" ]]; then
+        printf '[%sdb-tunnel%s]    🔌 Stopping port-forward (PID: %s)...\n' "$colour" "$reset" "$pf_pid"
+        kill "$pf_pid" 2>/dev/null || true
+        sleep 2
+
+        # Force kill if still running
+        if kill -0 "$pf_pid" 2>/dev/null; then
+          printf '[%sdb-tunnel%s]    🔨 Force killing port-forward...\n' "$colour" "$reset"
+          kill -9 "$pf_pid" 2>/dev/null || true
+        fi
+      fi
+
+      # Force kill any remaining port-forwards on this port
+      if [[ -n "$port" ]] && pgrep -f "kubectl port-forward.*${port}:5432" >/dev/null 2>&1; then
+        printf '[%sdb-tunnel%s]    🔨 Force killing remaining port-forwards on port %s...\n' "$colour" "$reset" "$port"
+        pkill -9 -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
+      fi
+
+      # Stop tunnel pod if we started it
+      if [[ "$tunnel_started" == "true" ]]; then
+        printf '[%sdb-tunnel%s]    🚇 Stopping tunnel pod...\n' "$colour" "$reset"
+        if STAGE="$stage" AWS_PROFILE="$profile" make --silent stop-db-tunnel 2>/dev/null; then
+          printf '[%sdb-tunnel%s]    ✓ Tunnel pod stopped\n' "$colour" "$reset"
+        else
+          printf '[%sdb-tunnel%s]    ⚠️  Warning: Failed to stop tunnel pod rds-tunnel-%s\n' "$colour" "$reset" "$USER"
+        fi
+      fi
+
+      # Wait for port to be freed
+      printf '[%sdb-tunnel%s]    ⏳ Waiting for port to be freed...\n' "$colour" "$reset"
+      sleep 3
+      printf '[%sdb-tunnel%s] ✅ Cleanup complete\n' "$colour" "$reset"
+    }
+    trap cleanup EXIT INT TERM
 
     # ── banner ──────────────────────────────────────────────────────────────
     printf '\n%s┌──────────────────────────────────────────────────────────┐%s\n' "$colour" "$reset"
@@ -40,19 +93,85 @@ dg_db_tunnel () {
     printf '%s│  stage     : %-43s│%s\n'     "$colour" "$stage"     "$reset"
     printf '%s│  profile   : %-43s│%s\n'     "$colour" "$profile"   "$reset"
     printf '%s│  namespace : %-43s│%s\n'     "$colour" "$namespace" "$reset"
-    printf '%s│  host      : %-43s│%s\n'     "$colour" "$host"      "$reset"
+    printf '%s│  port      : %-43s│%s\n'     "$colour" "$port"      "$reset"
     printf '%s└──────────────────────────────────────────────────────────┘%s\n\n' "$colour" "$reset"
 
-    # ── cleanup handler (EXIT + Ctrl-C) ────────────────────────────────────
-    cleanup() {
-      printf '\n[%sdb-tunnel%s] cleaning up …\n' "$colour" "$reset"
-      STAGE="$stage" AWS_PROFILE="$profile" make --silent stop-db-tunnel || true
-    }
-    trap cleanup EXIT INT TERM
+    # ── start pod with error handling ──────────────────────────────────────
+    printf '[%sdb-tunnel%s] 🚇 Starting tunnel pod...\n' "$colour" "$reset"
+    if ! STAGE="$stage" AWS_PROFILE="$profile" make --silent start-db-tunnel; then
+      printf '[%sdb-tunnel%s] ❌ Failed to start tunnel pod\n' "$colour" "$reset"
+      exit 1
+    fi
+    tunnel_started=true
+    printf '[%sdb-tunnel%s] ✓ Tunnel pod started\n' "$colour" "$reset"
 
-    # ── start pod and port-forward (blocks) ────────────────────────────────
-    STAGE="$stage" AWS_PROFILE="$profile" make --silent start-db-tunnel
-    STAGE="$stage" AWS_PROFILE="$profile" make --silent port-forward-db-tunnel
+    # Wait for tunnel pod to be ready
+    printf '[%sdb-tunnel%s] ⏳ Waiting for tunnel pod to be ready...\n' "$colour" "$reset"
+    if ! kubectl wait --namespace "$namespace" --for=condition=Ready pod/rds-tunnel-"$USER" --timeout=60s; then
+      printf '[%sdb-tunnel%s] ❌ Tunnel pod failed to become ready within 60 seconds\n' "$colour" "$reset"
+      exit 1
+    fi
+    printf '[%sdb-tunnel%s] ✓ Tunnel pod is ready\n' "$colour" "$reset"
+
+    # ── start port-forward in background ───────────────────────────────────
+    printf '[%sdb-tunnel%s] 🔌 Starting port-forward to localhost:%s...\n' "$colour" "$reset" "$port"
+    STAGE="$stage" AWS_PROFILE="$profile" make --silent port-forward-db-tunnel &
+    pf_pid=$!
+
+    # Wait for port-forward to be established with timeout
+    printf '[%sdb-tunnel%s] ⏳ Waiting for port-forward to establish...\n' "$colour" "$reset"
+    local timeout=60
+    local wait_interval=2
+    while [[ $timeout -gt 0 ]]; do
+      # Check if port is available using netcat
+      if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        printf '[%sdb-tunnel%s] ✓ Port-forward established on localhost:%s\n' "$colour" "$reset" "$port"
+        break
+      fi
+
+      # Alternative check using /dev/tcp if nc is not available
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        exec 3>&-
+        printf '[%sdb-tunnel%s] ✓ Port-forward established on localhost:%s\n' "$colour" "$reset" "$port"
+        break
+      fi
+
+      # Check if port-forward process is still running
+      if ! kill -0 "$pf_pid" 2>/dev/null; then
+        printf '[%sdb-tunnel%s] ❌ Port-forward process died unexpectedly\n' "$colour" "$reset"
+        exit 1
+      fi
+
+      printf '[%sdb-tunnel%s]    Still waiting... (%ss remaining)\n' "$colour" "$reset" "$timeout"
+      sleep $wait_interval
+      ((timeout-=wait_interval))
+    done
+
+    if [[ $timeout -le 0 ]]; then
+      printf '[%sdb-tunnel%s] ❌ Port-forward failed to establish within 60 seconds\n' "$colour" "$reset"
+      exit 1
+    fi
+
+    # ── connection ready ────────────────────────────────────────────────────
+    printf '\n%s┌──────────────────────────────────────────────────────────┐%s\n' "$colour" "$reset"
+    printf '%s│  🎯 TUNNEL READY - Connect to localhost:%-15s │%s\n' "$colour" "$port" "$reset"
+    printf '%s│                                                          │%s\n' "$colour" "$reset"
+    printf '%s│  Example psql command:                                   │%s\n' "$colour" "$reset"
+    printf '%s│  psql -h 127.0.0.1 -p %-5s -U api -d dgstage -W         │%s\n' "$colour" "$port" "$reset"
+    printf '%s│                                                          │%s\n' "$colour" "$reset"
+    printf '%s│  Press Ctrl+C to stop the tunnel                        │%s\n' "$colour" "$reset"
+    printf '%s└──────────────────────────────────────────────────────────┘%s\n\n' "$colour" "$reset"
+
+    # ── wait for user interrupt (blocks) ───────────────────────────────────
+    printf '[%sdb-tunnel%s] 🔄 Tunnel active. Press Ctrl+C to stop...\n' "$colour" "$reset"
+
+    # Wait for the port-forward process to exit (either by user interrupt or process death)
+    wait "$pf_pid" 2>/dev/null || true
+
+    # If we reach here, the port-forward process has ended
+    printf '\n[%sdb-tunnel%s] 🛑 Port-forward process ended\n' "$colour" "$reset"
+
+    # Cleanup will be called automatically by trap
   )
 }
 
@@ -79,20 +198,147 @@ dg_db_dump () {
     # ────────────────────────── K8s config ──────────────────────────
     export KUBECONFIG="$kube"
 
-    # 1. start the DB tunnel pod
-    STAGE="$stage" AWS_PROFILE="$profile"  make start-db-tunnel
+    # Get namespace for this stage
+    local namespace
+    if [[ "$stage" == "umg79" ]]; then
+      namespace="dg-stage-prod"
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      namespace="argo-workflows-prod"
+    else
+      namespace="dg-stage-staging"
+    fi
 
-    # 2. port-forward in the background
-    STAGE="$stage" AWS_PROFILE="$profile"  make port-forward-db-tunnel &
-    local pf_pid=$!
+    # Set port based on stage (matching Makefile logic)
+    local port
+    if [[ "$stage" == "umg79" ]]; then
+      port=5433
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      # port=5435
+    else
+      port=5434
+    fi
 
-    sleep 3
+    # Variables for cleanup
+    local pf_pid=""
+    local pgpass_file=""
+    local tunnel_started=false
 
-    # 3. get the full ecto URL (ecto://user:pass@host:port/db)
+    # Enhanced cleanup handler for Ctrl+C and exit
+    cleanup() {
+      echo "🧹 Cleaning up..."
+
+      # Remove .pgpass file
+      if [[ -n "$pgpass_file" && -f "$pgpass_file" ]]; then
+        rm -f "$pgpass_file" 2>/dev/null
+        echo "   ✓ Removed .pgpass file"
+      fi
+
+      # Kill port-forward process with retry
+      if [[ -n "$pf_pid" ]]; then
+        echo "   🔌 Stopping port-forward (PID: $pf_pid)..."
+        kill "$pf_pid" 2>/dev/null || true
+        sleep 2
+
+        # Force kill if still running
+        if kill -0 "$pf_pid" 2>/dev/null; then
+          echo "   🔨 Force killing port-forward..."
+          kill -9 "$pf_pid" 2>/dev/null || true
+        fi
+      fi
+
+      # Force kill any remaining port-forwards on this port
+      if pgrep -f "kubectl port-forward.*${port}:5432" >/dev/null 2>&1; then
+        echo "   🔨 Force killing remaining port-forwards..."
+        pkill -9 -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
+      fi
+
+      # Stop the tunnel pod if we started it
+      if [[ "$tunnel_started" == "true" ]]; then
+        echo "   🚇 Stopping tunnel pod..."
+        if STAGE="$stage" AWS_PROFILE="$profile" make stop-db-tunnel 2>/dev/null; then
+          echo "   ✓ Tunnel pod stopped"
+        else
+          echo "   ⚠️  Warning: Failed to stop tunnel pod rds-tunnel-$USER"
+        fi
+      fi
+
+      # Wait for port to be freed
+      echo "   ⏳ Waiting for port to be freed..."
+      sleep 3
+      echo "✅ Cleanup complete"
+    }
+    trap cleanup EXIT INT TERM
+
+    # 1. Start the DB tunnel pod with error handling
+    echo "🚇 Starting DB tunnel pod..."
+    if ! STAGE="$stage" AWS_PROFILE="$profile" make start-db-tunnel; then
+      echo "❌ Failed to start DB tunnel pod"
+      exit 1
+    fi
+    tunnel_started=true
+    echo "✓ Tunnel pod started"
+
+    # Wait for tunnel pod to be ready
+    echo "⏳ Waiting for tunnel pod to be ready..."
+    if ! kubectl wait --namespace "$namespace" --for=condition=Ready pod/rds-tunnel-"$USER" --timeout=60s; then
+      echo "❌ Tunnel pod failed to become ready within 60 seconds"
+      exit 1
+    fi
+    echo "✓ Tunnel pod is ready"
+
+    # 2. Start port-forward in the background
+    echo "🔌 Starting port-forward to localhost:$port..."
+    STAGE="$stage" AWS_PROFILE="$profile" make port-forward-db-tunnel &
+    pf_pid=$!
+
+    # Wait for port-forward to be established with timeout
+    echo "⏳ Waiting for port-forward to establish..."
+    local timeout=60
+    local wait_interval=2
+    while [[ $timeout -gt 0 ]]; do
+      # Check if port is available using netcat
+      if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Alternative check using /dev/tcp if nc is not available
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        exec 3>&-
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Check if port-forward process is still running
+      if ! kill -0 "$pf_pid" 2>/dev/null; then
+        echo "❌ Port-forward process died unexpectedly"
+        exit 1
+      fi
+
+      echo "   Still waiting... (${timeout}s remaining)"
+      sleep $wait_interval
+      ((timeout-=wait_interval))
+    done
+
+    if [[ $timeout -le 0 ]]; then
+      echo "❌ Port-forward failed to establish within 60 seconds"
+      exit 1
+    fi
+
+    # 3. Get the full ecto URL (ecto://user:pass@host:port/db)
+    echo "🔑 Retrieving database credentials..."
     local url
-    url="$(STAGE="$stage" AWS_PROFILE="$profile" make --silent snatch-db-url)"
+    if ! url="$(STAGE="$stage" AWS_PROFILE="$profile" make --silent snatch-db-url)"; then
+      echo "❌ Failed to retrieve database URL"
+      exit 1
+    fi
 
-    # 4. pull the individual parts out of the URL
+    if [[ -z "$url" ]]; then
+      echo "❌ Database URL is empty"
+      exit 1
+    fi
+
+    # 4. Pull the individual parts out of the URL
     #    scheme://user:pass@host:port/dbname
     local no_scheme="${url#*://}"          # user:pass@host:port/db
     local creds="${no_scheme%%@*}"         # user:pass
@@ -104,63 +350,48 @@ dg_db_dump () {
     local hostport="${rest%%/*}"           # host:port/db
     local host="${hostport%%:*}"           # host
 
-    # set port based on stage (matching Makefile logic)
-    local port
-    if [[ "$stage" == "umg79" ]]; then
-      port=5433
-    else
-      port=5434
-    fi
-
     local db="${rest#*/}"                  # dbname (may contain %... → leave as-is)
 
-    # 5. create a temporary .pgpass file for non-interactive auth
-    local pgpass_file
+    # Validate extracted credentials
+    if [[ -z "$user" || -z "$pass" || -z "$db" ]]; then
+      echo "❌ Failed to parse database credentials from URL"
+      echo "   User: '$user', Pass: [${#pass} chars], DB: '$db'"
+      exit 1
+    fi
+
+    # 5. Create a temporary .pgpass file for non-interactive auth
     pgpass_file="$(mktemp)"
+    if [[ $? -ne 0 || -z "$pgpass_file" ]]; then
+      echo "❌ Failed to create temporary .pgpass file"
+      exit 1
+    fi
+
     # Use 127.0.0.1 in .pgpass since pg_dump connects to localhost
     echo "127.0.0.1:${port}:${db}:${user}:${pass}" > "$pgpass_file"
     chmod 600 "$pgpass_file"
 
-    # log connection info
+    # Log connection info (without password)
     echo "🔗 Database connection details:"
     echo "   Connect to: 127.0.0.1:${port}"
     echo "   Database: ${db}"
     echo "   User: ${user}"
-    echo "   .pgpass entry: 127.0.0.1:${port}:${db}:${user}:***"
+    echo "   Password: [${#pass} characters]"
     echo "   .pgpass file: ${pgpass_file}"
 
-    # cleanup handler for Ctrl+C and exit
-    cleanup() {
-      echo "Cleaning up..."
-      rm -f "$pgpass_file" 2>/dev/null
-
-      # Kill port-forward process and its children
-      if [[ -n "$pf_pid" ]]; then
-        kill "$pf_pid" 2>/dev/null || true
-        # Also kill any remaining kubectl port-forward processes on this port
-        pkill -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
-      fi
-
-      # Stop the tunnel pod
-      STAGE="$stage" AWS_PROFILE="$profile" make stop-db-tunnel 2>/dev/null || true
-
-      # Wait a moment for port to be freed
-      sleep 1
-    }
-    trap cleanup EXIT INT TERM
-
-    # 6. get namespace for output filename (simpler approach)
-    local namespace
-    if [[ "$stage" == "umg79" ]]; then
-      namespace="dg-stage-prod"
-    elif [[ "$stage" == "umg79hybrid" ]]; then
-      namespace="argo-workflows-prod"
-    else
-      namespace="dg-stage-staging"
+    # Test database connection before proceeding
+    echo "🧪 Testing database connection..."
+    if ! PGPASSFILE="$pgpass_file" pg_isready -h 127.0.0.1 -p "$port" -U "$user" -d "$db" -q; then
+      echo "❌ Database connection test failed"
+      exit 1
     fi
+    echo "✓ Database connection successful"
 
-    # 7. run sanitized dump inline (PGPASSFILE makes pg_dump skip the prompt)
-    PGPASSFILE="$pgpass_file" pg_dump -h 127.0.0.1 -p "$port" -U "$user" -d "$db" \
+    # 7. Run sanitized dump inline (PGPASSFILE makes pg_dump skip the prompt)
+    local output_file="${namespace}-$(date '+%Y-%m-%d').sql"
+    echo "📦 Starting database dump to: $output_file"
+    echo "   This may take several minutes..."
+
+    if ! PGPASSFILE="$pgpass_file" pg_dump -h 127.0.0.1 -p "$port" -U "$user" -d "$db" \
         --exclude-table-data=users \
         --exclude-table-data=device_identifiers \
         --exclude-table-data=devices \
@@ -177,12 +408,76 @@ dg_db_dump () {
         --no-owner \
         --no-privileges \
         --clean \
-        --if-exists > "${namespace}-$(date '+%Y-%m-%d').sql"
+        --if-exists > "$caller_cwd/$output_file"; then
+      echo "❌ Database dump failed"
+      exit 1
+    fi
 
-    # 8. cleanup (trap will also handle this, but explicit is better)
-    cleanup
+    echo "✅ Database dump completed successfully!"
+    echo "   Output file: $caller_cwd/$output_file"
+    echo "   File size: $(du -h "$caller_cwd/$output_file" | cut -f1)"
 
-    # 8. return to the directory from which the user invoked db-dump
-    cd "$caller_cwd"
+    # Cleanup will be called automatically by trap
   )
+}
+
+function s5cmd_inputs_for_isrc() {
+  local env="${ENV:-"production"}"
+  local s5cmd_ls_flags=()
+  local isrcs=()
+  for i in "$@"; do
+    if [[ "$i" == "-"* ]]; then
+      s5cmd_ls_flags+=($i)
+    else
+      isrcs+=("${(@s:,:)i}")
+    fi
+  done
+
+  for isrc in "${isrcs[@]}"; do
+    echo -e "\n🪣" "Listing input-bucket for s3://dg-vod-input-${env}/${isrc}" >&2
+    s5cmd ls "${s5cmd_ls_flags[@]}" "s3://dg-vod-input-${env}/${isrc}"
+    echo -e "\n🔉" "Listing additional audio in s3://stage-ingest-${env}/re-packaging/audio/${isrc}" >&2
+    s5cmd ls "${s5cmd_ls_flags[@]}" "s3://stage-ingest-${env}/re-packaging/audio/${isrc}"
+  done
+}
+
+function s5cmd() {
+  local S5CMD=/opt/homebrew/bin/s5cmd
+  # shellcheck disable=SC2207 # intentional word splitting for array splitting
+  local bucketNames=($(echo "$@" | grep -oE 's3://[^/]+' | sed 's|s3://||g'))
+  local numberOfBuckets="${#bucketNames[@]}"
+  # echo "🤖" "numberOfBuckets: ${numberOfBuckets}, array: '${bucketNames[*]}'"
+
+  case "${numberOfBuckets}" in
+    0)
+      "${S5CMD}" "$@"
+      ;;
+    1)
+      if [[ "$*" == *" pipe "* ]]; then
+        cat | AWS_REGION="$(getBucketRegion "${bucketNames[1]}")" "${S5CMD}" "$@"
+      else
+        AWS_REGION="$(getBucketRegion "${bucketNames[1]}")" "${S5CMD}" "$@"
+      fi
+      ;;
+    2)
+      local new_args=()
+      for arg in "$@"; do
+        new_args+=("$arg")
+        if [[ "$arg" == "cp" || "$arg" == "mv" || "$arg" == "sync" ]]; then
+          new_args+=("--source-region" "$(getBucketRegion "${bucketNames[1]}")" "--destination-region" "$(getBucketRegion "${bucketNames[2]}")")
+        fi
+      done
+      "${S5CMD}" "${new_args[@]}"
+      ;;
+    *)
+      echo "Detected ${numberOfBuckets} buckets: '${bucketNames[*]}'. Only up to 2 are supported.";
+      return 1;
+      ;;
+  esac
+}
+
+function getBucketRegion() {
+  bucketName="${1}"
+  # `aws s3api get-bucket-location` would have to be called in the correct region (duh). That's why we use a hack.
+  curl -sI -o /dev/null -w '%header{x-amz-bucket-region}' "https://${bucketName}.s3.amazonaws.com"
 }

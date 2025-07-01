@@ -34,6 +34,7 @@ bindkey '^[[B' history-substring-search-down
 
 # Hook up aliases
 source ~/.aliases
+source ~/.dg
 
 # Put local node_modules/.bin in path
 export PATH="$PATH:./node_modules/.bin"
