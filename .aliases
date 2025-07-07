@@ -367,3 +367,17 @@ _gtw_complete () {
   _describe 'branch' branches
 }
 compdef _gtw_complete gtw
+
+unwip() {
+    local last_non_wip_commit
+    last_non_wip_commit=$(git rev-list --max-count=1 --grep="^wip" --invert-grep HEAD)
+
+    if [[ -n "$last_non_wip_commit" ]]; then
+        echo "Resetting to commit: $last_non_wip_commit"
+        git log --oneline -1 "$last_non_wip_commit"
+        git reset --soft "$last_non_wip_commit"
+        echo "✅ Soft reset complete. Your changes are staged."
+    else
+        echo "❌ No non-wip commits found."
+    fi
+}

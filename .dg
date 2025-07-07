@@ -421,6 +421,261 @@ dg_db_dump () {
   )
 }
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Default stage  : umg79
+# Default profile: production
+# Produces       : query-output-YYYY-MM-DD-HHMMSS.csv in the *calling* directory
+# ──────────────────────────────────────────────────────────────────────────────
+dg_db_query_csv () {
+  local query="$1"
+  local stage="${2:-umg79}"
+  local profile="${3:-production}"
+
+  # Check if query is provided
+  if [[ -z "$query" ]]; then
+    echo "❌ SQL query is required as the first parameter"
+    echo "Usage: dg_db_query_csv 'SELECT * FROM table_name LIMIT 10' [stage] [profile]"
+    return 1
+  fi
+
+  # Display the query and ask for confirmation
+  echo "🔍 SQL Query to execute:"
+  echo "────────────────────────────────────────────────────────────────"
+  echo "$query"
+  echo "────────────────────────────────────────────────────────────────"
+  echo ""
+  echo "🎯 Target: Stage '$stage', Profile '$profile'"
+  echo ""
+  echo -n "❓ Do you want to execute this query? (y/N): "
+  read -r REPLY
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Query execution cancelled"
+    return 1
+  fi
+
+  # directories
+  local tunnel_dir="$HOME/Dev/dg/dg-stage-deploy/.rds-tunnel"
+  local kube="$HOME/Dev/dg/dg-stage-deploy/.eks-tunnel/kubeconfig-${stage}.yml"
+
+  (
+    # remember where the user is, then cd into the tunnel dir
+    local caller_cwd="$PWD"
+    cd "$tunnel_dir" || { echo "❌  Cannot cd into $tunnel_dir" >&2; exit 1; }
+
+    # ────────────────────────── K8s config ──────────────────────────
+    export KUBECONFIG="$kube"
+
+    # Get namespace for this stage
+    local namespace
+    if [[ "$stage" == "umg79" ]]; then
+      namespace="dg-stage-prod"
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      namespace="argo-workflows-prod"
+    else
+      namespace="dg-stage-staging"
+    fi
+
+    # Set port based on stage (matching Makefile logic)
+    local port
+    if [[ "$stage" == "umg79" ]]; then
+      port=5433
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      # port=5435
+    else
+      port=5434
+    fi
+
+    # Variables for cleanup
+    local pf_pid=""
+    local pgpass_file=""
+    local tunnel_started=false
+
+    # Enhanced cleanup handler for Ctrl+C and exit
+    cleanup() {
+      echo "🧹 Cleaning up..."
+
+      # Remove .pgpass file
+      if [[ -n "$pgpass_file" && -f "$pgpass_file" ]]; then
+        rm -f "$pgpass_file" 2>/dev/null
+        echo "   ✓ Removed .pgpass file"
+      fi
+
+      # Kill port-forward process with retry
+      if [[ -n "$pf_pid" ]]; then
+        echo "   🔌 Stopping port-forward (PID: $pf_pid)..."
+        kill "$pf_pid" 2>/dev/null || true
+        sleep 2
+
+        # Force kill if still running
+        if kill -0 "$pf_pid" 2>/dev/null; then
+          echo "   🔨 Force killing port-forward..."
+          kill -9 "$pf_pid" 2>/dev/null || true
+        fi
+      fi
+
+      # Force kill any remaining port-forwards on this port
+      if pgrep -f "kubectl port-forward.*${port}:5432" >/dev/null 2>&1; then
+        echo "   🔨 Force killing remaining port-forwards..."
+        pkill -9 -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
+      fi
+
+      # Stop the tunnel pod if we started it
+      if [[ "$tunnel_started" == "true" ]]; then
+        echo "   🚇 Stopping tunnel pod..."
+        if STAGE="$stage" AWS_PROFILE="$profile" make stop-db-tunnel 2>/dev/null; then
+          echo "   ✓ Tunnel pod stopped"
+        else
+          echo "   ⚠️  Warning: Failed to stop tunnel pod rds-tunnel-$USER"
+        fi
+      fi
+
+      # Wait for port to be freed
+      echo "   ⏳ Waiting for port to be freed..."
+      sleep 3
+      echo "✅ Cleanup complete"
+    }
+    trap cleanup EXIT INT TERM
+
+    # 1. Start the DB tunnel pod with error handling
+    echo "🚇 Starting DB tunnel pod..."
+    if ! STAGE="$stage" AWS_PROFILE="$profile" make start-db-tunnel; then
+      echo "❌ Failed to start DB tunnel pod"
+      exit 1
+    fi
+    tunnel_started=true
+    echo "✓ Tunnel pod started"
+
+    # Wait for tunnel pod to be ready
+    echo "⏳ Waiting for tunnel pod to be ready..."
+    if ! kubectl wait --namespace "$namespace" --for=condition=Ready pod/rds-tunnel-"$USER" --timeout=60s; then
+      echo "❌ Tunnel pod failed to become ready within 60 seconds"
+      exit 1
+    fi
+    echo "✓ Tunnel pod is ready"
+
+    # 2. Start port-forward in the background
+    echo "🔌 Starting port-forward to localhost:$port..."
+    STAGE="$stage" AWS_PROFILE="$profile" make port-forward-db-tunnel &
+    pf_pid=$!
+
+    # Wait for port-forward to be established with timeout
+    echo "⏳ Waiting for port-forward to establish..."
+    local timeout=60
+    local wait_interval=2
+    while [[ $timeout -gt 0 ]]; do
+      # Check if port is available using netcat
+      if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Alternative check using /dev/tcp if nc is not available
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        exec 3>&-
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Check if port-forward process is still running
+      if ! kill -0 "$pf_pid" 2>/dev/null; then
+        echo "❌ Port-forward process died unexpectedly"
+        exit 1
+      fi
+
+      echo "   Still waiting... (${timeout}s remaining)"
+      sleep $wait_interval
+      ((timeout-=wait_interval))
+    done
+
+    if [[ $timeout -le 0 ]]; then
+      echo "❌ Port-forward failed to establish within 60 seconds"
+      exit 1
+    fi
+
+    # 3. Get the full ecto URL (ecto://user:pass@host:port/db)
+    echo "🔑 Retrieving database credentials..."
+    local url
+    if ! url="$(STAGE="$stage" AWS_PROFILE="$profile" make --silent snatch-db-url)"; then
+      echo "❌ Failed to retrieve database URL"
+      exit 1
+    fi
+
+    if [[ -z "$url" ]]; then
+      echo "❌ Database URL is empty"
+      exit 1
+    fi
+
+    # 4. Pull the individual parts out of the URL
+    #    scheme://user:pass@host:port/dbname
+    local no_scheme="${url#*://}"          # user:pass@host:port/db
+    local creds="${no_scheme%%@*}"         # user:pass
+    local rest="${no_scheme#*@}"           # host:port/db
+
+    local user="${creds%%:*}"              # user
+    local pass="${creds#*:}"               # pass
+
+    local hostport="${rest%%/*}"           # host:port/db
+    local host="${hostport%%:*}"           # host
+
+    local db="${rest#*/}"                  # dbname (may contain %... → leave as-is)
+
+    # Validate extracted credentials
+    if [[ -z "$user" || -z "$pass" || -z "$db" ]]; then
+      echo "❌ Failed to parse database credentials from URL"
+      echo "   User: '$user', Pass: [${#pass} chars], DB: '$db'"
+      exit 1
+    fi
+
+    # 5. Create a temporary .pgpass file for non-interactive auth
+    pgpass_file="$(mktemp)"
+    if [[ $? -ne 0 || -z "$pgpass_file" ]]; then
+      echo "❌ Failed to create temporary .pgpass file"
+      exit 1
+    fi
+
+    # Use 127.0.0.1 in .pgpass since psql connects to localhost
+    echo "127.0.0.1:${port}:${db}:${user}:${pass}" > "$pgpass_file"
+    chmod 600 "$pgpass_file"
+
+    # Log connection info (without password)
+    echo "🔗 Database connection details:"
+    echo "   Connect to: 127.0.0.1:${port}"
+    echo "   Database: ${db}"
+    echo "   User: ${user}"
+    echo "   Password: [${#pass} characters]"
+    echo "   .pgpass file: ${pgpass_file}"
+
+    # Test database connection before proceeding
+    echo "🧪 Testing database connection..."
+    if ! PGPASSFILE="$pgpass_file" pg_isready -h 127.0.0.1 -p "$port" -U "$user" -d "$db" -q; then
+      echo "❌ Database connection test failed"
+      exit 1
+    fi
+    echo "✓ Database connection successful"
+
+    # 6. Execute the query and export to CSV
+    local timestamp=$(date '+%Y-%m-%d-%H%M%S')
+    local output_file="query-output-${timestamp}.csv"
+    echo "📊 Executing query and exporting to CSV: $output_file"
+    echo "   This may take several minutes depending on the query..."
+
+    # Use psql with \copy command to export CSV with headers
+    if ! PGPASSFILE="$pgpass_file" psql -h 127.0.0.1 -p "$port" -U "$user" -d "$db" \
+        -c "\\copy ($query) TO STDOUT WITH CSV HEADER" > "$caller_cwd/$output_file"; then
+      echo "❌ Query execution failed"
+      exit 1
+    fi
+
+    echo "✅ Query executed successfully!"
+    echo "   Output file: $caller_cwd/$output_file"
+    echo "   File size: $(du -h "$caller_cwd/$output_file" | cut -f1)"
+    echo "   Rows exported: $(($(wc -l < "$caller_cwd/$output_file") - 1))"
+
+    # Cleanup will be called automatically by trap
+  )
+}
+
 function s5cmd_inputs_for_isrc() {
   local env="${ENV:-"production"}"
   local s5cmd_ls_flags=()
