@@ -38,6 +38,7 @@ source ~/.dg
 
 # Put local node_modules/.bin in path
 export PATH="$PATH:./node_modules/.bin"
+export GITU_SHOW_EDITOR="zed"
 
 # enable fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -84,3 +85,6 @@ compdef _s5cmd_cli_zsh_autocomplete s5cmd
 
 # Profiling for zsh load speed - used in conjungtion with the other `zprof` command on top of this file
 # zprof
+
+# opencode
+export PATH=/Users/jfd/.opencode/bin:$PATH

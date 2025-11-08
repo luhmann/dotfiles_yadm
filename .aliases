@@ -6,6 +6,7 @@ alias dh='cd ~'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias episodic-memory='~/.claude/plugins/cache/episodic-memory/cli/episodic-memory'
 
 # utils
 alias fname='find . -iname'
@@ -82,18 +83,6 @@ function ds() {
   [ -n "$cid" ] && docker stop "$cid"
 }
 
-## brew helper
-# Install (one or multiple) selected application(s)
-# using "brew search" as source input
-# mnemonic [B]rew [I]nstall [P]lugin
-bip() {
-  local inst=$(brew search | fzf -m)
-
-  if [[ $inst ]]; then
-    for prog in $(echo $inst);
-    do; brew install $prog; done;
-  fi
-}
 
 function load_asdf() {
   . $(brew --prefix asdf)/libexec/asdf.sh
@@ -110,6 +99,7 @@ alias gl="git log --graph --pretty=format:'%Cred%h%Creset %an: %s - %Creset %C(y
 alias gs='git status -sb'
 alias gurl='git config --get remote.origin.url'
 alias gclean='git branch | grep -v "master\|main" | xargs git branch -D'
+alias gb='git branch --show-current | pbcopy && echo "Copied branch name: $(git branch --show-current)"'
 
 ## jump to project in travis
 alias trav='git-trav'
@@ -156,6 +146,85 @@ function gitstash() {
 
 function gitstashapply() {
     git stash apply $(git stash list | grep "zsh_stash_name_$1" | cut -d: -f1)
+}
+
+# ----------------------------------------------------
+# sync-git-origins - Sync a branch from 'origin' to 'backup' remote
+# ----------------------------------------------------
+# Fetches latest changes from 'origin' remote and pushes to 'backup' remote.
+# Useful for keeping a backup repository in sync with your main remote.
+#
+# Prerequisites:
+#   - Must be in a git repository
+#   - Must have 'origin' remote configured
+#   - Must have 'backup' remote configured
+#     Add with: git remote add backup <backup-repo-url>
+#
+# Usage:
+#   sync-git-origins           # Syncs current branch
+#   sync-git-origins main      # Syncs 'main' branch
+#   sync-git-origins feature/x # Syncs 'feature/x' branch
+#
+# Examples:
+#   # Setup backup remote (one-time)
+#   git remote add backup git@github.com:user/repo-backup.git
+#
+#   # Sync current branch to backup
+#   sync-git-origins
+#
+#   # Sync specific branch to backup
+#   sync-git-origins develop
+# ----------------------------------------------------
+function sync-git-origins() {
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        echo "❌ Not a git repository"
+        return 1
+    fi
+
+    # Get branch name (use argument if provided, otherwise current branch)
+    local branch
+    if [[ -n "$1" ]]; then
+        branch="$1"
+    else
+        branch=$(git branch --show-current)
+    fi
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not determine branch name"
+        return 1
+    fi
+
+    # Check if 'origin' remote exists
+    if ! git remote | grep -q "^origin$"; then
+        echo "❌ Remote 'origin' not found"
+        return 1
+    fi
+
+    # Check if 'backup' remote exists
+    if ! git remote | grep -q "^backup$"; then
+        echo "❌ Remote 'backup' not found"
+        echo "💡 Add a backup remote with: git remote add backup <url>"
+        return 1
+    fi
+
+    echo "🔄 Syncing branch '$branch' from origin to backup..."
+
+    # Fetch from origin
+    echo "📥 Fetching from origin..."
+    if ! git fetch origin "$branch"; then
+        echo "❌ Failed to fetch from origin"
+        return 1
+    fi
+
+    # Push to backup
+    echo "📤 Pushing to backup..."
+    if ! git push backup "$branch"; then
+        echo "❌ Failed to push to backup"
+        return 1
+    fi
+
+    echo "✅ Successfully synced '$branch' from origin to backup"
 }
 
 # remap of native tools for better experience
@@ -380,4 +449,23 @@ unwip() {
     else
         echo "❌ No non-wip commits found."
     fi
+}
+
+function getTranscodingsSinceHours() {
+  local sinceHours=${1:-24}
+  echo "Querying MediaConvertjobs in past ${sinceHours} hours..."
+
+  AWS_REGION=us-east-1 aws mediaconvert list-jobs --max-items 100 \
+  --query "Jobs[?to_string(Timing.FinishTime) > '$(date "-v-${sinceHours}H" "+%Y-%m-%dT%H:%M:%S+00:00")'].{isrc:UserMetadata.concert_isrc,finishTime:Timing.FinishTime,status:Status,audioRenditions:join(',',Settings.OutputGroups[].Outputs[].AudioDescriptions[].CodecSettings.Codec)}" \
+  --output table
+}
+
+pb_quote() {
+    pbpaste | sed -e "s/\([^\n]*\)/'&',/g" -e '$s/,$//' | pbcopy
+    echo "✅ Clipboard transformed: each line wrapped in quotes, no comma on last line"
+}
+
+lines_to_csv() {
+    pbpaste | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/, /g' | pbcopy
+    echo "Converted lines to comma-separated string and copied to clipboard:"
 }

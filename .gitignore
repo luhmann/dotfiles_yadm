@@ -30,3 +30,4 @@ docs/agent
 .claude/*
 !.claude/CLAUDE.md
 !.claude/.claude.json
+.jf
