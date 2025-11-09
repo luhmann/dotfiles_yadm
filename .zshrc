@@ -1,14 +1,8 @@
 ## Profiling zsh - used in conjungction with `zprof`-command on the bottom
 # zmodload zsh/zprof
 
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ $TERM_PROGRAM != "WarpTerminal" ]]; then
-  if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-  fi
-fi
+# Starship prompt is loaded via zinit in ~/.zinitrc
+# No instant prompt needed as Starship is fast by default
 
 
 ### Added by Zinit's installer
@@ -48,8 +42,8 @@ export FZF_DEFAULT_OPTS='--multi --reverse'
 # use python from homebrew
 # export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
-# powerlevel 10k: To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Starship configuration is in ~/.config/starship.toml
+# To customize prompt, edit that file or run: starship config
 
 eval "$(/opt/homebrew/bin/mise activate zsh)"
 
