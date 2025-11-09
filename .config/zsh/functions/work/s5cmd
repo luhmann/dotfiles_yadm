@@ -1,0 +1,42 @@
+#!/usr/bin/env zsh
+# @name: s5cmd
+# @description: Wrapper for s5cmd with auto-region detection
+# @category: work
+# @keywords: s3, aws, s5cmd, bucket, region
+# @usage: s5cmd [args]
+# @example: s5cmd
+
+s5cmd() {
+  local S5CMD=/opt/homebrew/bin/s5cmd
+  # shellcheck disable=SC2207 # intentional word splitting for array splitting
+  local bucketNames=($(echo "$@" | grep -oE 's3://[^/]+' | sed 's|s3://||g'))
+  local numberOfBuckets="${#bucketNames[@]}"
+  # echo "🤖" "numberOfBuckets: ${numberOfBuckets}, array: '${bucketNames[*]}'"
+
+  case "${numberOfBuckets}" in
+    0)
+      "${S5CMD}" "$@"
+      ;;
+    1)
+      if [[ "$*" == *" pipe "* ]]; then
+        cat | AWS_REGION="$(getBucketRegion "${bucketNames[1]}")" "${S5CMD}" "$@"
+      else
+        AWS_REGION="$(getBucketRegion "${bucketNames[1]}")" "${S5CMD}" "$@"
+      fi
+      ;;
+    2)
+      local new_args=()
+      for arg in "$@"; do
+        new_args+=("$arg")
+        if [[ "$arg" == "cp" || "$arg" == "mv" || "$arg" == "sync" ]]; then
+          new_args+=("--source-region" "$(getBucketRegion "${bucketNames[1]}")" "--destination-region" "$(getBucketRegion "${bucketNames[2]}")")
+        fi
+      done
+      "${S5CMD}" "${new_args[@]}"
+      ;;
+    *)
+      echo "Detected ${numberOfBuckets} buckets: '${bucketNames[*]}'. Only up to 2 are supported.";
+      return 1;
+      ;;
+  esac
+}

@@ -1,0 +1,121 @@
+#!/usr/bin/env zsh
+# @name: zf-help
+# @description: Show help and usage information for the ZSH Functions Library
+# @category: core
+# @keywords: help, documentation, usage, guide, info
+# @usage: zf-help
+# @example: zf-help
+
+zf-help() {
+  cat << 'EOF'
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                  ZSH Functions Library - Help
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A modern system for organizing and discovering zsh functions with:
+  • Categorized organization
+  • Fuzzy search with fzf
+  • Keyword and description-based discovery
+  • Easy function management
+
+CORE COMMANDS
+────────────────────────────────────────────────────────────────────
+
+  zf-browse [query]       Interactive fuzzy search (requires fzf)
+  zfb [query]             Alias for zf-browse
+
+  zf-list [category]      List all functions or by category
+  zfl [category]          Alias for zf-list
+
+  zf-search <keyword>     Search by keyword (grep-based, no fzf)
+  zfs <keyword>           Alias for zf-search
+
+  zf-add <name> <cat>     Create a new function from template
+  zfa <name> <cat>        Alias for zf-add
+
+  zf-help                 Show this help message
+  zfh                     Alias for zf-help
+
+USAGE EXAMPLES
+────────────────────────────────────────────────────────────────────
+
+  # Browse all functions interactively
+  zf-browse
+
+  # Search for git-related functions
+  zf-browse git
+
+  # List all functions
+  zf-list
+
+  # List functions in a specific category
+  zf-list git
+
+  # Search for functions containing "commit"
+  zf-search commit
+
+  # Create a new function
+  zf-add my-helper git
+
+FUNCTION FORMAT
+────────────────────────────────────────────────────────────────────
+
+Each function file should include metadata comments:
+
+  # @name: function_name
+  # @description: What the function does
+  # @category: category_name
+  # @keywords: keyword1, keyword2, keyword3
+  # @usage: function_name [arguments]
+  # @example: function_name arg1 arg2
+
+This metadata enables powerful search and discovery features.
+
+CATEGORIES
+────────────────────────────────────────────────────────────────────
+
+Default categories:
+  • git       - Git and version control helpers
+  • text      - Text processing and manipulation
+  • file      - File operations and management
+  • docker    - Docker and container tools
+  • dev       - Development utilities
+  • system    - System administration
+  • network   - Network tools and utilities
+
+You can create custom categories with: zf-add <name> <new_category>
+
+INSTALLATION
+────────────────────────────────────────────────────────────────────
+
+Add to your ~/.zshrc:
+
+  source /path/to/zsh-functions/init.zsh
+
+Optional: Enable verbose loading messages:
+
+  export ZSH_FUNCTIONS_VERBOSE=1
+  source /path/to/zsh-functions/init.zsh
+
+REQUIREMENTS
+────────────────────────────────────────────────────────────────────
+
+  • zsh (obviously!)
+  • fzf (optional, for zf-browse)
+    Install: brew install fzf  (macOS)
+         or: apt install fzf   (Linux)
+
+MORE INFORMATION
+────────────────────────────────────────────────────────────────────
+
+Library location: $ZSH_FUNCTIONS_DIR
+Documentation: See README.md in the library directory
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EOF
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  zf-help "$@"
+fi

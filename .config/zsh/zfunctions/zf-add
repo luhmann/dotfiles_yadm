@@ -1,0 +1,91 @@
+#!/usr/bin/env zsh
+# @name: zf-add
+# @description: Create a new function from template
+# @category: core
+# @keywords: add, create, new, template, scaffold
+# @usage: zf-add <function_name> <category>
+# @example: zf-add git-quick-commit git
+
+zf-add() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: zf-add <function_name> <category>"
+    echo ""
+    echo "Available categories:"
+    local functions_dir="${ZSH_FUNCTIONS_DIR:-${${(%):-%x}:A:h:h}}/functions"
+    for cat_dir in "$functions_dir"/*(N/); do
+      echo "  - ${cat_dir:t}"
+    done
+    echo ""
+    echo "Example: zf-add my-git-helper git"
+    return 1
+  fi
+
+  local func_name="$1"
+  local category="$2"
+  local functions_dir="${ZSH_FUNCTIONS_DIR:-${${(%):-%x}:A:h:h}}/functions"
+  local category_dir="$functions_dir/$category"
+  local func_file="$category_dir/$func_name"
+
+  # Create category directory if it doesn't exist
+  if [[ ! -d "$category_dir" ]]; then
+    echo "Category '$category' doesn't exist. Creating it..."
+    mkdir -p "$category_dir"
+  fi
+
+  # Check if function already exists
+  if [[ -f "$func_file" ]]; then
+    echo "Error: Function '$func_name' already exists in category '$category'"
+    echo "Location: $func_file"
+    return 1
+  fi
+
+  # Create function from template
+  cat > "$func_file" << EOF
+#!/usr/bin/env zsh
+# @name: $func_name
+# @description: Brief description of what this function does
+# @category: $category
+# @keywords: keyword1, keyword2, keyword3
+# @usage: $func_name [args]
+# @example: $func_name example_arg
+
+$func_name() {
+  # Add your implementation here
+  echo "Function $func_name called with args: \$@"
+}
+
+# Execute if run directly
+if [[ "\${(%):-%x}" == "\${0}" ]]; then
+  $func_name "\$@"
+fi
+EOF
+
+  chmod +x "$func_file"
+
+  echo "✓ Created function: $func_name"
+  echo "  Location: $func_file"
+  echo "  Category: $category"
+  echo ""
+  echo "Next steps:"
+  echo "  1. Edit the file to implement your function"
+  echo "  2. Update the @description, @keywords, @usage, and @example"
+  echo "  3. Reload your shell or run: autoload -Uz $func_name"
+  echo ""
+  echo "Opening in editor..."
+
+  # Open in editor if available
+  if [[ -n "$EDITOR" ]]; then
+    $EDITOR "$func_file"
+  elif command -v nano &> /dev/null; then
+    nano "$func_file"
+  elif command -v vi &> /dev/null; then
+    vi "$func_file"
+  else
+    echo "No editor found. Please edit manually: $func_file"
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  zf-add "$@"
+fi

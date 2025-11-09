@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: histrm
+# @description: Remove from shell history
+# @category: system
+# @keywords: history, remove, delete, zsh
+# @usage: histrm [args]
+# @example: histrm
+
+histrm() {
+  gsed -i "/$1/d" $HISTFILE
+}

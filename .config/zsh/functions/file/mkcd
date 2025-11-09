@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+# @name: mkcd
+# @description: Create a directory and cd into it
+# @category: file
+# @keywords: mkdir, cd, directory, create, navigate
+# @usage: mkcd <directory>
+# @example: mkcd my-new-project
+
+mkcd() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: mkcd <directory>"
+    return 1
+  fi
+
+  mkdir -p "$1" && cd "$1"
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  mkcd "$@"
+fi

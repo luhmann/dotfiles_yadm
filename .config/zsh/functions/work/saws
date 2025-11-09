@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: saws
+# @description: AWS profile wrapper (staging)
+# @category: work
+# @keywords: aws, profile, staging
+# @usage: saws [args]
+# @example: saws
+
+saws() {
+    AWS_PROFILE=default AWS_REGION=us-east-1 aws "$@"
+}

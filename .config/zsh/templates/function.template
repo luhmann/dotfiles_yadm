@@ -1,0 +1,17 @@
+#!/usr/bin/env zsh
+# @name: FUNCTION_NAME
+# @description: Brief description of what this function does
+# @category: CATEGORY
+# @keywords: keyword1, keyword2, keyword3
+# @usage: FUNCTION_NAME [arguments]
+# @example: FUNCTION_NAME example_arg
+
+FUNCTION_NAME() {
+  # Add your implementation here
+  echo "Function FUNCTION_NAME called with args: $@"
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  FUNCTION_NAME "$@"
+fi

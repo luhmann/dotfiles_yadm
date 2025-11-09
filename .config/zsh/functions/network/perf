@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: perf
+# @description: Performance test URL
+# @category: network
+# @keywords: performance, benchmark, http, curl
+# @usage: perf [args]
+# @example: perf
+
+perf {
+  curl -o /dev/null -s -w "%{time_connect} + %{time_starttransfer} = %{time_total}\n" "$1"
+}

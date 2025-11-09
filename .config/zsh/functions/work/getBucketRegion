@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+# @name: getBucketRegion
+# @description: Get AWS region for S3 bucket
+# @category: work
+# @keywords: aws, s3, bucket, region
+# @usage: getBucketRegion [args]
+# @example: getBucketRegion
+
+getBucketRegion() {
+  bucketName="${1}"
+  # `aws s3api get-bucket-location` would have to be called in the correct region (duh). That's why we use a hack.
+  curl -sI -o /dev/null -w '%header{x-amz-bucket-region}' "https://${bucketName}.s3.amazonaws.com"
+}

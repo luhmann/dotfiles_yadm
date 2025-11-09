@@ -1,0 +1,41 @@
+#!/usr/bin/env zsh
+# @name: json-pretty
+# @description: Pretty-print JSON from file or stdin
+# @category: dev
+# @keywords: json, format, pretty, print, parse
+# @usage: json-pretty [file]
+# @example: json-pretty data.json
+
+json-pretty() {
+  if command -v jq &> /dev/null; then
+    # Use jq if available (better)
+    if [[ -n "$1" && -f "$1" ]]; then
+      jq '.' "$1"
+    elif [[ -p /dev/stdin ]]; then
+      jq '.'
+    else
+      echo "Usage: json-pretty <file>"
+      echo "   or: cat file.json | json-pretty"
+      echo "   or: curl api.com/data | json-pretty"
+      return 1
+    fi
+  elif command -v python3 &> /dev/null; then
+    # Fallback to python
+    if [[ -n "$1" && -f "$1" ]]; then
+      python3 -m json.tool "$1"
+    elif [[ -p /dev/stdin ]]; then
+      python3 -m json.tool
+    else
+      echo "Usage: json-pretty <file>"
+      return 1
+    fi
+  else
+    echo "Error: Neither jq nor python3 found"
+    return 1
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  json-pretty "$@"
+fi

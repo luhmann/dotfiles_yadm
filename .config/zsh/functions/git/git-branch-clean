@@ -1,0 +1,56 @@
+#!/usr/bin/env zsh
+# @name: git-branch-clean
+# @description: Delete local branches that have been merged to main/master
+# @category: git
+# @keywords: git, branch, cleanup, delete, merged, prune
+# @usage: git-branch-clean
+# @example: git-branch-clean
+
+git-branch-clean() {
+  # Determine the main branch name
+  local main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+
+  if [[ -z "$main_branch" ]]; then
+    # Fallback: try common names
+    if git rev-parse --verify main >/dev/null 2>&1; then
+      main_branch="main"
+    elif git rev-parse --verify master >/dev/null 2>&1; then
+      main_branch="master"
+    else
+      echo "Error: Could not determine main branch"
+      return 1
+    fi
+  fi
+
+  echo "Main branch: $main_branch"
+  echo "Finding merged branches..."
+
+  # Get list of merged branches (excluding current and main)
+  local merged_branches=$(git branch --merged "$main_branch" | \
+    grep -v "\*" | \
+    grep -v "$main_branch" | \
+    sed 's/^[[:space:]]*//')
+
+  if [[ -z "$merged_branches" ]]; then
+    echo "✓ No merged branches to clean up"
+    return 0
+  fi
+
+  echo "\nThe following branches will be deleted:"
+  echo "$merged_branches"
+
+  echo -n "\nProceed with deletion? [y/N] "
+  read -r response
+
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    echo "$merged_branches" | xargs -n 1 git branch -d
+    echo "✓ Branches deleted"
+  else
+    echo "Cancelled"
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  git-branch-clean "$@"
+fi

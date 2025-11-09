@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+# @name: gtw
+# @description: Git worktree manager
+# @category: git
+# @keywords: git, worktree, manage
+# @usage: gtw [args]
+# @example: gtw
+
+gtw () {
+  local branch=$1
+  [[ -z $branch ]] && { echo "Usage: gtw <branch>"; return 1 }
+
+  # 1. repo information
+  local root=$(git rev-parse --show-toplevel 2>/dev/null) \
+    || { echo "❌  Not inside a Git repository"; return 1 }
+  local repo=${root:t}                     # basename of repo
+  local safe_branch=${branch//\//-}        # / → -
+  local target=${root:h}/${repo}-${safe_branch}
+
+  # 2. existing tree?
+  if [[ -d $target ]]; then
+    echo "✔ Work-tree already exists → cd $target"
+    cd "$target"
+    return
+  fi
+
+  # 3. create tree (branch new or existing)
+  if git show-ref --quiet "refs/heads/$branch"; then
+    git worktree add "$target" "$branch"
+  else
+    # detect default remote branch (falls back to main)
+    local def=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null \
+                 | cut -d/ -f2)
+    [[ -z $def ]] && def=main
+    git worktree add -b "$branch" "$target" origin/$def
+  fi
+
+  cd "$target"
+  echo "✅  Now inside $target"
+}

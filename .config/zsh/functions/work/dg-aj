@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: dg-aj
+# @description: Argo workflow jobs for audio ingest
+# @category: work
+# @keywords: dg, argo, workflow, audio, jobs
+# @usage: dg-aj [args]
+# @example: dg-aj
+
+dg-aj () {
+   KUBECONFIG="/Users/jfd/Dev/dg/dg-stage-deploy/.eks-tunnel/kubeconfig-umg79_INGEST.yml" AWS_PROFILE=production ARGO_NAMESPACE=ingest-prod argo "$@"
+}

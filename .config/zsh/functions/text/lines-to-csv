@@ -1,0 +1,12 @@
+#!/usr/bin/env zsh
+# @name: lines-to-csv
+# @description: Convert lines to CSV format
+# @category: text
+# @keywords: csv, convert, lines, format
+# @usage: lines-to-csv [args]
+# @example: lines-to-csv
+
+lines-to-csv() {
+    pbpaste | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/, /g' | pbcopy
+    echo "Converted lines to comma-separated string and copied to clipboard:"
+}

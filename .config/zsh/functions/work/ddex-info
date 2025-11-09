@@ -1,0 +1,241 @@
+#!/usr/bin/env zsh
+# @name: ddex-info
+# @description: Get DDEX metadata info for UPC
+# @category: work
+# @keywords: ddex, upc, metadata, xml
+# @usage: ddex-info [args]
+# @example: ddex-info
+
+ddex-info () {
+  local upc="$1"
+  local detail_limit="${2:-20}"  # Default to showing first 20 tracks in detail
+
+  if [[ -z "$upc" ]]; then
+    echo "Usage: ddex-info <UPC> [detail_limit]"
+    echo "  detail_limit: Number of tracks to show in detail (default: 20, use 'all' for all tracks)"
+    return 1
+  fi
+
+  # Check if xq is available
+  if ! command -v xq &> /dev/null; then
+    echo "❌ xq not found. Install with: brew install xq"
+    return 1
+  fi
+
+  # Handle 'all' keyword
+  if [[ "$detail_limit" == "all" ]]; then
+    detail_limit=999999
+  fi
+
+  # Find all S3 directories for this UPC
+  echo "🔍 Searching for UPC: $upc\n"
+  local all_dirs=$(AWS_PROFILE=production s5cmd ls "s3://stage-ingest-production/supply-chain/incoming/" | grep "${upc}_" | awk '{print $NF}')
+
+  if [[ -z "$all_dirs" ]]; then
+    echo "❌ No release found for UPC: $upc"
+    return 1
+  fi
+
+  # Count number of versions
+  local version_count=$(echo "$all_dirs" | wc -l | tr -d ' ')
+
+  # Select newest version (last one, since sorted by timestamp)
+  local s3_dir=$(echo "$all_dirs" | tail -1)
+
+  # Display all versions if multiple exist
+  if [[ $version_count -gt 1 ]]; then
+    echo "📦 Found $version_count versions:"
+    echo "$all_dirs" | while IFS= read -r dir; do
+      if [[ "$dir" == "$s3_dir" ]]; then
+        echo "   ✓ $dir (using newest)"
+      else
+        echo "     $dir"
+      fi
+    done
+    echo ""
+  else
+    echo "📦 Found release: $s3_dir"
+  fi
+
+  # Fetch the XML file
+  local xml_file="${upc}.xml"
+  local xml_path="s3://stage-ingest-production/supply-chain/incoming/${s3_dir}${xml_file}"
+
+  echo "💡 To inspect full XML: AWS_PROFILE=production s5cmd cat \"$xml_path\"\n"
+
+  local xml_content=$(AWS_PROFILE=production s5cmd cat "$xml_path" 2>/dev/null)
+
+  if [[ -z "$xml_content" ]]; then
+    echo "❌ Could not fetch XML file"
+    return 1
+  fi
+
+  # Parse album information
+  echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📀 ALBUM INFORMATION"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+  # Save XML to temp file for xq processing
+  local tmp_xml=$(mktemp)
+  echo "$xml_content" > "$tmp_xml"
+
+  local release_title=$(xq -x "string(//*[local-name()='ReleaseDetailsByTerritory'][1]/*[local-name()='Title'][1]/*[local-name()='TitleText'])" < "$tmp_xml" 2>/dev/null)
+  local release_artist=$(xq -x "string(//*[local-name()='ReleaseDetailsByTerritory'][1]/*[local-name()='DisplayArtistName'])" < "$tmp_xml" 2>/dev/null)
+  local label=$(xq -x "string(//*[local-name()='ReleaseDetailsByTerritory'][1]/*[local-name()='LabelName'])" < "$tmp_xml" 2>/dev/null)
+  local release_date=$(xq -x "string(//*[local-name()='ReleaseDetailsByTerritory'][1]/*[local-name()='ReleaseDate'])" < "$tmp_xml" 2>/dev/null)
+
+  echo "Title:   $release_title"
+  echo "Artist:  $release_artist"
+  echo "Label:   $label"
+  echo "Date:    $release_date"
+  echo "UPC:     $upc"
+
+  # Get track count using xq
+  local track_count=$(xq -x "count(//*[local-name()='SoundRecording'])" < "$tmp_xml" 2>/dev/null)
+  echo "Tracks:  $track_count"
+
+  # Parse tracks
+  echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🎵 TRACKS & FILES"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+  # Count codecs efficiently using xq XPath predicates
+  echo "⚡ Analyzing audio formats...\n"
+
+  typeset -A codec_counts
+
+  # Dynamically discover all codec types in the XML
+  # Get all AudioCodecType text values (non-UserDefined)
+  local regular_codecs=$(xq -x '//*[local-name()="AudioCodecType"][text()!="UserDefined"]/text()' < "$tmp_xml" 2>/dev/null | sort -u)
+
+  # Get all UserDefinedValue attributes (for codecs like Atmos)
+  local user_defined_codecs=$(xq -x '//*[local-name()="AudioCodecType"]/@UserDefinedValue' < "$tmp_xml" 2>/dev/null | sort -u)
+
+  # Combine all codecs
+  local all_codecs=$(echo -e "$regular_codecs\n$user_defined_codecs" | grep -v '^$' | sort -u)
+
+  # Count tracks for each codec
+  while IFS= read -r codec; do
+    [[ -z "$codec" ]] && continue
+
+    # Check if it's a UserDefined codec or regular codec
+    if echo "$user_defined_codecs" | grep -q "^${codec}$"; then
+      # UserDefined codec - search by @UserDefinedValue attribute
+      codec_counts[$codec]=$(xq -x '//*[local-name()="SoundRecording"][.//*[local-name()="AudioCodecType"][@UserDefinedValue="'"$codec"'"]]/*[local-name()="ResourceReference"]/text()' < "$tmp_xml" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+    else
+      # Regular codec - search by text content
+      codec_counts[$codec]=$(xq -x '//*[local-name()="SoundRecording"][.//*[local-name()="AudioCodecType"][text()="'"$codec"'"]]/*[local-name()="ResourceReference"]/text()' < "$tmp_xml" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+    fi
+  done <<< "$all_codecs"
+
+  # Process each track (limited for detailed output)
+  local tracks_shown=0
+  for i in {1..${track_count}}; do
+    # Check if we've hit the display limit
+    if [[ $i -gt $detail_limit ]]; then
+      echo "... and $((track_count - detail_limit)) more tracks (use 'ddex-info $upc all' to show all)\n"
+      break
+    fi
+
+    local track_title=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='DisplayTitleText'])" < "$tmp_xml" 2>/dev/null)
+    local track_artist=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='DisplayArtistName'])" < "$tmp_xml" 2>/dev/null)
+    local isrc=$(xq -x "string(//*[local-name()='SoundRecording'][$i]//*[local-name()='ISRC'])" < "$tmp_xml" 2>/dev/null)
+    local duration=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='Duration'])" < "$tmp_xml" 2>/dev/null)
+
+    echo "[$i] $track_title"
+    echo "    Artist: $track_artist"
+    echo "    ISRC:   $isrc"
+    echo "    Duration: $duration"
+    echo "    Files:"
+
+    ((tracks_shown++))
+
+    # Process all SoundRecordingEdition elements (there can be multiple)
+    local edition_count=$(xq -x "count(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'])" < "$tmp_xml" 2>/dev/null)
+
+    for edition in {1..${edition_count}}; do
+      # Get the number of technical details in this edition
+      local file_count=$(xq -x "count(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'])" < "$tmp_xml" 2>/dev/null)
+
+      # Skip if no technical details (avoid {1..0} iteration bug)
+      if [[ $file_count -lt 1 ]]; then
+        continue
+      fi
+
+      for j in {1..${file_count}}; do
+        local codec=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='AudioCodecType'])" < "$tmp_xml" 2>/dev/null)
+        local codec_user_defined=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='AudioCodecType']/@UserDefinedValue)" < "$tmp_xml" 2>/dev/null)
+        local sample_rate=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='SamplingRate'])" < "$tmp_xml" 2>/dev/null)
+        local bit_depth=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='BitsPerSample'])" < "$tmp_xml" 2>/dev/null)
+        local bit_rate=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='BitRate'])" < "$tmp_xml" 2>/dev/null)
+        local channels=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='NumberOfChannels'])" < "$tmp_xml" 2>/dev/null)
+        local file_uri=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='DeliveryFile']/*[local-name()='File']/*[local-name()='URI'])" < "$tmp_xml" 2>/dev/null)
+
+        # Fallback to TechnicalResourceDetailsReference if no URI
+        if [[ -z "$file_uri" ]]; then
+          file_uri=$(xq -x "string(//*[local-name()='SoundRecording'][$i]/*[local-name()='SoundRecordingEdition'][$edition]/*[local-name()='TechnicalDetails'][$j]/*[local-name()='TechnicalResourceDetailsReference'])" < "$tmp_xml" 2>/dev/null)
+        fi
+
+        # Use UserDefinedValue if codec is "UserDefined"
+        if [[ "$codec" == "UserDefined" && -n "$codec_user_defined" ]]; then
+          codec="$codec_user_defined"
+        fi
+
+        # Format quality string
+        local quality=""
+        if [[ -n "$bit_depth" ]]; then
+          quality="${sample_rate}kHz/${bit_depth}bit"
+        elif [[ -n "$bit_rate" ]]; then
+          quality="${sample_rate}kHz/${bit_rate}kbps"
+        else
+          quality="${sample_rate}kHz"
+        fi
+
+        # Add channel info for multi-channel audio
+        if [[ -n "$channels" && "$channels" != "2" ]]; then
+          quality="${quality}/${channels}ch"
+        fi
+
+        echo "      • $codec ($quality) - $file_uri"
+      done
+    done
+
+    echo ""
+  done
+
+  # Display summary statistics
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📊 QUALITY SUMMARY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+  # Display all found codecs
+  while IFS= read -r codec; do
+    [[ -z "$codec" ]] && continue
+
+    local count=${codec_counts[$codec]:-0}
+    [[ -z "$count" ]] && count=0
+
+    # Skip if count is 0 and codec is not Atmos
+    if [[ $count -eq 0 && "$codec" != "E-AC-3_JOC" ]]; then
+      continue
+    fi
+
+    local percentage=$(( count * 100 / track_count ))
+
+    # Highlight Atmos specially
+    if [[ "$codec" == "E-AC-3_JOC" ]]; then
+      if [[ $count -eq 0 ]]; then
+        echo "🎧 Dolby Atmos (E-AC-3_JOC): Not available"
+      else
+        echo "🎧 Dolby Atmos (E-AC-3_JOC): $count/$track_count tracks ($percentage%)"
+      fi
+    else
+      echo "   $codec: $count/$track_count tracks ($percentage%)"
+    fi
+  done <<< "$all_codecs"
+
+  # Cleanup temp files
+  rm -f "$tmp_xml" 2>/dev/null
+
+  echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+}

@@ -1,0 +1,17 @@
+#!/usr/bin/env zsh
+# @name: node-project
+# @description: Create new Node.js project scaffold
+# @category: dev
+# @keywords: node, npm, init, project
+# @usage: node-project [args]
+# @example: node-project
+
+node-project() {
+  git init
+  npx license $(npm get init.license) -o "$(npm get init.author.name)" > LICENSE
+  npx gitignore node
+  npx covgen "$(npm get init.author.email)"
+  npm init -y
+  git add -A
+  git commit -m "Initial commit"
+}

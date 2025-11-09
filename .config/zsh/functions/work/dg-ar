@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: dg-ar
+# @description: Argo workflows AR operations
+# @category: work
+# @keywords: dg, argo, ar
+# @usage: dg-ar [args]
+# @example: dg-ar
+
+dg_ar() {
+    dg_aj get "$1" -o json | jq '.status.nodes[] | select(.phase=="Failed") | {displayName, message}'
+}

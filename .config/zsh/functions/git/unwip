@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+# @name: unwip
+# @description: Undo WIP commit
+# @category: git
+# @keywords: git, wip, undo, reset
+# @usage: unwip [args]
+# @example: unwip
+
+unwip() {
+    local last_non_wip_commit
+    last_non_wip_commit=$(git rev-list --max-count=1 --grep="^wip" --invert-grep HEAD)
+
+    if [[ -n "$last_non_wip_commit" ]]; then
+        echo "Resetting to commit: $last_non_wip_commit"
+        git log --oneline -1 "$last_non_wip_commit"
+        git reset --soft "$last_non_wip_commit"
+        echo "✅ Soft reset complete. Your changes are staged."
+    else
+        echo "❌ No non-wip commits found."
+    fi
+}

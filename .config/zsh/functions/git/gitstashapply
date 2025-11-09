@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: gitstashapply
+# @description: Git stash apply helper
+# @category: git
+# @keywords: git, stash, apply, pop
+# @usage: gitstashapply [args]
+# @example: gitstashapply
+
+gitstashapply() {
+    git stash apply $(git stash list | grep "zsh_stash_name_$1" | cut -d: -f1)
+}

@@ -1,0 +1,226 @@
+#!/usr/bin/env zsh
+# @name: dg-db-dump
+# @description: Dump sanitized database (excluding sensitive tables)
+# @category: work
+# @keywords: dg, database, dump, backup, postgres, pg_dump, sanitized
+# @usage: dg-db-dump [args]
+# @example: dg-db-dump
+
+dg-db-dump () {
+  local stage="${1:-umg79}"
+  local profile="${2:-production}"
+
+  # directories
+  local tunnel_dir="$HOME/Dev/dg/dg-stage-deploy/.rds-tunnel"
+  local kube="$HOME/Dev/dg/dg-stage-deploy/.eks-tunnel/kubeconfig-${stage}.yml"
+
+  (
+    # remember where the user is, then cd into the tunnel dir
+    local caller_cwd="$PWD"
+    cd "$tunnel_dir" || { echo "❌  Cannot cd into $tunnel_dir" >&2; exit 1; }
+
+    # ────────────────────────── K8s config ──────────────────────────
+    export KUBECONFIG="$kube"
+
+    # Get namespace, port, database, and user for this stage
+    local namespace port db_name db_user
+    if [[ "$stage" == "umg79" ]]; then
+      namespace="dg-stage-prod"
+      port=5433
+      db_name="dgstage"
+      db_user="dg_stage_read_only"
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      namespace="argo-workflows-prod"
+      port=5435
+      db_name="dgstage"
+      db_user="argo"
+    else
+      namespace="dg-stage-staging"
+      port=5434
+      db_name="dgstageimport"
+      db_user="dg_stage_read_only"
+    fi
+
+    # Variables for cleanup
+    local pf_pid=""
+    local pgpass_file=""
+    local tunnel_started=false
+
+    # Enhanced cleanup handler for Ctrl+C and exit
+    cleanup() {
+      echo "🧹 Cleaning up..."
+
+      # Remove .pgpass file
+      if [[ -n "$pgpass_file" && -f "$pgpass_file" ]]; then
+        rm -f "$pgpass_file" 2>/dev/null
+        echo "   ✓ Removed .pgpass file"
+      fi
+
+      # Kill port-forward process with retry
+      if [[ -n "$pf_pid" ]]; then
+        echo "   🔌 Stopping port-forward (PID: $pf_pid)..."
+        kill "$pf_pid" 2>/dev/null || true
+        sleep 2
+
+        # Force kill if still running
+        if kill -0 "$pf_pid" 2>/dev/null; then
+          echo "   🔨 Force killing port-forward..."
+          kill -9 "$pf_pid" 2>/dev/null || true
+        fi
+      fi
+
+      # Force kill any remaining port-forwards on this port
+      if pgrep -f "kubectl port-forward.*${port}:5432" >/dev/null 2>&1; then
+        echo "   🔨 Force killing remaining port-forwards..."
+        pkill -9 -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
+      fi
+
+      # Stop the tunnel pod if we started it
+      if [[ "$tunnel_started" == "true" ]]; then
+        echo "   🚇 Stopping tunnel pod..."
+        if STAGE="$stage" AWS_PROFILE="$profile" make stop-db-tunnel 2>/dev/null; then
+          echo "   ✓ Tunnel pod stopped"
+        else
+          echo "   ⚠️  Warning: Failed to stop tunnel pod rds-tunnel-$USER"
+        fi
+      fi
+
+      # Wait for port to be freed
+      echo "   ⏳ Waiting for port to be freed..."
+      sleep 3
+      echo "✅ Cleanup complete"
+    }
+    trap cleanup EXIT INT TERM
+
+    # 1. Start the DB tunnel pod with error handling
+    echo "🚇 Starting DB tunnel pod..."
+    if ! STAGE="$stage" AWS_PROFILE="$profile" make start-db-tunnel; then
+      echo "❌ Failed to start DB tunnel pod"
+      exit 1
+    fi
+    tunnel_started=true
+    echo "✓ Tunnel pod started"
+
+    # Wait for tunnel pod to be ready
+    echo "⏳ Waiting for tunnel pod to be ready..."
+    if ! kubectl wait --namespace "$namespace" --for=condition=Ready pod/rds-tunnel-"$USER" --timeout=60s; then
+      echo "❌ Tunnel pod failed to become ready within 60 seconds"
+      exit 1
+    fi
+    echo "✓ Tunnel pod is ready"
+
+    # 2. Start port-forward in the background
+    echo "🔌 Starting port-forward to localhost:$port..."
+    STAGE="$stage" AWS_PROFILE="$profile" make port-forward-db-tunnel &
+    pf_pid=$!
+
+    # Wait for port-forward to be established with timeout
+    echo "⏳ Waiting for port-forward to establish..."
+    local timeout=60
+    local wait_interval=2
+    while [[ $timeout -gt 0 ]]; do
+      # Check if port is available using netcat
+      if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Alternative check using /dev/tcp if nc is not available
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        exec 3>&-
+        echo "✓ Port-forward established on localhost:$port"
+        break
+      fi
+
+      # Check if port-forward process is still running
+      if ! kill -0 "$pf_pid" 2>/dev/null; then
+        echo "❌ Port-forward process died unexpectedly"
+        exit 1
+      fi
+
+      echo "   Still waiting... (${timeout}s remaining)"
+      sleep $wait_interval
+      ((timeout-=wait_interval))
+    done
+
+    if [[ $timeout -le 0 ]]; then
+      echo "❌ Port-forward failed to establish within 60 seconds"
+      exit 1
+    fi
+
+    # 3. Get database password
+    echo "🔑 Retrieving database password..."
+    local password
+    if ! password="$(STAGE="$stage" AWS_PROFILE="$profile" make --silent snatch-db-url 2>/dev/null)"; then
+      echo "❌ Failed to retrieve database password"
+      exit 1
+    fi
+
+    if [[ -z "$password" ]]; then
+      echo "❌ Database password is empty"
+      exit 1
+    fi
+
+    echo "✓ Password retrieved (${#password} characters)"
+
+    # 4. Create a temporary .pgpass file for non-interactive auth
+    pgpass_file="$(mktemp)"
+    if [[ $? -ne 0 || -z "$pgpass_file" ]]; then
+      echo "❌ Failed to create temporary .pgpass file"
+      exit 1
+    fi
+
+    # Format: hostname:port:database:username:password
+    echo "127.0.0.1:${port}:${db_name}:${db_user}:${password}" > "$pgpass_file"
+    chmod 600 "$pgpass_file"
+
+    # Log connection info (without password)
+    echo "🔗 Database connection details:"
+    echo "   Connect to: 127.0.0.1:${port}"
+    echo "   Database: ${db_name}"
+    echo "   User: ${db_user}"
+    echo "   Password: [${#password} characters]"
+    echo "   .pgpass file: ${pgpass_file}"
+
+    # Test database connection before proceeding
+    echo "🧪 Testing database connection..."
+    if ! PGPASSFILE="$pgpass_file" pg_isready -h 127.0.0.1 -p "$port" -U "$db_user" -d "$db_name" -q; then
+      echo "❌ Database connection test failed"
+      exit 1
+    fi
+    echo "✓ Database connection successful"
+
+    # 7. Run sanitized dump inline (PGPASSFILE makes pg_dump skip the prompt)
+    local output_file="${namespace}-$(date '+%Y-%m-%d').sql"
+    echo "📦 Starting database dump to: $output_file"
+    echo "   This may take several minutes..."
+
+    if ! PGPASSFILE="$pgpass_file" pg_dump -h 127.0.0.1 -p "$port" -U "$db_user" -d "$db_name" \
+        --exclude-table-data=users \
+        --exclude-table-data=device_identifiers \
+        --exclude-table-data=devices \
+        --exclude-table-data=favorites \
+        --exclude-table-data=live_concert_reminders \
+        --exclude-table-data=playback_progress \
+        --exclude-table-data=postal_addresses \
+        --exclude-table-data=tickets \
+        --exclude-table-data=user_codes \
+        --exclude-table-data=user_push_endpoints \
+        --exclude-table-data=voucher_redemptions \
+        --exclude-table-data=vouchers \
+        --exclude-table-data=payments \
+        --no-owner \
+        --no-privileges \
+        --clean \
+        --if-exists > "$caller_cwd/$output_file"; then
+      echo "❌ Database dump failed"
+      exit 1
+    fi
+
+    echo "✅ Database dump completed successfully!"
+    echo "   Output file: $caller_cwd/$output_file"
+    echo "   File size: $(du -h "$caller_cwd/$output_file" | cut -f1)"
+
+    # Cleanup will be called automatically by trap
+  )
+}

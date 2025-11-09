@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: dg-vj
+# @description: Argo workflow jobs for video
+# @category: work
+# @keywords: dg, argo, workflow, video, jobs
+# @usage: dg-vj [args]
+# @example: dg-vj
+
+dg-vj () {
+   KUBECONFIG="/Users/jfd/Dev/dg/dg-stage-deploy/.eks-tunnel/kubeconfig-umg79_INGEST.yml" AWS_PROFILE=production ARGO_NAMESPACE=repackage-prod argo "$@"
+}

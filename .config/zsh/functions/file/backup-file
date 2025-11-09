@@ -1,0 +1,36 @@
+#!/usr/bin/env zsh
+# @name: backup-file
+# @description: Create a timestamped backup copy of a file
+# @category: file
+# @keywords: backup, copy, timestamp, save, archive
+# @usage: backup-file <file>
+# @example: backup-file important-config.json
+
+backup-file() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: backup-file <file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "Error: File not found: $1"
+    return 1
+  fi
+
+  local timestamp=$(date +%Y%m%d_%H%M%S)
+  local backup_name="${1}.backup_${timestamp}"
+
+  cp "$1" "$backup_name"
+
+  if [[ $? -eq 0 ]]; then
+    echo "✓ Backup created: $backup_name"
+  else
+    echo "✗ Backup failed"
+    return 1
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  backup-file "$@"
+fi

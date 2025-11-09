@@ -1,0 +1,59 @@
+#!/usr/bin/env zsh
+# @name: sync-git-origins
+# @description: Sync all git remote origins
+# @category: git
+# @keywords: git, remote, origin, sync
+# @usage: sync-git-origins [args]
+# @example: sync-git-origins
+
+sync-git-origins() {
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        echo "❌ Not a git repository"
+        return 1
+    fi
+
+    # Get branch name (use argument if provided, otherwise current branch)
+    local branch
+    if [[ -n "$1" ]]; then
+        branch="$1"
+    else
+        branch=$(git branch --show-current)
+    fi
+
+    if [[ -z "$branch" ]]; then
+        echo "❌ Could not determine branch name"
+        return 1
+    fi
+
+    # Check if 'origin' remote exists
+    if ! git remote | grep -q "^origin$"; then
+        echo "❌ Remote 'origin' not found"
+        return 1
+    fi
+
+    # Check if 'backup' remote exists
+    if ! git remote | grep -q "^backup$"; then
+        echo "❌ Remote 'backup' not found"
+        echo "💡 Add a backup remote with: git remote add backup <url>"
+        return 1
+    fi
+
+    echo "🔄 Syncing branch '$branch' from origin to backup..."
+
+    # Fetch from origin
+    echo "📥 Fetching from origin..."
+    if ! git fetch origin "$branch"; then
+        echo "❌ Failed to fetch from origin"
+        return 1
+    fi
+
+    # Push to backup
+    echo "📤 Pushing to backup..."
+    if ! git push backup "$branch"; then
+        echo "❌ Failed to push to backup"
+        return 1
+    fi
+
+    echo "✅ Successfully synced '$branch' from origin to backup"
+}

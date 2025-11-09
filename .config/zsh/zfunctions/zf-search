@@ -1,0 +1,66 @@
+#!/usr/bin/env zsh
+# @name: zf-search
+# @description: Search functions by keyword without fzf (grep-based)
+# @category: core
+# @keywords: search, grep, find, keyword, query
+# @usage: zf-search <keyword>
+# @example: zf-search commit
+
+zf-search() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: zf-search <keyword>"
+    echo "Example: zf-search commit"
+    return 1
+  fi
+
+  local functions_dir="${ZSH_FUNCTIONS_DIR:-${${(%):-%x}:A:h:h}}/functions"
+  local search_term="$1"
+  local found=0
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "Search results for: '$search_term'"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+
+  for func_file in "$functions_dir"/**/*(.N); do
+    local func_name="${func_file:t}"
+    local category="${${func_file:h}:t}"
+
+    # Search in function name, description, and keywords (case-insensitive)
+    if grep -qi "$search_term" "$func_file" 2>/dev/null || \
+       echo "$func_name" | grep -qi "$search_term" 2>/dev/null; then
+
+      local description=$(grep "^# @description:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @description: *//')
+      local keywords=$(grep "^# @keywords:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @keywords: *//')
+      local usage=$(grep "^# @usage:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @usage: *//')
+
+      echo "📦 $func_name [$category]"
+      [[ -n "$description" ]] && echo "   Description: $description"
+      [[ -n "$keywords" ]] && echo "   Keywords: $keywords"
+      [[ -n "$usage" ]] && echo "   Usage: $usage"
+      echo ""
+
+      ((found++))
+    fi
+  done
+
+  if [[ $found -eq 0 ]]; then
+    echo "No functions found matching: '$search_term'"
+    echo ""
+    echo "💡 Try:"
+    echo "   - Different keywords"
+    echo "   - 'zf-list' to see all functions"
+    echo "   - 'zf-browse' for interactive search"
+    echo ""
+  else
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Found $found matching function(s)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  zf-search "$@"
+fi

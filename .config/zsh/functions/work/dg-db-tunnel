@@ -1,0 +1,184 @@
+#!/usr/bin/env zsh
+# @name: dg-db-tunnel
+# @description: Create interactive database tunnel to production/staging RDS
+# @category: work
+# @keywords: database, tunnel, rds, kubernetes, postgres, port-forward
+# @usage: dg-db-tunnel [args]
+# @example: dg-db-tunnel
+
+dg-db-tunnel () {
+  local stage="${1:-umg79}"
+  local profile="${2:-production}"
+
+  local base="$HOME/Dev/dg/dg-stage-deploy"
+  local workdir="$base/.rds-tunnel"               # folder that contains Makefile
+  local kube="$base/.eks-tunnel/kubeconfig-${stage}.yml"
+
+  # Validate directories exist
+  if [[ ! -d "$workdir" ]]; then
+    echo "[db-tunnel] ❌ workdir not found: $workdir"
+    return 1
+  fi
+
+  if [[ ! -f "$kube" ]]; then
+    echo "[db-tunnel] ❌ kubeconfig not found: $kube"
+    return 1
+  fi
+
+  # colour for banner (red when the stage looks like production)
+  local colour reset msg
+  reset=$'\e[0m'
+  if [[ "$stage" =~ (umg79) ]]; then
+    colour=$'\e[1;31m'; msg="💣 PRODUCTION"
+  else
+    colour=$'\e[1;32m'; msg="staging/test system"
+  fi
+
+  (
+    cd "$workdir" || exit 1
+    export KUBECONFIG="$kube"
+
+    # Variables for cleanup tracking
+    local tunnel_started=false
+    local pf_pid=""
+    local namespace=""
+    local port=""
+
+    # Get namespace and port for this stage
+    if [[ "$stage" == "umg79" ]]; then
+      namespace="dg-stage-prod"
+      port=5433
+    elif [[ "$stage" == "umg79hybrid" ]]; then
+      namespace="argo-workflows-prod"
+      # port=5435
+    else
+      namespace="dg-stage-staging"
+      port=5434
+    fi
+
+    cleanup() {
+      printf '\n[%sdb-tunnel%s] 🧹 Cleaning up...\n' "$colour" "$reset"
+
+      # Kill port-forward process with retry
+      if [[ -n "$pf_pid" ]]; then
+        printf '[%sdb-tunnel%s]    🔌 Stopping port-forward (PID: %s)...\n' "$colour" "$reset" "$pf_pid"
+        kill "$pf_pid" 2>/dev/null || true
+        sleep 2
+
+        # Force kill if still running
+        if kill -0 "$pf_pid" 2>/dev/null; then
+          printf '[%sdb-tunnel%s]    🔨 Force killing port-forward...\n' "$colour" "$reset"
+          kill -9 "$pf_pid" 2>/dev/null || true
+        fi
+      fi
+
+      # Force kill any remaining port-forwards on this port
+      if [[ -n "$port" ]] && pgrep -f "kubectl port-forward.*${port}:5432" >/dev/null 2>&1; then
+        printf '[%sdb-tunnel%s]    🔨 Force killing remaining port-forwards on port %s...\n' "$colour" "$reset" "$port"
+        pkill -9 -f "kubectl port-forward.*${port}:5432" 2>/dev/null || true
+      fi
+
+      # Stop tunnel pod if we started it
+      if [[ "$tunnel_started" == "true" ]]; then
+        printf '[%sdb-tunnel%s]    🚇 Stopping tunnel pod...\n' "$colour" "$reset"
+        if STAGE="$stage" AWS_PROFILE="$profile" make --silent stop-db-tunnel 2>/dev/null; then
+          printf '[%sdb-tunnel%s]    ✓ Tunnel pod stopped\n' "$colour" "$reset"
+        else
+          printf '[%sdb-tunnel%s]    ⚠️  Warning: Failed to stop tunnel pod rds-tunnel-%s\n' "$colour" "$reset" "$USER"
+        fi
+      fi
+
+      # Wait for port to be freed
+      printf '[%sdb-tunnel%s]    ⏳ Waiting for port to be freed...\n' "$colour" "$reset"
+      sleep 3
+      printf '[%sdb-tunnel%s] ✅ Cleanup complete\n' "$colour" "$reset"
+    }
+    trap cleanup EXIT INT TERM
+
+    # ── banner ──────────────────────────────────────────────────────────────
+    printf '\n%s┌──────────────────────────────────────────────────────────┐%s\n' "$colour" "$reset"
+    printf '%s│  Connected to %-43s│%s\n'   "$colour" "$msg"       "$reset"
+    printf '%s│  stage     : %-43s│%s\n'     "$colour" "$stage"     "$reset"
+    printf '%s│  profile   : %-43s│%s\n'     "$colour" "$profile"   "$reset"
+    printf '%s│  namespace : %-43s│%s\n'     "$colour" "$namespace" "$reset"
+    printf '%s│  port      : %-43s│%s\n'     "$colour" "$port"      "$reset"
+    printf '%s└──────────────────────────────────────────────────────────┘%s\n\n' "$colour" "$reset"
+
+    # ── start pod with error handling ──────────────────────────────────────
+    printf '[%sdb-tunnel%s] 🚇 Starting tunnel pod...\n' "$colour" "$reset"
+    if ! STAGE="$stage" AWS_PROFILE="$profile" make --silent start-db-tunnel; then
+      printf '[%sdb-tunnel%s] ❌ Failed to start tunnel pod\n' "$colour" "$reset"
+      exit 1
+    fi
+    tunnel_started=true
+    printf '[%sdb-tunnel%s] ✓ Tunnel pod started\n' "$colour" "$reset"
+
+    # Wait for tunnel pod to be ready
+    printf '[%sdb-tunnel%s] ⏳ Waiting for tunnel pod to be ready...\n' "$colour" "$reset"
+    if ! kubectl wait --namespace "$namespace" --for=condition=Ready pod/rds-tunnel-"$USER" --timeout=60s; then
+      printf '[%sdb-tunnel%s] ❌ Tunnel pod failed to become ready within 60 seconds\n' "$colour" "$reset"
+      exit 1
+    fi
+    printf '[%sdb-tunnel%s] ✓ Tunnel pod is ready\n' "$colour" "$reset"
+
+    # ── start port-forward in background ───────────────────────────────────
+    printf '[%sdb-tunnel%s] 🔌 Starting port-forward to localhost:%s...\n' "$colour" "$reset" "$port"
+    STAGE="$stage" AWS_PROFILE="$profile" make --silent port-forward-db-tunnel &
+    pf_pid=$!
+
+    # Wait for port-forward to be established with timeout
+    printf '[%sdb-tunnel%s] ⏳ Waiting for port-forward to establish...\n' "$colour" "$reset"
+    local timeout=60
+    local wait_interval=2
+    while [[ $timeout -gt 0 ]]; do
+      # Check if port is available using netcat
+      if command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        printf '[%sdb-tunnel%s] ✓ Port-forward established on localhost:%s\n' "$colour" "$reset" "$port"
+        break
+      fi
+
+      # Alternative check using /dev/tcp if nc is not available
+      if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        exec 3>&-
+        printf '[%sdb-tunnel%s] ✓ Port-forward established on localhost:%s\n' "$colour" "$reset" "$port"
+        break
+      fi
+
+      # Check if port-forward process is still running
+      if ! kill -0 "$pf_pid" 2>/dev/null; then
+        printf '[%sdb-tunnel%s] ❌ Port-forward process died unexpectedly\n' "$colour" "$reset"
+        exit 1
+      fi
+
+      printf '[%sdb-tunnel%s]    Still waiting... (%ss remaining)\n' "$colour" "$reset" "$timeout"
+      sleep $wait_interval
+      ((timeout-=wait_interval))
+    done
+
+    if [[ $timeout -le 0 ]]; then
+      printf '[%sdb-tunnel%s] ❌ Port-forward failed to establish within 60 seconds\n' "$colour" "$reset"
+      exit 1
+    fi
+
+    # ── connection ready ────────────────────────────────────────────────────
+    printf '\n%s┌──────────────────────────────────────────────────────────┐%s\n' "$colour" "$reset"
+    printf '%s│  🎯 TUNNEL READY - Connect to localhost:%-15s │%s\n' "$colour" "$port" "$reset"
+    printf '%s│                                                          │%s\n' "$colour" "$reset"
+    printf '%s│  Example psql command:                                   │%s\n' "$colour" "$reset"
+    printf '%s│  psql -h 127.0.0.1 -p %-5s -U api -d dgstage -W         │%s\n' "$colour" "$port" "$reset"
+    printf '%s│                                                          │%s\n' "$colour" "$reset"
+    printf '%s│  Press Ctrl+C to stop the tunnel                        │%s\n' "$colour" "$reset"
+    printf '%s└──────────────────────────────────────────────────────────┘%s\n\n' "$colour" "$reset"
+
+    # ── wait for user interrupt (blocks) ───────────────────────────────────
+    printf '[%sdb-tunnel%s] 🔄 Tunnel active. Press Ctrl+C to stop...\n' "$colour" "$reset"
+
+    # Wait for the port-forward process to exit (either by user interrupt or process death)
+    wait "$pf_pid" 2>/dev/null || true
+
+    # If we reach here, the port-forward process has ended
+    printf '\n[%sdb-tunnel%s] 🛑 Port-forward process ended\n' "$colour" "$reset"
+
+    # Cleanup will be called automatically by trap
+  )
+}

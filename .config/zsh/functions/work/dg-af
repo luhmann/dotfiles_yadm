@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+# @name: dg-af
+# @description: Get failed audio jobs and display UPCs
+# @category: work
+# @keywords: dg, argo, audio, failed, jobs
+# @usage: dg-af [args]
+# @example: dg-af
+
+dg-af () {
+    local workflow_status="${1:-Failed}"
+    dg_aj list --status "$workflow_status" -o json | jq -r '
+def fmt_kvs(o): (o // {}) | to_entries | map("\(.key)=\(.value)") | join(",");
+def humandur($s):
+  if $s == null then ""
+  elif $s < 0 then "-" + humandur(-$s)
+  elif $s >= 3600 then
+    "\((($s/3600)|floor))h" +
+    (if (($s%3600)/60|floor) > 0 then "\(((($s%3600)/60)|floor))m" else "" end)
+  elif $s >= 60 then "\((($s/60)|floor))m"
+  else "\(($s|floor))s"
+  end;
+def pick_items: if type=="object" and has("items") then .items else . end;
+
+pick_items
+| map({
+    name:        .metadata.name,
+    status:      .status.phase,
+    age_s:       (now - (.metadata.creationTimestamp | fromdateiso8601)),
+    dur_s:       (.status.duration // .status.estimatedDuration //
+                 ((.status.finishedAt|fromdateiso8601) - (.status.startedAt|fromdateiso8601))),
+    started:     .status.startedAt,
+    finished:    .status.finishedAt,
+    labels:      fmt_kvs(.metadata.labels),
+    annotations: fmt_kvs(.metadata.annotations)
+  })
+| (["NAME","STATUS","AGE","DURATION","STARTED","FINISHED","LABELS","ANNOTATIONS"] | @tsv),
+  (.[] | [
+      .name,
+      .status,
+      humandur(.age_s),
+      humandur(.dur_s),
+      (.started // ""),
+      (.finished // ""),
+      .labels,
+      .annotations
+    ] | @tsv)
+' | column -t -s $'\t'
+}

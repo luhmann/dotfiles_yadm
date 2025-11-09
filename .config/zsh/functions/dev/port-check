@@ -1,0 +1,50 @@
+#!/usr/bin/env zsh
+# @name: port-check
+# @description: Check if a port is in use and show the process
+# @category: dev
+# @keywords: port, process, lsof, network, debug
+# @usage: port-check <port>
+# @example: port-check 3000
+
+port-check() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: port-check <port>"
+    echo "Example: port-check 3000"
+    return 1
+  fi
+
+  local port="$1"
+
+  echo "Checking port $port..."
+  echo ""
+
+  if command -v lsof &> /dev/null; then
+    local result=$(lsof -i ":$port" -P -n)
+
+    if [[ -n "$result" ]]; then
+      echo "✗ Port $port is IN USE:"
+      echo ""
+      echo "$result"
+    else
+      echo "✓ Port $port is available"
+    fi
+  elif command -v netstat &> /dev/null; then
+    local result=$(netstat -tuln | grep ":$port ")
+
+    if [[ -n "$result" ]]; then
+      echo "✗ Port $port is IN USE:"
+      echo ""
+      echo "$result"
+    else
+      echo "✓ Port $port is available"
+    fi
+  else
+    echo "Error: Neither lsof nor netstat found"
+    return 1
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  port-check "$@"
+fi

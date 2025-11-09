@@ -1,0 +1,18 @@
+#!/usr/bin/env zsh
+# @name: fshow
+# @description: Fuzzy git commit show
+# @category: git
+# @keywords: git, commit, show, fzf, log
+# @usage: fshow [args]
+# @example: fshow
+
+fshow() {
+  git log --graph --color=always \
+      --format="%C(auto)%h%d %s %C(black)%C(bold)%cr" "$@" |
+  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort \
+      --bind "ctrl-m:execute:
+                (grep -o '[a-f0-9]\{7\}' | head -1 |
+                xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+                {}
+FZF-EOF"
+}

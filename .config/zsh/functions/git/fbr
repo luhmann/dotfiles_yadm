@@ -1,0 +1,15 @@
+#!/usr/bin/env zsh
+# @name: fbr
+# @description: Fuzzy git branch checkout
+# @category: git
+# @keywords: git, branch, fzf, checkout
+# @usage: fbr [args]
+# @example: fbr
+
+fbr() {
+  local branches branch
+  branches=$(git for-each-ref --count=30 --sort=-committerdate refs/heads/ --format="%(refname:short)") &&
+  branch=$(echo "$branches" |
+           fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
+  git checkout $(echo "$branch" | sed "s/.* //" | sed "s#remotes/[^/]*/##")
+}

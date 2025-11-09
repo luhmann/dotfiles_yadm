@@ -1,0 +1,12 @@
+#!/usr/bin/env zsh
+# @name: pb-quote
+# @description: Quote text for pasteboard/shell
+# @category: text
+# @keywords: quote, escape, pasteboard, shell
+# @usage: pb-quote [args]
+# @example: pb-quote
+
+pb-quote() {
+    pbpaste | sed -e "s/\([^\n]*\)/'&',/g" -e '$s/,$//' | pbcopy
+    echo "✅ Clipboard transformed: each line wrapped in quotes, no comma on last line"
+}

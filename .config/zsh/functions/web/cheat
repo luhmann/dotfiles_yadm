@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: cheat
+# @description: Get cheat sheet from cheat.sh
+# @category: web
+# @keywords: cheat, reference, docs
+# @usage: cheat [args]
+# @example: cheat
+
+cheat() {
+  curl cheat.sh/$1
+}

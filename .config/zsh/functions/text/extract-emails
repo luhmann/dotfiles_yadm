@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+# @name: extract-emails
+# @description: Extract email addresses from text or file
+# @category: text
+# @keywords: email, extract, parse, regex, grep
+# @usage: extract-emails [file]
+# @example: extract-emails contacts.txt
+
+extract-emails() {
+  local email_regex='[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+
+  if [[ -n "$1" && -f "$1" ]]; then
+    # Extract from file
+    grep -oE "$email_regex" "$1" | sort -u
+  elif [[ -p /dev/stdin ]]; then
+    # Extract from stdin (pipe)
+    grep -oE "$email_regex" | sort -u
+  else
+    echo "Usage: extract-emails <file>"
+    echo "   or: cat file | extract-emails"
+    echo "   or: pbpaste | extract-emails"
+    return 1
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  extract-emails "$@"
+fi

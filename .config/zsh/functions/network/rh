@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: rh
+# @description: Show HTTP response headers
+# @category: network
+# @keywords: http, headers, curl, request
+# @usage: rh [args]
+# @example: rh
+
+rh() {
+    curl -s -D - "$1" -o /dev/null
+}

@@ -1,0 +1,44 @@
+#!/usr/bin/env zsh
+# @name: count-lines
+# @description: Count lines in files with detailed statistics
+# @category: text
+# @keywords: count, lines, wc, statistics, file
+# @usage: count-lines <file> [file2...]
+# @example: count-lines *.txt
+
+count-lines() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: count-lines <file> [file2...]"
+    echo "Example: count-lines *.txt"
+    return 1
+  fi
+
+  local total=0
+  local file_count=0
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  printf "%-50s %10s\n" "File" "Lines"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  for file in "$@"; do
+    if [[ -f "$file" ]]; then
+      local lines=$(wc -l < "$file" | tr -d ' ')
+      printf "%-50s %10s\n" "${file:0:50}" "$lines"
+      ((total += lines))
+      ((file_count++))
+    else
+      printf "%-50s %10s\n" "${file:0:50}" "(not found)"
+    fi
+  done
+
+  if [[ $file_count -gt 1 ]]; then
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    printf "%-50s %10s\n" "TOTAL ($file_count files)" "$total"
+  fi
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  count-lines "$@"
+fi

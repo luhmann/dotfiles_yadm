@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+# @name: curl-time
+# @description: Curl with detailed timing
+# @category: network
+# @keywords: curl, timing, performance, trace
+# @usage: curl-time [args]
+# @example: curl-time
+
+curl_time() {
+    curl -w "\
+   namelookup:  %{time_namelookup}s\n\
+      connect:  %{time_connect}s\n\
+   appconnect:  %{time_appconnect}s\n\
+  pretransfer:  %{time_pretransfer}s\n\
+     redirect:  %{time_redirect}s\n\
+starttransfer:  %{time_starttransfer}s\n\
+-------------------------\n\
+        total:  %{time_total}s\n" "$@"
+}

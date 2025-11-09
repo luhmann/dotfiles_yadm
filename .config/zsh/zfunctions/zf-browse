@@ -1,0 +1,86 @@
+#!/usr/bin/env zsh
+# @name: zf-browse
+# @description: Browse and search functions interactively using fzf
+# @category: core
+# @keywords: browse, search, fzf, discover, find
+# @usage: zf-browse [search_term]
+# @example: zf-browse git
+
+zf-browse() {
+  # Check if fzf is available
+  if ! command -v fzf &> /dev/null; then
+    echo "Error: fzf is required but not installed."
+    echo "Install it with: brew install fzf  (macOS)"
+    echo "             or: apt install fzf  (Ubuntu/Debian)"
+    echo "             or: https://github.com/junegunn/fzf#installation"
+    return 1
+  fi
+
+  local functions_dir="${ZSH_FUNCTIONS_DIR:-${${(%):-%x}:A:h:h}}/functions"
+  local initial_query="${1:-}"
+
+  # Build a searchable index of all functions
+  local index_file=$(mktemp)
+  local func_file
+
+  for func_file in "$functions_dir"/**/*(.N); do
+    local func_name="${func_file:t}"
+    local category="${${func_file:h}:t}"
+    local description=""
+    local keywords=""
+
+    # Extract metadata from function file
+    if [[ -f "$func_file" ]]; then
+      description=$(grep "^# @description:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @description: *//')
+      keywords=$(grep "^# @keywords:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @keywords: *//')
+    fi
+
+    # Format: function_name | category | description | keywords | file_path
+    echo "${func_name}|${category}|${description}|${keywords}|${func_file}" >> "$index_file"
+  done
+
+  # Use fzf to select a function
+  local selected=$(cat "$index_file" | \
+    awk -F'|' '{
+      printf "%-20s %-12s %s\n", $1, "[" $2 "]", $3
+    }' | \
+    fzf --ansi \
+        --height=50% \
+        --reverse \
+        --border \
+        --header="Search functions by name, category, or description (ESC to cancel)" \
+        --prompt="Function> " \
+        --preview="echo {}; echo; head -50 \$(echo {} | awk '{print \$1}' | xargs -I {} grep -l \"^{}\" $functions_dir/**/* 2>/dev/null | head -1)" \
+        --preview-window=right:60%:wrap \
+        --query="$initial_query")
+
+  if [[ -n "$selected" ]]; then
+    local func_name=$(echo "$selected" | awk '{print $1}')
+    local func_path=$(grep "^${func_name}|" "$index_file" | cut -d'|' -f5)
+
+    echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Function: $func_name"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+    # Display function details
+    grep "^# @" "$func_path" 2>/dev/null | sed 's/^# @/  /' | sed 's/:/ →/'
+
+    echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Source Code:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+    # Show function source (skip metadata comments)
+    sed '/^# @/d' "$func_path" | sed '/^#!/d' | sed '/^$/d' | head -20
+
+    echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Location: $func_path"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+  fi
+
+  rm -f "$index_file"
+}
+
+# Execute if run directly (not sourced/autoloaded)
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  zf-browse "$@"
+fi

@@ -1,0 +1,30 @@
+#!/usr/bin/env zsh
+# @name: git-quick-commit
+# @description: Quickly stage all changes and commit with a message
+# @category: git
+# @keywords: git, commit, quick, add, stage
+# @usage: git-quick-commit <message>
+# @example: git-quick-commit "Fix bug in authentication"
+
+git-quick-commit() {
+  if [[ -z "$1" ]]; then
+    echo "Error: Commit message required"
+    echo "Usage: git-quick-commit <message>"
+    return 1
+  fi
+
+  local message="$*"
+
+  echo "Staging all changes..."
+  git add -A
+
+  echo "Committing with message: $message"
+  git commit -m "$message"
+
+  echo "✓ Done! Use 'git push' to push changes."
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  git-quick-commit "$@"
+fi

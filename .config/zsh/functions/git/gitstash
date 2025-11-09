@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: gitstash
+# @description: Git stash helper
+# @category: git
+# @keywords: git, stash, save
+# @usage: gitstash [args]
+# @example: gitstash
+
+gitstash() {
+    git stash push --include-untracked -m "zsh_stash_name_$1"
+}

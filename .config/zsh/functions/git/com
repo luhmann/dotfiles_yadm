@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: com
+# @description: Git commit with message
+# @category: git
+# @keywords: git, commit, message
+# @usage: com [args]
+# @example: com
+
+com () {
+    git commit -m "$*"
+}

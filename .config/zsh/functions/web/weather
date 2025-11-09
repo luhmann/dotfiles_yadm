@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: weather
+# @description: Get weather from wttr.in
+# @category: web
+# @keywords: weather, forecast
+# @usage: weather [args]
+# @example: weather
+
+weather() {
+  curl -4 wttr.in/${1:-berlin}
+}

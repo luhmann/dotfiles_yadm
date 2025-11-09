@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# @name: paws
+# @description: AWS profile wrapper (production)
+# @category: work
+# @keywords: aws, profile, production
+# @usage: paws [args]
+# @example: paws
+
+paws() {
+    AWS_PROFILE=production AWS_REGION=us-east-1 aws "$@"
+}

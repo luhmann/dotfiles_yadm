@@ -1,0 +1,79 @@
+#!/usr/bin/env zsh
+# @name: zf-list
+# @description: List all available functions with their descriptions
+# @category: core
+# @keywords: list, show, functions, inventory
+# @usage: zf-list [category]
+# @example: zf-list git
+
+zf-list() {
+  local functions_dir="${ZSH_FUNCTIONS_DIR:-${${(%):-%x}:A:h:h}}/functions"
+  local filter_category="${1:-}"
+  local func_file
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "ZSH Functions Library"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+
+  local current_category=""
+  local total_count=0
+
+  # Group functions by category
+  for category_dir in "$functions_dir"/*(N/); do
+    local category="${category_dir:t}"
+
+    # Skip if filtering by category and this isn't it
+    if [[ -n "$filter_category" && "$category" != "$filter_category" ]]; then
+      continue
+    fi
+
+    local has_functions=0
+    local category_output=""
+
+    for func_file in "$category_dir"/*(.N); do
+      local func_name="${func_file:t}"
+      local description=$(grep "^# @description:" "$func_file" 2>/dev/null | head -1 | sed 's/^# @description: *//')
+
+      if [[ -z "$description" ]]; then
+        description="No description available"
+      fi
+
+      category_output+=$(printf "  %-24s %s\n" "$func_name" "$description")
+      category_output+="\n"
+      ((total_count++))
+      has_functions=1
+    done
+
+    # Print category header and functions if any exist
+    if [[ $has_functions -eq 1 ]]; then
+      echo "📁 Category: $category"
+      echo "────────────────────────────────────────────────────────────────────"
+      echo "$category_output"
+    fi
+  done
+
+  if [[ $total_count -eq 0 ]]; then
+    if [[ -n "$filter_category" ]]; then
+      echo "No functions found in category: $filter_category"
+    else
+      echo "No functions found. Add some with 'zf-add'!"
+    fi
+    echo ""
+  else
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Total: $total_count function(s)"
+    if [[ -n "$filter_category" ]]; then
+      echo "Filtered by category: $filter_category"
+    fi
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "💡 Tip: Use 'zf-browse' for interactive search with fzf"
+    echo ""
+  fi
+}
+
+# Execute if run directly
+if [[ "${(%):-%x}" == "${0}" ]]; then
+  zf-list "$@"
+fi

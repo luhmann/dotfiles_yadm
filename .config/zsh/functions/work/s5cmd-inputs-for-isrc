@@ -1,0 +1,27 @@
+#!/usr/bin/env zsh
+# @name: s5cmd-inputs-for-isrc
+# @description: List S3 inputs for ISRC
+# @category: work
+# @keywords: s3, isrc, inputs
+# @usage: s5cmd-inputs-for-isrc [args]
+# @example: s5cmd-inputs-for-isrc
+
+s5cmd_inputs_for_isrc() {
+  local env="${ENV:-"production"}"
+  local s5cmd_ls_flags=()
+  local isrcs=()
+  for i in "$@"; do
+    if [[ "$i" == "-"* ]]; then
+      s5cmd_ls_flags+=($i)
+    else
+      isrcs+=("${(@s:,:)i}")
+    fi
+  done
+
+  for isrc in "${isrcs[@]}"; do
+    echo -e "\n🪣" "Listing input-bucket for s3://dg-vod-input-${env}/${isrc}" >&2
+    s5cmd ls "${s5cmd_ls_flags[@]}" "s3://dg-vod-input-${env}/${isrc}"
+    echo -e "\n🔉" "Listing additional audio in s3://stage-ingest-${env}/re-packaging/audio/${isrc}" >&2
+    s5cmd ls "${s5cmd_ls_flags[@]}" "s3://stage-ingest-${env}/re-packaging/audio/${isrc}"
+  done
+}
