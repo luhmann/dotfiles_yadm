@@ -27,7 +27,11 @@ zinit light wfxr/forgit
 
 zinit light zsh-users/zsh-history-substring-search
 
-zinit ice depth=1; zinit light romkatv/powerlevel10k
+# Install Starship prompt
+zinit ice as"command" from"gh-r" \
+  atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" \
+  atpull"%atclone" src"init.zsh"
+zinit light starship/starship
 
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
