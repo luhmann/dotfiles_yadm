@@ -1,0 +1,285 @@
+#!/bin/bash
+#
+# yadm bootstrap - sets up a fresh macOS machine
+#
+# Usage:
+#   yadm bootstrap        # interactive menu
+#   yadm bootstrap --all  # run all sections (unattended)
+#
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Color helpers (tput-based, gracefully degrade if tput unavailable)
+# ---------------------------------------------------------------------------
+if command -v tput &>/dev/null && [[ -t 1 ]]; then
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    RED=$(tput setaf 1)
+    BOLD=$(tput bold)
+    RESET=$(tput sgr0)
+else
+    GREEN=""
+    YELLOW=""
+    RED=""
+    BOLD=""
+    RESET=""
+fi
+
+header() {
+    echo ""
+    echo "${GREEN}${BOLD}==> $1${RESET}"
+}
+
+ok() {
+    echo "${GREEN}[OK]${RESET} $1"
+}
+
+skip() {
+    echo "${YELLOW}[SKIP]${RESET} $1"
+}
+
+warn() {
+    echo "${YELLOW}[WARN]${RESET} $1"
+}
+
+fail() {
+    echo "${RED}[ERROR]${RESET} $1"
+}
+
+# ---------------------------------------------------------------------------
+# Section 1: SSH key setup
+# ---------------------------------------------------------------------------
+setup_ssh() {
+    header "Setting up SSH key..."
+
+    local key_path="$HOME/.ssh/id_ed25519"
+
+    if [[ -f "$key_path" ]]; then
+        skip "SSH key already exists at $key_path."
+        return 0
+    fi
+
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+
+    ssh-keygen -t ed25519 -C "jfd@daenen4.de" -f "$key_path" -N ""
+
+    if command -v pbcopy &>/dev/null; then
+        pbcopy < "${key_path}.pub"
+        echo "Public key has been copied to your clipboard."
+    else
+        echo "Public key:"
+        cat "${key_path}.pub"
+    fi
+
+    echo ""
+    echo "${YELLOW}Add this key to GitHub: https://github.com/settings/ssh/new${RESET}"
+    read -rp "Press Enter to continue after adding the key..."
+
+    ok "SSH key setup complete."
+}
+
+# ---------------------------------------------------------------------------
+# Section 2: Xcode Command Line Tools
+# ---------------------------------------------------------------------------
+setup_xcode_cli() {
+    header "Installing Xcode Command Line Tools..."
+
+    if xcode-select -p &>/dev/null; then
+        skip "Xcode CLI tools already installed at $(xcode-select -p)."
+        return 0
+    fi
+
+    echo "This may take a while."
+
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+
+    local label
+    label=$(softwareupdate -l 2>&1 \
+        | grep "\*.*Command Line" \
+        | tail -n 1 \
+        | awk -F"*" '{print $2}' \
+        | sed -e 's/^ *//' \
+        | tr -d '\n')
+
+    if [[ -n "$label" ]]; then
+        softwareupdate -i "$label" --verbose
+    else
+        warn "Could not find CLI tools via softwareupdate. Falling back to xcode-select --install."
+        xcode-select --install
+        echo "${YELLOW}Press Enter after the installation dialog completes...${RESET}"
+        read -r
+    fi
+
+    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+
+    ok "Xcode CLI tools installed."
+}
+
+# ---------------------------------------------------------------------------
+# Section 3: Create ~/dev directory
+# ---------------------------------------------------------------------------
+setup_dev_dir() {
+    header "Creating ~/dev directory..."
+
+    if [[ -d "$HOME/dev" ]]; then
+        skip "~/dev already exists."
+        return 0
+    fi
+
+    mkdir -p "$HOME/dev"
+    ok "~/dev created."
+}
+
+# ---------------------------------------------------------------------------
+# Section 4: Install Homebrew
+# ---------------------------------------------------------------------------
+setup_homebrew() {
+    header "Installing Homebrew..."
+
+    if command -v brew &>/dev/null; then
+        skip "Homebrew already installed at $(command -v brew)."
+        return 0
+    fi
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add brew to PATH for the rest of this session
+    if [[ -f /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -f /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+
+    ok "Homebrew installed."
+}
+
+# ---------------------------------------------------------------------------
+# Section 5: Brew bundle + fzf setup
+# ---------------------------------------------------------------------------
+setup_brew_bundle() {
+    header "Running brew bundle + fzf setup..."
+
+    if ! command -v brew &>/dev/null; then
+        fail "Homebrew is not installed. Run section 4 first."
+        return 1
+    fi
+
+    local brewfile="$HOME/Brewfile"
+    if [[ ! -f "$brewfile" ]]; then
+        warn "No Brewfile found at $brewfile. Skipping brew bundle."
+    else
+        echo "Running brew bundle (this may take a while)..."
+        brew bundle --file="$brewfile"
+        ok "Brew bundle complete."
+    fi
+
+    local fzf_install
+    fzf_install="$(brew --prefix)/opt/fzf/install"
+    if [[ -x "$fzf_install" ]]; then
+        echo "Setting up fzf key bindings and completion..."
+        "$fzf_install" --no-bash --no-fish --key-bindings --completion --no-update-rc
+        ok "fzf setup complete."
+    else
+        warn "fzf install script not found at $fzf_install. Is fzf in your Brewfile?"
+    fi
+
+    ok "Brew bundle section complete."
+}
+
+# ---------------------------------------------------------------------------
+# Section 6: Disable Spotlight shortcut (for Raycast)
+# ---------------------------------------------------------------------------
+setup_spotlight() {
+    header "Disabling Spotlight shortcut (for Raycast)..."
+
+    local plist="$HOME/Library/Preferences/com.apple.symbolichotkeys.plist"
+
+    if [[ ! -f "$plist" ]]; then
+        warn "Plist file not found at $plist. Skipping."
+        return 0
+    fi
+
+    if /usr/libexec/PlistBuddy "$plist" \
+        -c "Set AppleSymbolicHotKeys:64:enabled false" 2>/dev/null; then
+        ok "Spotlight shortcut disabled."
+    else
+        warn "Could not disable Spotlight shortcut (may already be disabled or key path differs)."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Section 7: Apply macOS defaults
+# ---------------------------------------------------------------------------
+setup_macos_defaults() {
+    header "Applying macOS defaults..."
+
+    local defaults_script="$HOME/.config/yadm/macos-defaults.bash"
+
+    if [[ ! -f "$defaults_script" ]]; then
+        warn "macOS defaults script not found at $defaults_script. Skipping."
+        return 0
+    fi
+
+    bash "$defaults_script"
+    ok "macOS defaults applied."
+}
+
+# ---------------------------------------------------------------------------
+# --all mode: run everything in order
+# ---------------------------------------------------------------------------
+if [[ "${1:-}" == "--all" ]]; then
+    setup_ssh
+    setup_xcode_cli
+    setup_dev_dir
+    setup_homebrew
+    setup_brew_bundle
+    setup_spotlight
+    setup_macos_defaults
+    echo ""
+    echo "${GREEN}${BOLD}Done!${RESET}"
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Interactive menu
+# ---------------------------------------------------------------------------
+while true; do
+    echo ""
+    echo "${BOLD}yadm bootstrap${RESET}"
+    echo "=============="
+    echo "  1) SSH key setup"
+    echo "  2) Xcode Command Line Tools"
+    echo "  3) Create ~/dev directory"
+    echo "  4) Install Homebrew"
+    echo "  5) Brew bundle (install packages)"
+    echo "  6) Disable Spotlight shortcut (for Raycast)"
+    echo "  7) Apply macOS defaults"
+    echo "  a) Run all"
+    echo "  q) Quit"
+    echo ""
+    read -rp "Choose: " choice
+    case "$choice" in
+        1) setup_ssh ;;
+        2) setup_xcode_cli ;;
+        3) setup_dev_dir ;;
+        4) setup_homebrew ;;
+        5) setup_brew_bundle ;;
+        6) setup_spotlight ;;
+        7) setup_macos_defaults ;;
+        a)
+            setup_ssh
+            setup_xcode_cli
+            setup_dev_dir
+            setup_homebrew
+            setup_brew_bundle
+            setup_spotlight
+            setup_macos_defaults
+            echo ""
+            echo "${GREEN}${BOLD}Done!${RESET}"
+            ;;
+        q) exit 0 ;;
+        *) echo "Invalid choice." ;;
+    esac
+done
