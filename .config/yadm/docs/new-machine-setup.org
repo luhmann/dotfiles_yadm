@@ -1,0 +1,165 @@
+#+TITLE: New Machine Setup
+#+AUTHOR: jfd
+#+DATE: 2026-02-12
+
+* Overview
+
+Dotfiles are managed with [[https://yadm.io][yadm]] (Yet Another Dotfiles Manager). yadm is a thin
+wrapper around git that uses your home directory as the working tree, so config
+files stay in place — no symlinks needed.
+
+A fresh macOS machine goes from zero to fully configured with:
+
+1. Install yadm
+2. Clone the dotfiles repo
+3. Run the bootstrap script
+4. Add secrets to Keychain
+
+* Step-by-Step Setup
+
+** 1. Install yadm
+
+Without Homebrew (bootstrapping from scratch):
+
+#+begin_src bash
+curl -fLo /usr/local/bin/yadm https://github.com/yadm-dev/yadm/raw/master/yadm
+chmod a+x /usr/local/bin/yadm
+#+end_src
+
+Or if Homebrew is already available:
+
+#+begin_src bash
+brew install yadm
+#+end_src
+
+** 2. Clone the dotfiles repo
+
+#+begin_src bash
+yadm clone git@github.com:luhmann/dotfiles_yadm.git
+#+end_src
+
+This checks out all tracked config files directly into =~=. If any files
+already exist, yadm will warn about conflicts — review and resolve with
+=yadm checkout ~=.
+
+After cloning, yadm automatically offers to run the bootstrap script.
+
+** 3. Run bootstrap
+
+If you skipped it during clone, run manually:
+
+#+begin_src bash
+yadm bootstrap
+#+end_src
+
+The bootstrap is interactive. It presents a menu:
+
+#+begin_example
+yadm bootstrap
+==============
+  1) SSH key setup
+  2) Xcode Command Line Tools
+  3) Create ~/dev directory
+  4) Install Homebrew
+  5) Brew bundle (install packages)
+  6) Disable Spotlight shortcut (for Raycast)
+  7) Apply macOS defaults
+  a) Run all
+  q) Quit
+#+end_example
+
+For a completely unattended setup:
+
+#+begin_src bash
+yadm bootstrap --all
+#+end_src
+
+*** What Each Section Does
+
+| # | Section                | Description                                             |
+|---+------------------------+---------------------------------------------------------|
+| 1 | SSH key setup          | Generates ed25519 key, copies pubkey to clipboard       |
+| 2 | Xcode CLI tools        | Installs compiler toolchain via =softwareupdate=        |
+| 3 | Create ~/dev           | Creates the development directory                       |
+| 4 | Install Homebrew       | Installs Homebrew (handles Apple Silicon path)          |
+| 5 | Brew bundle            | Installs all packages/casks from =~/Brewfile= + fzf    |
+| 6 | Spotlight shortcut     | Disables Cmd-Space for Spotlight (frees it for Raycast) |
+| 7 | macOS defaults         | Applies system preferences (Finder, Dock, keyboard...) |
+
+All sections are idempotent — safe to re-run.
+
+** 4. Add secrets to Keychain
+
+Secrets are not stored in the dotfiles repo. They live in macOS Keychain and
+are referenced by =~/.mise.toml= using templates. See [[file:mise-keychain-secrets.org][mise-keychain-secrets.org]]
+for full details.
+
+#+begin_src bash
+security add-generic-password -a "$USER" -s "openai-api-key" -w "sk-..." -U
+security add-generic-password -a "$USER" -s "gemini-api-key" -w "AIza..." -U
+security add-generic-password -a "$USER" -s "openrouter-api-key" -w "sk-or-..." -U
+security add-generic-password -a "$USER" -s "jira-api-token" -w "ATATT..." -U
+security add-generic-password -a "$USER" -s "anthropic-api-key" -w "sk-ant-..." -U
+security add-generic-password -a "$USER" -s "brave-api-key" -w "BSAH..." -U
+#+end_src
+
+** 5. Verify
+
+#+begin_src bash
+# Check all files are in place
+yadm status
+
+# Check mise resolves secrets
+mise env | grep API
+
+# Check tools are installed
+brew list --formula | head
+#+end_src
+
+* Recommended Order
+
+For a brand new Mac, run sections in order (or use =--all=):
+
+#+begin_example
+SSH key  ->  Xcode CLI  ->  Homebrew  ->  brew bundle  ->  macOS defaults  ->  secrets
+#+end_example
+
+The SSH key is needed first because =yadm clone= uses SSH. If cloning over
+HTTPS instead, you can set up SSH later.
+
+* What yadm Tracks
+
+Key files managed by yadm (run =yadm list= for the full list):
+
+| Category        | Files                                                  |
+|-----------------+--------------------------------------------------------|
+| Shell           | =.zshrc=, =.zprofile=, =.zshenv=, =.zinitrc=          |
+| Git             | =.gitconfig=, =.gitignore=                             |
+| Editor          | =.vim/=, =.config/nvim/=                               |
+| Terminal        | =.config/ghostty/config=, =.config/starship.toml=     |
+| Tools           | =.config/atuin/=, =.config/mise/=, =.config/gh/=      |
+| Search          | =.config/television/=, =.ignore=, =.fxrc=             |
+| Packages        | =Brewfile=                                             |
+| Bootstrap       | =.config/yadm/bootstrap=, =.config/yadm/macos-defaults.bash= |
+| Aliases/funcs   | =.aliases=, =.config/zsh/functions/=                   |
+
+* Files NOT Tracked (by design)
+
+| File                     | Reason                             |
+|--------------------------+------------------------------------|
+| =~/.mise.toml=           | Contains Keychain template lookups (no secrets, but machine-specific) |
+| =~/.config/gh/hosts.yml= | Contains GitHub auth tokens        |
+| =~/.ssh/=                | Private keys                       |
+
+* Common yadm Commands
+
+#+begin_src bash
+yadm status                    # see what changed
+yadm diff                      # diff working tree
+yadm add -u                    # stage all modified tracked files
+yadm add ~/.config/foo/bar     # track a new file
+yadm commit -m "description"   # commit
+yadm push                      # push to GitHub
+yadm list                      # list all tracked files
+yadm bootstrap                 # re-run bootstrap
+#+end_src
