@@ -1,94 +1,68 @@
-# quick navigation
+# ============================================================================
+# ZSH Aliases - Simple Shortcuts
+# ============================================================================
+# Complex functions have been migrated to ~/.config/zsh/functions/
+# Use `zf-list` to see all available functions
+# ============================================================================
+
+# Quick navigation
 alias ddev='cd ~/Dev'
 alias ddot='cd ~/Dev/dotfiles'
 alias dh='cd ~'
-
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+
+# Episodic memory
 alias episodic-memory='~/.claude/plugins/cache/episodic-memory/cli/episodic-memory'
 
-# utils
+# File operations
 alias fname='find . -iname'
-alias genkey='openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=localhost" -keyout key.pem -out cert.pem'
-alias ccat='pygmentize -g'
-alias hosts='sudo vim /etc/hosts'
-alias ip='dig +short myip.opendns.com @resolver1.opendns.com'
-alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
 alias o='open'
 alias oo='open .'
-alias pubkey="more ~/.ssh/id_ed25519.pub | pbcopy | echo '=> Public key copied to pasteboard.'"
 alias v='vim'
-alias sudo='sudo '
-alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; brew cu; zinit update;'
-alias ifactive="ifconfig | pcregrep -M -o '^[^\t:]+:([^\n]|\n\t)*status: active'"
-alias vimup='vim +PlugUpgrade +PlugUpdate +qa!'
 alias exclude='vim .git/info/exclude'
+
+# System utilities
+alias hosts='sudo vim /etc/hosts'
+alias sudo='sudo '
+alias reload='exec $SHELL -l'
 alias sep="echo '------------------->'"
 alias todo="ultralist"
 
-# get some help on nearly anything
-cheat() {
-  curl cheat.sh/$1
+# Network utilities
+alias ip='dig +short myip.opendns.com @resolver1.opendns.com'
+alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
+alias ifactive="ifconfig | pcregrep -M -o '^[^\t:]+:([^\n]|\n\t)*status: active'"
+alias listpi='lsof -P -i -n'
+alias listpo='lsof -Pni4 | grep LISTEN | column -t'
+alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
+alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+
+# Security/Crypto
+alias genkey='openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=localhost" -keyout key.pem -out cert.pem'
+alias pubkey="more ~/.ssh/id_ed25519.pub | pbcopy | echo '=> Public key copied to pasteboard.'"
+
+# Text utilities
+alias ccat='pygmentize -g'
+alias urldecode='python -c "import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])"'
+alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])"'
+
+# Simple hash function
+sha1() {
+  echo -n "$1" | shasum -a 1 | awk '{print $1}' | pbcopy
 }
 
-weather() {
-  curl -4 wttr.in/${1:-berlin}
-}
+# System updates
+alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; brew cu; zinit update;'
+alias vimup='vim +PlugUpgrade +PlugUpdate +qa!'
 
-# fe [FUZZY PATTERN] - Open the selected file with the default editor
-#   - Bypass fuzzy finder if there's only one match (--select-1)
-#   - Exit if there's no match (--exit-0)
-fe() {
-  local files
-  IFS=$'\n' files=($(fzf-tmux --query="$1" --multi --select-1 --exit-0))
-  [[ -n "$files" ]] && ${EDITOR:-vim} "${files[@]}"
-}
+# macOS desktop
+alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
 
-# c - browse chrome history
-c() {
-  local cols sep google_history open
-  cols=$(( COLUMNS / 3 ))
-  sep='{::}'
-
-  if [ "$(uname)" = "Darwin" ]; then
-    google_history="$HOME/Library/Application Support/Google/Chrome/Default/History"
-    open=open
-  else
-    google_history="$HOME/.config/google-chrome/Default/History"
-    open=xdg-open
-  fi
-  cp -f "$google_history" /tmp/h
-  sqlite3 -separator $sep /tmp/h \
-    "select substr(title, 1, $cols), url
-     from urls order by last_visit_time desc" |
-  awk -F $sep '{printf "%-'$cols's  \x1b[36m%s\x1b[m\n", $1, $2}' |
-  fzf --ansi --multi | sed 's#.*\(https*://\)#\1#' | xargs $open > /dev/null 2> /dev/null
-}
-
-## docker
-# Select a docker container to start and attach to
-function da() {
-  local cid
-  cid=$(docker ps -a | sed 1d | fzf -1 -q "$1" | awk '{print $1}')
-
-  [ -n "$cid" ] && docker start "$cid" && docker attach "$cid"
-}
-
-# Select a running docker container to stop
-function ds() {
-  local cid
-  cid=$(docker ps | sed 1d | fzf -q "$1" | awk '{print $1}')
-
-  [ -n "$cid" ] && docker stop "$cid"
-}
-
-
-function load_asdf() {
-  . $(brew --prefix asdf)/libexec/asdf.sh
-}
-
-# git shortcuts
+# Git shortcuts (simple aliases)
 alias g='git'
 alias ga='git add --all .'
 alias gc='git commit'
@@ -101,371 +75,94 @@ alias gurl='git config --get remote.origin.url'
 alias gclean='git branch | grep -v "master\|main" | xargs git branch -D'
 alias gb='git branch --show-current | pbcopy && echo "Copied branch name: $(git branch --show-current)"'
 
-## jump to project in travis
+# GitHub CLI shortcuts
 alias trav='git-trav'
-## jump to repo
 alias repo='gh repo view --web'
-## work with issues
 alias issues="gh issue list --web"
-## work with prs
 alias prs="gh pr list --web"
 alias pr="gh pr create --web"
-## me
 alias me="open 'https://github.com/luhmann'"
 alias repos="open 'https://github.com/luhmann?tab=repositories'"
 alias stars="open 'https://github.com/luhmann?tab=stars'"
 
-## Switch git branches with fzf
-fbr() {
-  local branches branch
-  branches=$(git for-each-ref --count=30 --sort=-committerdate refs/heads/ --format="%(refname:short)") &&
-  branch=$(echo "$branches" |
-           fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
-  git checkout $(echo "$branch" | sed "s/.* //" | sed "s#remotes/[^/]*/##")
-}
-
-# fshow - git commit browser
-fshow() {
-  git log --graph --color=always \
-      --format="%C(auto)%h%d %s %C(black)%C(bold)%cr" "$@" |
-  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort \
-      --bind "ctrl-m:execute:
-                (grep -o '[a-f0-9]\{7\}' | head -1 |
-                xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
-                {}
-FZF-EOF"
-}
-
-function com () {
-    git commit -m "$*"
-}
-
-function gitstash() {
-    git stash push --include-untracked -m "zsh_stash_name_$1"
-}
-
-function gitstashapply() {
-    git stash apply $(git stash list | grep "zsh_stash_name_$1" | cut -d: -f1)
-}
-
-# ----------------------------------------------------
-# sync-git-origins - Sync a branch from 'origin' to 'backup' remote
-# ----------------------------------------------------
-# Fetches latest changes from 'origin' remote and pushes to 'backup' remote.
-# Useful for keeping a backup repository in sync with your main remote.
-#
-# Prerequisites:
-#   - Must be in a git repository
-#   - Must have 'origin' remote configured
-#   - Must have 'backup' remote configured
-#     Add with: git remote add backup <backup-repo-url>
-#
-# Usage:
-#   sync-git-origins           # Syncs current branch
-#   sync-git-origins main      # Syncs 'main' branch
-#   sync-git-origins feature/x # Syncs 'feature/x' branch
-#
-# Examples:
-#   # Setup backup remote (one-time)
-#   git remote add backup git@github.com:user/repo-backup.git
-#
-#   # Sync current branch to backup
-#   sync-git-origins
-#
-#   # Sync specific branch to backup
-#   sync-git-origins develop
-# ----------------------------------------------------
-function sync-git-origins() {
-    # Check if we're in a git repository
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        echo "❌ Not a git repository"
-        return 1
-    fi
-
-    # Get branch name (use argument if provided, otherwise current branch)
-    local branch
-    if [[ -n "$1" ]]; then
-        branch="$1"
-    else
-        branch=$(git branch --show-current)
-    fi
-
-    if [[ -z "$branch" ]]; then
-        echo "❌ Could not determine branch name"
-        return 1
-    fi
-
-    # Check if 'origin' remote exists
-    if ! git remote | grep -q "^origin$"; then
-        echo "❌ Remote 'origin' not found"
-        return 1
-    fi
-
-    # Check if 'backup' remote exists
-    if ! git remote | grep -q "^backup$"; then
-        echo "❌ Remote 'backup' not found"
-        echo "💡 Add a backup remote with: git remote add backup <url>"
-        return 1
-    fi
-
-    echo "🔄 Syncing branch '$branch' from origin to backup..."
-
-    # Fetch from origin
-    echo "📥 Fetching from origin..."
-    if ! git fetch origin "$branch"; then
-        echo "❌ Failed to fetch from origin"
-        return 1
-    fi
-
-    # Push to backup
-    echo "📤 Pushing to backup..."
-    if ! git push backup "$branch"; then
-        echo "❌ Failed to push to backup"
-        return 1
-    fi
-
-    echo "✅ Successfully synced '$branch' from origin to backup"
-}
-
-# remap of native tools for better experience
-alias cat='bat'
-alias ll='eza -lag'
-# commented because it breaks other tools that use find
-# alias find='fd'
-
-# reload shell
-alias reload='exec $SHELL -l'
-
-# list all processes that currently connect to the internet
-alias listpi='lsof -P -i -n'
-alias listpo='lsof -Pni4 | grep LISTEN | column -t'
-
-# view HTTP traffic
-alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
-alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
-
-# hide/show all desktop icons (useful when presenting)
-alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
-alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
-
-# lock the screen (when going AFK)
-alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
-
-# delete entries containing string from history
-histrm() {
-  gsed -i "/$1/d" $HISTFILE
-}
-
-# encoding /decoding
-alias urldecode='python -c "import sys, urllib as ul; \
-    print ul.unquote_plus(sys.argv[1])"'
-alias urlencode='python -c "import sys, urllib as ul; \
-    print ul.quote_plus(sys.argv[1])"'
-
-sha1 () {
-  echo -n "$1" | shasum -a 1 | awk '{print $1}' | pbcopy
-}
-
-# fkill - kill processes - list only the ones you can kill. Modified the earlier script.
-fkill() {
-    local pid
-    if [ "$UID" != "0" ]; then
-        pid=$(ps -f -u $UID | sed 1d | fzf -m | awk '{print $2}')
-    else
-        pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
-    fi
-
-    if [ "x$pid" != "x" ]
-    then
-        echo $pid | xargs kill -${1:-9}
-    fi
-}
-
-# dev
-## yarn shortcuts
+# Dev shortcuts
 alias yt="yarn test"
 alias ys="yarn start"
-
-## kill node processes
 alias kn="killall node"
+alias gw='./gradlew'
+alias nukenm="find . -name \"node_modules\" -exec rm -rf '{}' +"
+alias cc='code .'
 
-## recursively delete all node_modules
-alias nukenm="find . -name "node_modules" -exec rm -rf '{}' +"
+# Tool remapping for better experience
+alias cat='bat'
+alias ll='eza -lag'
+# Commented because it breaks other tools that use find:
+# alias find='fd'
+alias rg='rg --smart-case --hidden'
+alias grep='rg'
 
-## backup patch of current changes to cloud
-function pcloud() {
-    git diff > /Users/jfd/Library/Mobile\ Documents/com~apple~CloudDocs/patches/"$1".patch
+# Backup patch to cloud
+pcloud() {
+  git diff > /Users/jfd/Library/Mobile\ Documents/com~apple~CloudDocs/patches/"$1".patch
 }
 
-## show request-headers
-function rh() {
-    curl -s -D - "$1" -o /dev/null
+# Load asdf when needed
+load_asdf() {
+  . $(brew --prefix asdf)/libexec/asdf.sh
 }
 
-# Same as below but with less info
-function perf {
-  curl -o /dev/null -s -w "%{time_connect} + %{time_starttransfer} = %{time_total}\n" "$1"
+# Simple utility functions
+cloc() {
+  git ls-files --exclude-standard -- ':!:**/*.[pjs][npv]g' ':!:**/*.ai' ':!:.idea' ':!:**/*.eslintrc' ':!:package-lock.json' | xargs wc -l
 }
 
-function docker-run-interactive {
-  docker run -it --entrypoint "" -e AWS_PROFILE=${AWS_PROFILE} -v $(pwd):/app -v ${HOME}/.aws:/root/.aws --platform=linux/amd64 "$1" sh -c "cd /app/; sh"
-}
-
-# Break down of timings for one request
-function curl_time() {
-    curl -w "\
-   namelookup:  %{time_namelookup}s\n\
-      connect:  %{time_connect}s\n\
-   appconnect:  %{time_appconnect}s\n\
-  pretransfer:  %{time_pretransfer}s\n\
-     redirect:  %{time_redirect}s\n\
-starttransfer:  %{time_starttransfer}s\n\
--------------------------\n\
-        total:  %{time_total}s\n" "$@"
-}
-
-function node-project() {
-  git init
-  npx license $(npm get init.license) -o "$(npm get init.author.name)" > LICENSE
-  npx gitignore node
-  npx covgen "$(npm get init.author.email)"
-  npm init -y
-  git add -A
-  git commit -m "Initial commit"
-}
-
-
-function build_dockerfile() {
-  docker build . -t $1 -f ./Dockerfile
-}
-
-function run_dockerfile() {
-  docker run -d $1
-}
-
-function img-data() {
-  TYPE=$(file --mime-type -b $1)
-  ENC=$(base64 $1)
-  echo "data:$TYPE;base64,$ENC"
-}
-
-# time zsh startup time
 timezsh() {
   shell=${1-$SHELL}
   for i in $(seq 1 10); do /usr/bin/time $shell -i -c exit; done
 }
 
-# count lines of code in a repo omitting some files
-cloc() {
-git ls-files --exclude-standard -- ':!:**/*.[pjs][npv]g' ':!:**/*.ai' ':!:.idea' ':!:**/*.eslintrc' ':!:package-lock.json' | xargs wc -l
+# Docker helpers
+build_dockerfile() {
+  docker build . -t $1 -f ./Dockerfile
 }
 
-cc() {
-  code .
+run_dockerfile() {
+  docker run -d $1
 }
 
-# ----------------------------------------------------
-# gtw  reate + enter a git work-tree for <branch>
-# ----------------------------------------------------
-gtw () {
-  local branch=$1
-  [[ -z $branch ]] && { echo "Usage: gtw <branch>"; return 1 }
-
-  # 1. repo information
-  local root=$(git rev-parse --show-toplevel 2>/dev/null) \
-    || { echo "❌  Not inside a Git repository"; return 1 }
-  local repo=${root:t}                     # basename of repo
-  local safe_branch=${branch//\//-}        # / → -
-  local target=${root:h}/${repo}-${safe_branch}
-
-  # 2. existing tree?
-  if [[ -d $target ]]; then
-    echo "✔ Work-tree already exists → cd $target"
-    cd "$target"
-    return
-  fi
-
-  # 3. create tree (branch new or existing)
-  if git show-ref --quiet "refs/heads/$branch"; then
-    git worktree add "$target" "$branch"
-  else
-    # detect default remote branch (falls back to main)
-    local def=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null \
-                 | cut -d/ -f2)
-    [[ -z $def ]] && def=main
-    git worktree add -b "$branch" "$target" origin/$def
-  fi
-
-  cd "$target"
-  echo "✅  Now inside $target"
+docker-run-interactive() {
+  docker run -it --entrypoint "" -e AWS_PROFILE=${AWS_PROFILE} -v $(pwd):/app -v ${HOME}/.aws:/root/.aws --platform=linux/amd64 "$1" sh -c "cd /app/; sh"
 }
 
-# ----------------------------------------------------
-# rmwt - remove a git work-tree
-# ----------------------------------------------------
-rmwt () {
-  local target=$1
-
-  # If no arg: are we *in* a work-tree folder that matches "<repo>-<branch>"?
-  if [[ -z $target ]] && git rev-parse --git-path . &>/dev/null; then
-    local root=$(git rev-parse --show-toplevel)
-    local base=${root:t}
-    [[ $base == *-* ]] && target=$root
-  fi
-
-  [[ -z $target ]] && { echo "Usage: rmwt [worktree-path]"; return 1 }
-  ! git -C "$target" rev-parse --git-dir &>/dev/null && { echo "❌  $target is not a git dir"; return 1 }
-
-  read -q "REPLY?⚠️  Remove work-tree $target ? [y/N] " || { echo; return 1 }
-  echo
-
-  # Change away from target directory if we're currently in it
-  [[ "$(pwd)" == "$target"* ]] && cd ..
-
-  git worktree remove --force "$target" && rm -rf "$target"
-  echo "🗑  Work-tree removed"
+# Image to data URL
+img-data() {
+  TYPE=$(file --mime-type -b $1)
+  ENC=$(base64 $1)
+  echo "data:$TYPE;base64,$ENC"
 }
 
-# ----------------------------------------------------
-# tab-completion for gtw  (local + remote branches)
-# ----------------------------------------------------
-_gtw_complete () {
-  local -a branches
-  branches=(${(f)"$(git for-each-ref --format='%(refname:short)' \
-                  refs/heads refs/remotes | grep -v '^HEAD')"})
-  _describe 'branch' branches
-}
-compdef _gtw_complete gtw
-
-unwip() {
-    local last_non_wip_commit
-    last_non_wip_commit=$(git rev-list --max-count=1 --grep="^wip" --invert-grep HEAD)
-
-    if [[ -n "$last_non_wip_commit" ]]; then
-        echo "Resetting to commit: $last_non_wip_commit"
-        git log --oneline -1 "$last_non_wip_commit"
-        git reset --soft "$last_non_wip_commit"
-        echo "✅ Soft reset complete. Your changes are staged."
-    else
-        echo "❌ No non-wip commits found."
-    fi
-}
-
-function getTranscodingsSinceHours() {
+# MediaConvert helper
+getTranscodingsSinceHours() {
   local sinceHours=${1:-24}
-  echo "Querying MediaConvertjobs in past ${sinceHours} hours..."
-
+  echo "Querying MediaConvert jobs in past ${sinceHours} hours..."
   AWS_REGION=us-east-1 aws mediaconvert list-jobs --max-items 100 \
   --query "Jobs[?to_string(Timing.FinishTime) > '$(date "-v-${sinceHours}H" "+%Y-%m-%dT%H:%M:%S+00:00")'].{isrc:UserMetadata.concert_isrc,finishTime:Timing.FinishTime,status:Status,audioRenditions:join(',',Settings.OutputGroups[].Outputs[].AudioDescriptions[].CodecSettings.Codec)}" \
   --output table
 }
 
-pb_quote() {
-    pbpaste | sed -e "s/\([^\n]*\)/'&',/g" -e '$s/,$//' | pbcopy
-    echo "✅ Clipboard transformed: each line wrapped in quotes, no comma on last line"
-}
-
-lines_to_csv() {
-    pbpaste | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/, /g' | pbcopy
-    echo "Converted lines to comma-separated string and copied to clipboard:"
-}
+# ============================================================================
+# Complex functions have been moved to ~/.config/zsh/functions/
+#
+# Migrated functions (use zf-list to see all):
+# - Git: fbr, fshow, com, gitstash, gitstashapply, sync-git-origins, gtw, rmwt, unwip
+# - Docker: da, ds
+# - Network: curl-time, perf, rh
+# - Web: cheat, weather, chrome-history
+# - System: fkill, histrm
+# - File: fe
+# - Text: pb-quote, lines-to-csv
+# - Dev: node-project
+#
+# Use `zf-browse` for interactive search
+# Use `zf-help` for more information
+# ============================================================================

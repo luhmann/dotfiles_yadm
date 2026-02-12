@@ -2,6 +2,10 @@
 # Migrated from Powerlevel10k on 2025-11-09
 # Based on p10k lean style with 2-line prompt
 
+# Performance settings
+scan_timeout = 30  # Timeout for scanning files (ms)
+command_timeout = 500  # Timeout for custom module commands (ms)
+
 # General prompt format
 format = """
 [┌─](dimmed)\
@@ -13,10 +17,8 @@ $git_metrics\
 $git_status\
 ${custom.git_wip}\
 [─](dimmed)\
-$status\
-$cmd_duration\
-$jobs\
 $direnv\
+$mise\
 $python\
 $nodejs\
 $golang\
@@ -37,6 +39,12 @@ $nix_shell\
 $line_break\
 [└─](dimmed)$character"""
 
+# Right side prompt (status, duration, jobs)
+right_format = """
+$status\
+$cmd_duration\
+$jobs"""
+
 # Add newline before prompt
 add_newline = true
 
@@ -44,10 +52,10 @@ add_newline = true
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
-vicmd_symbol = "[❮](bold green)"
-vicmd_replace_symbol = "[▶](bold green)"
-vicmd_replace_one_symbol = "[▶](bold green)"
-vicmd_visual_symbol = "[V](bold green)"
+vimcmd_symbol = "[❮](bold green)"
+vimcmd_replace_symbol = "[▶](bold green)"
+vimcmd_replace_one_symbol = "[▶](bold green)"
+vimcmd_visual_symbol = "[V](bold green)"
 
 # Directory module
 [directory]
@@ -228,7 +236,7 @@ detect_folders = []
 format = "[$symbol$context( \\($namespace\\))]($style) "
 symbol = "☸ "
 style = "cyan"
-disabled = false
+disabled = true
 
 [kubernetes.context_aliases]
 "dev.local.cluster.k8s" = "dev"
@@ -276,6 +284,16 @@ allowed_msg = "allowed"
 denied_msg = "denied"
 loaded_msg = "loaded"
 unloaded_msg = "unloaded"
+
+# Mise (tool version manager)
+[mise]
+format = "[$symbol($version )]($style)"
+symbol = "mise "
+style = "bold cyan"
+disabled = false
+detect_extensions = []
+detect_files = [".mise.toml", ".tool-versions", "mise.toml", ".mise.local.toml"]
+detect_folders = [".mise"]
 
 # Container indicator
 [container]

@@ -15,8 +15,17 @@ zinit snippet PZT::modules/history
 
 zinit light zsh-users/zsh-completions
 
-# enable completions
-zpcompinit; zpcdreplay
+# enable completions with cache optimization (only rebuild when stale)
+autoload -Uz compinit
+dump=${ZDOTDIR:-$HOME}/.zcompdump
+if [[ ! -f $dump || $dump -ot /opt/homebrew/share/zsh/site-functions || $dump -ot ~/.zshrc ]]; then
+  zpcompinit
+else
+  zpcompinit -C
+fi
+zpcdreplay
+zstyle ':completion:*' rehash true
+
 zinit light Aloxaf/fzf-tab
 
 zinit light zsh-users/zsh-autosuggestions
@@ -39,7 +48,7 @@ zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-# preview directory's content with exa when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+# preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
 # switch group using `,` and `.`
 zstyle ':fzf-tab:*' switch-group ',' '.'

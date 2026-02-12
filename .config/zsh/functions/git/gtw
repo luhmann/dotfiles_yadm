@@ -35,6 +35,32 @@ gtw () {
     git worktree add -b "$branch" "$target" origin/$def
   fi
 
-  cd "$target"
+  # 4. run creation hook if exists
+  local hook_script="${root}/.jf/worktree-create"
+  if [[ -f $hook_script ]]; then
+    echo "🔧  Running worktree creation hook..."
+    cd "$target"
+
+    # Export environment variables for the hook
+    export REPO_ROOT="$root"
+    export WORKTREE_PATH="$target"
+    export WORKTREE_NAME="${target:t}"
+
+    # Make hook executable if not already
+    [[ ! -x $hook_script ]] && chmod +x "$hook_script"
+
+    # Run the hook from within the worktree
+    if "$hook_script"; then
+      echo "✅  Hook completed successfully"
+    else
+      echo "❌  Hook failed - removing worktree"
+      cd "$root"
+      git worktree remove "$target"
+      return 1
+    fi
+  else
+    cd "$target"
+  fi
+
   echo "✅  Now inside $target"
 }

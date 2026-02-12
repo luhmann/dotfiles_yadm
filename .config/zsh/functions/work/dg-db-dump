@@ -209,6 +209,7 @@ dg-db-dump () {
         --exclude-table-data=voucher_redemptions \
         --exclude-table-data=vouchers \
         --exclude-table-data=payments \
+        --exclude-table-data=playbacks \
         --no-owner \
         --no-privileges \
         --clean \

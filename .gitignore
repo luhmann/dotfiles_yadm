@@ -27,7 +27,4 @@ npm-debug.log
 docs/agent
 
 .vim/plugged
-.claude/*
-!.claude/CLAUDE.md
-!.claude/.claude.json
 .jf
