@@ -82,15 +82,46 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
-(setenv "PATH" (concat "/opt/homebrew/bin/node:" (getenv "PATH")))
-(setq exec-path (append exec-path '("/opt/homebrew/bin/node")))
+(setenv "PATH" (concat "/opt/homebrew/bin:" (getenv "PATH")))
+(add-to-list 'exec-path "/opt/homebrew/bin")
 
 
 (setq org-log-done 'time)
 
+(use-package! org-transclusion
+  :after org
+  :config
+  (add-to-list 'org-transclusion-extensions 'org-transclusion-http)
+  (map! :map org-mode-map
+        :localleader
+        (:prefix ("t" . "toggle")
+         "T" #'org-transclusion-mode)))
+
+(after! org-transclusion
+  ;; Ensure external extension and its dependency are on `load-path'.
+  (dolist (pkg '("plz" "org-transclusion-http"))
+    (let ((pkg-path
+           (expand-file-name
+            (format "straight/build-%d.%d/%s"
+                    emacs-major-version emacs-minor-version pkg)
+            doom-local-dir)))
+      (when (file-directory-p pkg-path)
+        (add-to-list 'load-path pkg-path))))
+  (unless (require 'org-transclusion-http nil t)
+    (message "org-transclusion-http not found; run doom sync")))
+
 (after! org
   (require 'org-tempo)
-  (add-to-list 'org-src-lang-modes '("typescript" . typescript))
+  (let ((d2-mode-path
+         (expand-file-name
+          (format "straight/build-%d.%d/d2-mode"
+                  emacs-major-version emacs-minor-version)
+          doom-local-dir)))
+    (when (file-directory-p d2-mode-path)
+      (add-to-list 'load-path d2-mode-path)))
+  (require 'd2-mode nil t)
+  (setf (alist-get "typescript" org-src-lang-modes nil nil #'equal) 'typescript)
+  (setf (alist-get "d2" org-src-lang-modes nil nil #'equal) 'd2)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((js . t)
@@ -101,6 +132,36 @@
      ))
 )
 
+(after! ob
+  (defvar org-babel-default-header-args:d2
+    '((:results . "file") (:exports . "results"))
+    "Default header arguments for D2 source blocks.")
+
+  (defun org-babel-execute:d2 (body params)
+    "Execute a D2 source block BODY with header PARAMS."
+    (let* ((d2-bin (or (executable-find "d2") "/opt/homebrew/bin/d2"))
+           (do-export (member "file" (cdr (assq :result-params params))))
+           (out-file (if do-export
+                         (or (cdr (assq :file params))
+                             (error "No :file provided but :results set to file"))
+                       (org-babel-temp-file "d2-" ".svg")))
+           (cmdline (or (cdr (assq :cmdline params)) ""))
+           (in-file (org-babel-temp-file "d2-" ".d2"))
+           (cmd (format "%s %s %s %s"
+                        (shell-quote-argument d2-bin)
+                        cmdline
+                        (org-babel-process-file-name in-file)
+                        (org-babel-process-file-name out-file))))
+      (with-temp-file in-file
+        (insert body))
+      (org-babel-eval cmd "")
+      (unless do-export
+        (with-temp-buffer
+          (insert-file-contents out-file)
+          (buffer-substring-no-properties (point-min) (point-max))))))
+
+  ;; Satisfy Doom's lazy babel loader that tries (require 'ob-d2).
+  (provide 'ob-d2))
 
 (after! org
   (setq dgstage-notes-file (expand-file-name "notes_dgstage.org" org-directory))
@@ -110,3 +171,38 @@
                "* [%<%Y-%m-%d %H:%M>] %? :dgstage:\n %i\n %a\n"
                )
   ))
+
+(after! plantuml-mode
+  (setq plantuml-default-exec-mode 'executable
+        plantuml-executable-path (or (executable-find "plantuml")
+                                     "/opt/homebrew/bin/plantuml")))
+
+(after! ob-plantuml
+  ;; Use upstream ob-plantuml executor. Doom's override can produce empty
+  ;; #+RESULTS: blocks for :file outputs in this setup.
+  (when (fboundp '+plantuml-org-babel-execute:plantuml-a)
+    (advice-remove #'org-babel-execute:plantuml
+                   #'+plantuml-org-babel-execute:plantuml-a))
+  (setq org-plantuml-exec-mode 'plantuml
+        org-plantuml-executable-path (or (executable-find "plantuml")
+                                         "/opt/homebrew/bin/plantuml")))
+
+(after! artist
+  ;; Keep artist-mode inside current major mode (e.g. org-mode) to avoid
+  ;; Org internals running in picture-mode.
+  (setq artist-picture-compatibility nil))
+
+(after! ox
+  (dolist (pkg '("pcache" "logito" "marshal" "gh" "gist" "ox-gist"))
+    (let ((pkg-path
+           (expand-file-name
+            (format "straight/build-%d.%d/%s"
+                    emacs-major-version emacs-minor-version pkg)
+            doom-local-dir)))
+      (when (file-directory-p pkg-path)
+        (add-to-list 'load-path pkg-path))))
+  (require 'ox-gist)
+  (map! :map org-mode-map
+        :localleader
+        (:prefix ("e" . "export")
+         "g" #'org-gist-export-to-gist)))
