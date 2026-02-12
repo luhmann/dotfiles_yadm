@@ -28,3 +28,6 @@ docs/agent
 
 .vim/plugged
 .jf
+
+# Auth tokens
+.config/gh/hosts.yml
