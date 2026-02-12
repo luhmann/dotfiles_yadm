@@ -1,0 +1,8 @@
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
+[tools]
+go = "latest"
+java = "temurin-17"
+node = "22.21.1"
+rust = "latest"

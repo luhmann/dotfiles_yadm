@@ -1,0 +1,9 @@
+theme = cyberpunk
+maximize = true
+confirm-close-surface = false
+clipboard-read = allow
+clipboard-write = allow
+copy-on-select = false
+clipboard-paste-protection = false
+auto-update = check
+unfocused-split-opacity = 1
