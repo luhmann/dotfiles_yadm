@@ -225,18 +225,24 @@ setup_xcode_cli() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 3: Create ~/dev directory
+# Section 3: Create ~/dev and ~/icloud
 # ---------------------------------------------------------------------------
 setup_dev_dir() {
-    header "Creating ~/dev directory..."
+    header "Creating ~/dev and ~/icloud..."
 
     if [[ -d "$HOME/dev" ]]; then
         skip "~/dev already exists."
-        return 0
+    else
+        mkdir -p "$HOME/dev"
+        ok "~/dev created."
     fi
 
-    mkdir -p "$HOME/dev"
-    ok "~/dev created."
+    if [[ -L "$HOME/icloud" ]]; then
+        skip "~/icloud symlink already exists."
+    else
+        ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" "$HOME/icloud"
+        ok "~/icloud symlink created."
+    fi
 }
 
 # ---------------------------------------------------------------------------
