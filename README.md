@@ -4,18 +4,28 @@ Managed with [yadm](https://yadm.io). Config files live in-place in `~` — no s
 
 ## New Machine Setup
 
+Single command to set up a fresh Mac:
+
 ```bash
-# 1. Install yadm
-curl -fLo /usr/local/bin/yadm https://github.com/yadm-dev/yadm/raw/master/yadm
-chmod a+x /usr/local/bin/yadm
+curl -fsSL https://raw.githubusercontent.com/luhmann/dotfiles_yadm/main/.config/yadm/kickstart.sh | bash
+```
 
-# 2. Clone
-yadm clone git@github.com:luhmann/dotfiles_yadm.git
+This installs Xcode CLI tools, Homebrew, yadm, clones the dotfiles, and launches the interactive bootstrap menu.
 
-# 3. Bootstrap (interactive menu)
-yadm bootstrap
+### Flags
 
-# 4. Add secrets to Keychain (see below)
+```bash
+# Dev tools only (default)
+curl -fsSL ... | bash
+
+# Include personal apps
+curl -fsSL ... | bash -s -- --personal
+
+# Run all steps unattended (dev only)
+curl -fsSL ... | bash -s -- --all
+
+# Run all steps including personal apps
+curl -fsSL ... | bash -s -- --all --personal
 ```
 
 ### Bootstrap Sections
@@ -24,23 +34,18 @@ The bootstrap script is interactive — pick individual sections or run all at o
 
 | # | Section | Description |
 |---|---------|-------------|
-| 1 | SSH key setup | Generates ed25519 key, copies pubkey to clipboard |
+| 1 | SSH key setup | Generates ed25519 key(s), prompts for additional keys |
 | 2 | Xcode CLI tools | Installs compiler toolchain via `softwareupdate` |
 | 3 | Create ~/dev | Creates the development directory |
 | 4 | Install Homebrew | Installs Homebrew (handles Apple Silicon path) |
-| 5 | Brew bundle | Installs all packages/casks from `~/Brewfile` + fzf |
-| 6 | Spotlight shortcut | Disables Cmd-Space for Spotlight (frees it for Raycast) |
-| 7 | macOS defaults | Applies system preferences (Finder, Dock, keyboard...) |
+| 5 | Brew bundle | Installs packages from `Brewfile.dev` (+ `Brewfile.personal` with `--personal`) |
+| 6 | GitHub SSH keys | Upload SSH keys to GitHub via `gh` CLI (select which keys) |
+| 7 | Claude Code | Installs via `curl` for auto-updates |
+| 8 | MonoLisa font | Retrieves font from 1Password vault |
+| 9 | Spotlight shortcut | Disables Cmd-Space for Spotlight (frees it for Raycast) |
+| 10 | macOS defaults | Applies system preferences (Finder, Dock, keyboard...) |
 
 All sections are idempotent — safe to re-run.
-
-### Recommended Order
-
-```
-SSH key -> Xcode CLI -> Homebrew -> brew bundle -> macOS defaults -> secrets
-```
-
-SSH key is needed first because `yadm clone` uses SSH. If cloning over HTTPS, SSH can wait.
 
 ## What's Tracked
 
@@ -54,8 +59,8 @@ Run `yadm list` for the full list. Key categories:
 | Terminal | `.config/ghostty/config`, `.config/starship.toml` |
 | Tools | `.config/atuin/`, `.config/mise/`, `.config/gh/` |
 | Search | `.config/television/`, `.ignore`, `.fxrc` |
-| Packages | `Brewfile` |
-| Bootstrap | `.config/yadm/bootstrap`, `.config/yadm/macos-defaults.bash` |
+| Packages | `Brewfile.dev`, `Brewfile.personal` |
+| Bootstrap | `.config/yadm/bootstrap`, `.config/yadm/kickstart.sh`, `.config/yadm/macos-defaults.bash` |
 | Aliases/funcs | `.aliases`, `.config/zsh/functions/` |
 
 ### Not Tracked (by design)
