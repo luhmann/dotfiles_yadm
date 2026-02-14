@@ -227,7 +227,37 @@ setup_claude_code() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 7: Disable Spotlight shortcut (for Raycast)
+# Section 7: Install MonoLisa font from 1Password
+# ---------------------------------------------------------------------------
+setup_monolisa() {
+    header "Installing MonoLisa font..."
+
+    if ls "$HOME/Library/Fonts"/MonoLisa-*.otf &>/dev/null; then
+        skip "MonoLisa fonts already installed."
+        return 0
+    fi
+
+    if ! command -v op &>/dev/null; then
+        warn "1Password CLI not found. Skipping MonoLisa install."
+        return 0
+    fi
+
+    local tmpzip
+    tmpzip=$(mktemp /tmp/monolisa-XXXXXX.zip)
+
+    if op document get "33gu4ruy7ky3zydk5la5vflda4" --out-file "$tmpzip" 2>/dev/null; then
+        mkdir -p "$HOME/Library/Fonts"
+        unzip -o "$tmpzip" -d "$HOME/Library/Fonts"
+        rm -f "$tmpzip"
+        ok "MonoLisa fonts installed."
+    else
+        rm -f "$tmpzip"
+        warn "Could not retrieve MonoLisa from 1Password. Are you signed in? (eval \$(op signin))"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Section 8: Disable Spotlight shortcut (for Raycast)
 # ---------------------------------------------------------------------------
 setup_spotlight() {
     header "Disabling Spotlight shortcut (for Raycast)..."
@@ -248,7 +278,7 @@ setup_spotlight() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 8: Apply macOS defaults
+# Section 9: Apply macOS defaults
 # ---------------------------------------------------------------------------
 setup_macos_defaults() {
     header "Applying macOS defaults..."
@@ -274,6 +304,7 @@ if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
     setup_homebrew
     setup_brew_bundle
     setup_claude_code
+    setup_monolisa
     setup_spotlight
     setup_macos_defaults
     echo ""
@@ -298,8 +329,9 @@ while true; do
     echo "  4) Install Homebrew"
     echo "  5) Brew bundle (install packages)"
     echo "  6) Install Claude Code"
-    echo "  7) Disable Spotlight shortcut (for Raycast)"
-    echo "  8) Apply macOS defaults"
+    echo "  7) Install MonoLisa font"
+    echo "  8) Disable Spotlight shortcut (for Raycast)"
+    echo "  9) Apply macOS defaults"
     echo "  a) Run all"
     echo "  q) Quit"
     echo ""
@@ -311,8 +343,9 @@ while true; do
         4) setup_homebrew ;;
         5) setup_brew_bundle ;;
         6) setup_claude_code ;;
-        7) setup_spotlight ;;
-        8) setup_macos_defaults ;;
+        7) setup_monolisa ;;
+        8) setup_spotlight ;;
+        9) setup_macos_defaults ;;
         a)
             setup_ssh
             setup_xcode_cli
