@@ -3,11 +3,19 @@
 # yadm bootstrap - sets up a fresh macOS machine
 #
 # Usage:
-#   yadm bootstrap        # interactive menu
-#   yadm bootstrap --all  # run all sections (unattended)
+#   yadm bootstrap              # interactive menu (dev packages only)
+#   yadm bootstrap --all        # run all sections (unattended, dev only)
+#   yadm bootstrap --personal   # include personal apps in brew bundle
 #
 
 set -euo pipefail
+
+INSTALL_PERSONAL=false
+for arg in "$@"; do
+    case "$arg" in
+        --personal) INSTALL_PERSONAL=true ;;
+    esac
+done
 
 # ---------------------------------------------------------------------------
 # Color helpers (tput-based, gracefully degrade if tput unavailable)
@@ -166,13 +174,27 @@ setup_brew_bundle() {
         return 1
     fi
 
-    local brewfile="$HOME/Brewfile"
-    if [[ ! -f "$brewfile" ]]; then
-        warn "No Brewfile found at $brewfile. Skipping brew bundle."
+    local brewfile_dev="$HOME/Brewfile.dev"
+    local brewfile_personal="$HOME/Brewfile.personal"
+
+    if [[ -f "$brewfile_dev" ]]; then
+        echo "Running brew bundle for dev tools..."
+        brew bundle --file="$brewfile_dev"
+        ok "Dev brew bundle complete."
     else
-        echo "Running brew bundle (this may take a while)..."
-        brew bundle --file="$brewfile"
-        ok "Brew bundle complete."
+        warn "No Brewfile.dev found at $brewfile_dev. Skipping."
+    fi
+
+    if [[ "$INSTALL_PERSONAL" == true ]]; then
+        if [[ -f "$brewfile_personal" ]]; then
+            echo "Running brew bundle for personal apps..."
+            brew bundle --file="$brewfile_personal"
+            ok "Personal brew bundle complete."
+        else
+            warn "No Brewfile.personal found at $brewfile_personal. Skipping."
+        fi
+    else
+        skip "Personal apps skipped (use --personal to include)."
     fi
 
     local fzf_install
@@ -189,7 +211,23 @@ setup_brew_bundle() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 6: Disable Spotlight shortcut (for Raycast)
+# Section 6: Install Claude Code (auto-updating)
+# ---------------------------------------------------------------------------
+setup_claude_code() {
+    header "Installing Claude Code..."
+
+    if command -v claude &>/dev/null; then
+        skip "Claude Code already installed at $(command -v claude)."
+        return 0
+    fi
+
+    curl -fsSL https://claude.ai/install.sh | bash
+
+    ok "Claude Code installed."
+}
+
+# ---------------------------------------------------------------------------
+# Section 7: Disable Spotlight shortcut (for Raycast)
 # ---------------------------------------------------------------------------
 setup_spotlight() {
     header "Disabling Spotlight shortcut (for Raycast)..."
@@ -210,7 +248,7 @@ setup_spotlight() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 7: Apply macOS defaults
+# Section 8: Apply macOS defaults
 # ---------------------------------------------------------------------------
 setup_macos_defaults() {
     header "Applying macOS defaults..."
@@ -229,12 +267,13 @@ setup_macos_defaults() {
 # ---------------------------------------------------------------------------
 # --all mode: run everything in order
 # ---------------------------------------------------------------------------
-if [[ "${1:-}" == "--all" ]]; then
+if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
     setup_ssh
     setup_xcode_cli
     setup_dev_dir
     setup_homebrew
     setup_brew_bundle
+    setup_claude_code
     setup_spotlight
     setup_macos_defaults
     echo ""
@@ -248,14 +287,19 @@ fi
 while true; do
     echo ""
     echo "${BOLD}yadm bootstrap${RESET}"
-    echo "=============="
+    if [[ "$INSTALL_PERSONAL" == true ]]; then
+        echo "==============${YELLOW} [+personal]${RESET}"
+    else
+        echo "==============${YELLOW} [dev only]${RESET}"
+    fi
     echo "  1) SSH key setup"
     echo "  2) Xcode Command Line Tools"
     echo "  3) Create ~/dev directory"
     echo "  4) Install Homebrew"
     echo "  5) Brew bundle (install packages)"
-    echo "  6) Disable Spotlight shortcut (for Raycast)"
-    echo "  7) Apply macOS defaults"
+    echo "  6) Install Claude Code"
+    echo "  7) Disable Spotlight shortcut (for Raycast)"
+    echo "  8) Apply macOS defaults"
     echo "  a) Run all"
     echo "  q) Quit"
     echo ""
@@ -266,14 +310,16 @@ while true; do
         3) setup_dev_dir ;;
         4) setup_homebrew ;;
         5) setup_brew_bundle ;;
-        6) setup_spotlight ;;
-        7) setup_macos_defaults ;;
+        6) setup_claude_code ;;
+        7) setup_spotlight ;;
+        8) setup_macos_defaults ;;
         a)
             setup_ssh
             setup_xcode_cli
             setup_dev_dir
             setup_homebrew
             setup_brew_bundle
+            setup_claude_code
             setup_spotlight
             setup_macos_defaults
             echo ""

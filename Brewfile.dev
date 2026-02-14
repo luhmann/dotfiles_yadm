@@ -1,11 +1,8 @@
 tap "buo/cask-upgrade"
-tap "cavaliercoder/dmidecode"
 tap "d12frosted/emacs-plus"
 tap "danvergara/tools"
 tap "derailed/k9s"
-tap "harelba/q"
 tap "hashicorp/tap"
-tap "jnsahaj/lumen"
 tap "macos-fuse-t/cask"
 tap "olleolleolle/adr-tools"
 tap "peak/tap"
@@ -15,8 +12,6 @@ tap "raine/claude-history"
 brew "act"
 # Improved shell history for zsh, bash, fish and nushell
 brew "atuin"
-# Library for command-line editing
-brew "readline"
 # Official Amazon AWS command-line interface
 brew "awscli"
 # Bourne-Again SHell, a UNIX command interpreter
@@ -25,8 +20,6 @@ brew "bash"
 brew "bat"
 # Dependency manager for Cocoa projects
 brew "cocoapods"
-# Color-highlighted diff(1) output
-brew "colordiff"
 # GNU File, Shell, and Text utilities
 brew "coreutils"
 # Suite of command-line tools for converting to and working with CSV
@@ -37,26 +30,14 @@ brew "csvq"
 brew "ctop"
 # Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
-# Perl lib for reading and writing EXIF metadata
-brew "exiftool"
 # Modern, maintained replacement for ls
 brew "eza"
 # Simple, fast and user-friendly alternative to find
 brew "fd"
-# C/C++ and Java libraries for Unicode and globalization
-brew "icu4c@77"
-# Play, record, convert, and stream select audio and video codecs
-brew "ffmpeg"
-# Play, record, convert, and stream audio and video
-brew "ffmpeg@6"
-# Fast and Lightweight Logs and Metrics processor
-brew "fluent-bit"
 # Terminal JSON viewer
 brew "fx"
 # Command-line fuzzy finder written in Go
 brew "fzf"
-# Command-line downloader for image-hosting site galleries and collections
-brew "gallery-dl"
 # GNU compiler collection
 brew "gcc"
 # Interact with Google Gemini AI models from the command-line
@@ -81,10 +62,6 @@ brew "grep"
 brew "htop"
 # Command-line benchmarking tool
 brew "hyperfine"
-# Tool to download photos from iCloud
-brew "icloudpd"
-# Display an interface's bandwidth usage
-brew "iftop"
 # Tools and libraries to manipulate images in select formats
 brew "imagemagick"
 # Feature-rich interactive Jira CLI
@@ -97,46 +74,26 @@ brew "k3d"
 brew "ktlint"
 # Cross-platform TUI database management tool
 brew "lazysql"
-# Access DVDs as block devices without the decryption
-brew "libdvdcss"
 # GUI for vim, made for macOS
 brew "macvim"
 # Mac App Store command-line interface
 brew "mas"
-# Unified display of technical and tag data for audio/video
-brew "media-info"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
 # Simple tool to make locally trusted development certificates
 brew "mkcert"
-# CLI tool for saving complete web pages as a single HTML file
-brew "monolith"
 # NCurses Disk Usage
 brew "ncdu"
-# Network grep
-brew "ngrep"
 # Port scanning utility for large networks
 brew "nmap"
 # Modern shell for the GitHub era
 brew "nushell"
-# ISO-C API and CLI for generating UUIDs
-brew "ossp-uuid"
 # CLI for Postgres with auto-completion and syntax highlighting
 brew "pgcli"
 # Tool to interact with the Phrase API
 brew "phrase-cli"
-# Package compiler and linker metadata toolkit
-brew "pkgconf"
-# Cross-platform library for audio I/O
-brew "portaudio"
-# Object-relational database system
-brew "postgresql@13"
 # Object-relational database system
 brew "postgresql@16"
-# Modern API client that lives in your terminal
-brew "posting"
-# Interpreted, interactive, object-oriented programming language
-brew "python@3.10"
 # Persistent key-value database, with built-in net interface
 brew "redis"
 # Search tool like grep and The Silver Searcher
@@ -147,14 +104,10 @@ brew "shfmt"
 brew "sq"
 # Add a public key to a remote machine's authorized_keys file
 brew "ssh-copy-id"
-# TCP/IP packet demultiplexer
-brew "tcpflow"
 # General purpose fuzzy finder TUI
 brew "television"
 # Send macOS User Notifications from the command-line
 brew "terminal-notifier"
-# Code-search similar to ack
-brew "the_silver_searcher"
 # Simplified and community-driven man pages
 brew "tldr"
 # Terminal multiplexer
@@ -165,8 +118,6 @@ brew "tree"
 brew "uv"
 # Internet file retriever
 brew "wget"
-# Cross-platform C++ GUI toolkit
-brew "wxwidgets"
 # XML command-line utilities
 brew "xmlstarlet"
 # Command-line XML and HTML beautifier and content extractor
@@ -175,10 +126,6 @@ brew "xq"
 brew "yadm"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
-# Feature-rich command-line audio/video downloader
-brew "yt-dlp"
-# General-purpose lossless data-compression library
-brew "zlib"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
 # UNIX shell (command interpreter)
@@ -193,8 +140,6 @@ brew "derailed/k9s/k9s"
 brew "hashicorp/tap/terraform"
 # Vault
 brew "hashicorp/tap/vault"
-# lumen is a command-line tool that can show pretty diff, generate commit messages with AI, summarise diffs / commits, and more without requiring an API key.
-brew "jnsahaj/lumen/lumen"
 # A command-line tool for working with Architecture Decision Records (ADRs).
 brew "olleolleolle/adr-tools/adr_tools"
 # Parallel S3 and local filesystem execution tool
@@ -205,39 +150,14 @@ brew "raine/claude-history/claude-history"
 cask "1password"
 # Command-line interface for 1Password
 cask "1password-cli"
-# Chromium based browser
-cask "arc"
-# Multi-cloud backup application
-cask "arq"
-# Multi-track audio editor and recorder
-cask "audacity"
-# Prevents your sleeping computer from connecting to Bluetooth accessories
-cask "bluesnooze"
 # Open source IDE for exploring and testing APIs
 cask "bruno"
 # Code snippet organiser
 cask "cacher"
 # Anthropic's official Claude AI desktop app
 cask "claude"
-# Terminal-based AI coding assistant
-cask "claude-code"
-# Screen capturing tool
-cask "cleanshot"
 # OpenAI's coding agent that runs in your terminal
 cask "codex"
-# Native document editor
-cask "craft"
-# Write, edit, and chat about your code with AI
-cask "cursor"
-# Voice and text chat software
-cask "discord"
-# Web browser
-cask "firefox"
-cask "font-inconsolata-g-for-powerline"
-cask "font-input"
-cask "font-meslo-lg-nerd-font"
-cask "font-roboto-mono-for-powerline"
-cask "font-source-code-pro"
 # Kext-less implementation of FUSE
 cask "fuse-t"
 # SSHFS implementation based on FUSE-T
@@ -250,86 +170,32 @@ cask "ghostty"
 cask "google-chrome"
 # Web browser
 cask "google-chrome@canary"
-# Open-source video transcoder
-cask "handbrake-app"
-# Automated organisation
-cask "hazel"
-# Chromium-based web browser
-cask "helium-browser"
 # Dedicated scratchpad for developers
 cask "heynote"
-# Free and open-source media player
-cask "iina"
 # IDE for Java development - community edition
 cask "intellij-idea-ce"
-# System monitoring app
-cask "istat-menus"
-# Discover, download, and run local LLMs
-cask "lm-studio"
-# Open-source Dropbox client
-cask "maestral"
 # Meet, chat, call, and collaborate in just one place
 cask "microsoft-teams"
-# Native app email client for Gmail
-cask "mimestream"
 # Minimal installer for conda
 cask "miniconda"
-# Intercept, modify, replay, save HTTP/S traffic
-cask "mitmproxy"
-# Set of tools to create, alter and inspect Matroska files (MKV)
-cask "mkvtoolnix-app"
-# Calculator and converter application
-cask "numi"
 # Replacement for Docker Desktop
 cask "orbstack"
-# Screen measuring tool
-cask "pixelsnap"
-# Home media player
-cask "plex"
-# Music player focusing on visuals
-cask "plexamp"
 # HTTP debugging proxy
 cask "proxyman"
-# All-in-one bookmark manager
-cask "raindropio"
-# Control your tools with a few keystrokes
-cask "raycast"
 # JavaScript playground that auto-evaluates as code is typed
 cask "runjs"
 # Web browser
 cask "safari-technology-preview"
-# Team communication and collaboration software
-cask "slack"
-# Music streaming service
-cask "spotify"
-# Search and click text anywhere on screen
-cask "superkey"
 # Native GUI tool for relational databases
 cask "tableplus"
-# Music streaming service with high fidelity sound and hi-def video quality
-cask "tidal"
 # Free and open-source OpenVPN client
 cask "tunnelblick"
 # Open-source code editor
 cask "visual-studio-code"
-# Open-source code editor
-cask "visual-studio-code@insiders"
-# Multimedia player
-cask "vlc"
-# Rust-based terminal
-cask "warp"
-# Native desktop client for WhatsApp
-cask "whatsapp"
-# Lossless audio decoder
-cask "xld"
-# Photo viewer, image manager, image resiser and more
-cask "xnviewmp"
-# REST, GraphQL and gRPC client
-cask "yaak"
+# Network protocol analyzer
+cask "wireshark"
 # Multiplayer code editor
 cask "zed"
-# Video communication and virtual meeting platform
-cask "zoom"
 vscode "4ops.terraform"
 vscode "aaron-bond.better-comments"
 vscode "alefragnani.bookmarks"
@@ -380,7 +246,6 @@ vscode "mikestead.dotenv"
 vscode "mkhl.shfmt"
 vscode "mohammadbaqer.better-folding"
 vscode "ms-playwright.playwright"
-vscode "ms-python.black-formatter"
 vscode "ms-python.debugpy"
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"

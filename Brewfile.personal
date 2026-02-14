@@ -1,0 +1,128 @@
+# Perl lib for reading and writing EXIF metadata
+brew "exiftool"
+# Play, record, convert, and stream select audio and video codecs
+brew "ffmpeg"
+# Command-line downloader for image-hosting site galleries and collections
+brew "gallery-dl"
+# Tool to download photos from iCloud
+brew "icloudpd"
+# Display an interface's bandwidth usage
+brew "iftop"
+# Access DVDs as block devices without the decryption
+brew "libdvdcss"
+# Unified display of technical and tag data for audio/video
+brew "media-info"
+# CLI tool for saving complete web pages as a single HTML file
+brew "monolith"
+# Feature-rich command-line audio/video downloader
+brew "yt-dlp"
+# Chromium based browser
+cask "arc"
+# Multi-track audio editor and recorder
+cask "audacity"
+# Prevents your sleeping computer from connecting to Bluetooth accessories
+cask "bluesnooze"
+# Screen capturing tool
+cask "cleanshot"
+# Native document editor
+cask "craft"
+# Vault to protect your data
+cask "cryptomator"
+# macOS ISO downloader
+cask "crystalfetch"
+# Disk space analyzer
+cask "daisydisk"
+# Voice and text chat software
+cask "discord"
+# RAW image viewer
+cask "fastrawviewer"
+# TV and movie renaming tool
+cask "filebot"
+# Web browser
+cask "firefox"
+cask "font-inconsolata-g-for-powerline"
+cask "font-input"
+cask "font-meslo-lg-nerd-font"
+cask "font-roboto-mono-for-powerline"
+cask "font-source-code-pro"
+# Free and open-source media player
+cask "iina"
+# System monitoring app
+cask "istat-menus"
+# Open-source Dropbox client
+cask "maestral"
+# Video converter for MKV
+cask "makemkv"
+# Microsoft Excel
+cask "microsoft-excel"
+# Microsoft OneNote
+cask "microsoft-onenote"
+# Microsoft Word
+cask "microsoft-word"
+# Native app email client for Gmail
+cask "mimestream"
+# Set of tools to create, alter and inspect Matroska files (MKV)
+cask "mkvtoolnix-app"
+# Banking for macOS
+cask "moneymoney"
+# Calculator and converter application
+cask "numi"
+# Run LLMs locally
+cask "ollama"
+# Lightweight web browser
+cask "orion"
+# Screen measuring tool
+cask "pixelsnap"
+# Home media player
+cask "plex"
+# Music player focusing on visuals
+cask "plexamp"
+# Secure cloud storage
+cask "proton-drive"
+# End-to-end encrypted email
+cask "proton-mail"
+# Bridge for Proton Mail with email clients
+cask "proton-mail-bridge"
+# Password manager
+cask "proton-pass"
+# VPN client
+cask "protonvpn"
+# All-in-one bookmark manager
+cask "raindropio"
+# Control your tools with a few keystrokes
+cask "raycast"
+# API traffic interceptor
+cask "requestly"
+# Music streaming service
+cask "spotify"
+# Search and click text anywhere on screen
+cask "superkey"
+# AI-powered voice-to-text
+cask "superwhisper"
+# Music streaming service with high fidelity sound and hi-def video quality
+cask "tidal"
+# AI image upscaler
+cask "topaz-gigapixel"
+# Multimedia player
+cask "vlc"
+# Scanner software
+cask "vuescan"
+# Native desktop client for WhatsApp
+cask "whatsapp"
+# Lossless audio decoder
+cask "xld"
+# Photo viewer, image manager, image resiser and more
+cask "xnviewmp"
+# Video communication and virtual meeting platform
+cask "zoom"
+mas "Bear", id: 1091189122
+mas "Darkroom", id: 953286746
+mas "Flacbox", id: 1594027432
+mas "Kagi for Safari", id: 1622835804
+mas "karakeeper", id: 6746722790
+mas "Kindle", id: 302584613
+mas "Mela", id: 1568924476
+mas "Noizio", id: 928871589
+mas "Patterns", id: 429449079
+mas "PDF Viewer", id: 1120099014
+mas "PDFScanner", id: 410968114
