@@ -1,9 +1,27 @@
 theme = cyberpunk
+
+font-family = "MesloLGM Nerd Font Mono"
+font-size = 13
+font-thicken = true
+adjust-cell-height = 10%
+
+window-padding-x = 8
+window-padding-y = 4
+window-padding-balance = true
+macos-titlebar-style = transparent
+window-save-state = always
+
 maximize = true
 confirm-close-surface = false
 clipboard-read = allow
 clipboard-write = allow
 copy-on-select = false
-clipboard-paste-protection = false
+clipboard-paste-protection = true
 auto-update = check
 unfocused-split-opacity = 1
+
+scrollback-limit = 1000000
+
+shell-integration-features = cursor,sudo,title,ssh-terminfo
+
+keybind = global:ctrl+shift+grave_accent=toggle_quick_terminal

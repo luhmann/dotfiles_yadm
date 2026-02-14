@@ -362,7 +362,46 @@ setup_monolisa() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 9: Disable Spotlight shortcut (for Raycast)
+# Section 9: Sync API keys from 1Password to macOS keychain
+# ---------------------------------------------------------------------------
+setup_api_keys() {
+    header "Syncing API keys from 1Password to macOS keychain..."
+
+    if ! command -v op &>/dev/null; then
+        warn "1Password CLI not found. Skipping API key sync."
+        return 0
+    fi
+
+    if ! op vault list &>/dev/null 2>&1; then
+        warn "1Password is locked. Unlock and retry. (eval \$(op signin))"
+        return 0
+    fi
+
+    local keys=(
+        "openai-api-key"
+        "gemini-api-key"
+        "openrouter-api-key"
+        "jira-api-token"
+        "anthropic-api-key"
+        "brave-api-key"
+    )
+
+    for key_name in "${keys[@]}"; do
+        local secret
+        secret=$(op read "op://Automation/${key_name}/credential" --no-newline 2>/dev/null)
+
+        if [[ -z "$secret" ]]; then
+            warn "Could not read ${key_name} from 1Password. Skipping."
+            continue
+        fi
+
+        security add-generic-password -a "$USER" -s "$key_name" -w "$secret" -U 2>/dev/null
+        ok "$key_name"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Section 10: Disable Spotlight shortcut (for Raycast)
 # ---------------------------------------------------------------------------
 setup_spotlight() {
     header "Disabling Spotlight shortcut (for Raycast)..."
@@ -383,7 +422,7 @@ setup_spotlight() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 10: Apply macOS defaults
+# Section 11: Apply macOS defaults
 # ---------------------------------------------------------------------------
 setup_macos_defaults() {
     header "Applying macOS defaults..."
@@ -411,6 +450,7 @@ if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
     setup_github_ssh
     setup_claude_code
     setup_monolisa
+    setup_api_keys
     setup_spotlight
     setup_macos_defaults
     echo ""
@@ -437,8 +477,9 @@ while true; do
     echo "  6) Add SSH keys to GitHub"
     echo "  7) Install Claude Code"
     echo "  8) Install MonoLisa font"
-    echo "  9) Disable Spotlight shortcut (for Raycast)"
-    echo " 10) Apply macOS defaults"
+    echo "  9) Sync API keys from 1Password"
+    echo " 10) Disable Spotlight shortcut (for Raycast)"
+    echo " 11) Apply macOS defaults"
     echo "  a) Run all"
     echo "  q) Quit"
     echo ""
@@ -452,15 +493,19 @@ while true; do
         6) setup_github_ssh ;;
         7) setup_claude_code ;;
         8) setup_monolisa ;;
-        9) setup_spotlight ;;
-        10) setup_macos_defaults ;;
+        9) setup_api_keys ;;
+        10) setup_spotlight ;;
+        11) setup_macos_defaults ;;
         a)
             setup_ssh
             setup_xcode_cli
             setup_dev_dir
             setup_homebrew
             setup_brew_bundle
+            setup_github_ssh
             setup_claude_code
+            setup_monolisa
+            setup_api_keys
             setup_spotlight
             setup_macos_defaults
             echo ""
