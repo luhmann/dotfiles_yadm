@@ -1,3 +1,11 @@
+[env]
+OPENAI_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s openai-api-key -w')}}"
+GEMINI_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s gemini-api-key -w')}}"
+OPENROUTER_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s openrouter-api-key -w')}}"
+JIRA_API_TOKEN = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s jira-api-token -w')}}"
+ANTHROPIC_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s anthropic-api-key -w')}}"
+BRAVE_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s brave-api-key -w')}}"
+
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
 
