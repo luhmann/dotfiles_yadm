@@ -175,14 +175,16 @@ setup_ssh() {
         esac
     done
 
-    # Offer to add keys to GitHub
-    echo ""
-    read -rp "Add SSH keys to GitHub? (y/n): " add_to_gh
-    if [[ "$add_to_gh" =~ ^[yY]$ ]]; then
-        add_ssh_keys_to_github
-    fi
-
     ok "SSH key setup complete."
+}
+
+# ---------------------------------------------------------------------------
+# Section 6: Add SSH keys to GitHub (requires gh from brew bundle)
+# ---------------------------------------------------------------------------
+setup_github_ssh() {
+    header "Adding SSH keys to GitHub..."
+
+    add_ssh_keys_to_github
 }
 
 # ---------------------------------------------------------------------------
@@ -308,7 +310,7 @@ setup_brew_bundle() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 6: Install Claude Code (auto-updating)
+# Section 7: Install Claude Code (auto-updating)
 # ---------------------------------------------------------------------------
 setup_claude_code() {
     header "Installing Claude Code..."
@@ -324,7 +326,7 @@ setup_claude_code() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 7: Install MonoLisa font from 1Password
+# Section 8: Install MonoLisa font from 1Password
 # ---------------------------------------------------------------------------
 setup_monolisa() {
     header "Installing MonoLisa font..."
@@ -354,7 +356,7 @@ setup_monolisa() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 8: Disable Spotlight shortcut (for Raycast)
+# Section 9: Disable Spotlight shortcut (for Raycast)
 # ---------------------------------------------------------------------------
 setup_spotlight() {
     header "Disabling Spotlight shortcut (for Raycast)..."
@@ -375,7 +377,7 @@ setup_spotlight() {
 }
 
 # ---------------------------------------------------------------------------
-# Section 9: Apply macOS defaults
+# Section 10: Apply macOS defaults
 # ---------------------------------------------------------------------------
 setup_macos_defaults() {
     header "Applying macOS defaults..."
@@ -400,6 +402,7 @@ if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
     setup_dev_dir
     setup_homebrew
     setup_brew_bundle
+    setup_github_ssh
     setup_claude_code
     setup_monolisa
     setup_spotlight
@@ -425,10 +428,11 @@ while true; do
     echo "  3) Create ~/dev directory"
     echo "  4) Install Homebrew"
     echo "  5) Brew bundle (install packages)"
-    echo "  6) Install Claude Code"
-    echo "  7) Install MonoLisa font"
-    echo "  8) Disable Spotlight shortcut (for Raycast)"
-    echo "  9) Apply macOS defaults"
+    echo "  6) Add SSH keys to GitHub"
+    echo "  7) Install Claude Code"
+    echo "  8) Install MonoLisa font"
+    echo "  9) Disable Spotlight shortcut (for Raycast)"
+    echo " 10) Apply macOS defaults"
     echo "  a) Run all"
     echo "  q) Quit"
     echo ""
@@ -439,10 +443,11 @@ while true; do
         3) setup_dev_dir ;;
         4) setup_homebrew ;;
         5) setup_brew_bundle ;;
-        6) setup_claude_code ;;
-        7) setup_monolisa ;;
-        8) setup_spotlight ;;
-        9) setup_macos_defaults ;;
+        6) setup_github_ssh ;;
+        7) setup_claude_code ;;
+        8) setup_monolisa ;;
+        9) setup_spotlight ;;
+        10) setup_macos_defaults ;;
         a)
             setup_ssh
             setup_xcode_cli
