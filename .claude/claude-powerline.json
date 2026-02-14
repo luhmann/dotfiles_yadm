@@ -1,0 +1,34 @@
+{
+  "display": {
+    "lines": [
+      {
+        "segments": {
+          "directory": {
+            "enabled": true,
+            "style": "basename"
+          },
+          "git": {
+            "enabled": true
+          },
+          "model": {
+            "enabled": true
+          },
+          "session": {
+            "enabled": true,
+            "type": "tokens",
+            "costSource": "calculated"
+          },
+          "today": {
+            "enabled": true,
+            "type": "cost"
+          },
+          "context": {
+            "enabled": true,
+            "showPercentageOnly": false,
+            "displayStyle": "bar"
+          }
+        }
+      }
+    ]
+  }
+}

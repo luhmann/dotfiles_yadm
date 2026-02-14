@@ -1,0 +1,61 @@
+{
+  "cleanupPeriodDays": 99999,
+  "env": {
+    "DISABLE_BUG_COMMAND": "1"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build)",
+      "Read(node_modules/**)",
+      "Bash(bd quickstart:*)",
+      "Bash(bd list:*)",
+      "Bash(bd create:*)",
+      "Bash(bd ready:*)",
+      "Bash(bd dep tree:*)",
+      "Bash(bd sync:*)",
+      "Bash(bd show:*)",
+      "Bash(bd update:*)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(pnpm check:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git push)",
+      "Bash(mkdir:*)",
+      "Bash(bd close:*)",
+      "Bash(pnpm test:unit:*)",
+      "Bash(bd blocked)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(bd stats:*)",
+      "Bash(pnpm build:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "WebFetch(domain:github.com)",
+      "Bash(sqlite3:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pnpm lint:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  },
+  "hooks": {},
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y @owloops/claude-powerline@latest --style=powerline --theme=tokyo-night"
+  },
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "episodic-memory@superpowers-marketplace": false,
+    "feature-dev@claude-plugins-official": true,
+    "ralph-wiggum@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "kotlin-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "medium"
+}
