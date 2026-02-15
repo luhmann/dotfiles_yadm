@@ -154,3 +154,44 @@ yadm push                      # push to GitHub
 yadm list                      # list all tracked files
 yadm bootstrap                 # re-run bootstrap
 ```
+
+## AI Agent Sessions via tmux
+
+Run AI coding agents in persistent tmux sessions so you can detach and reattach from anywhere (e.g. SSH from your phone).
+
+### Aliases
+
+| Alias | Description |
+|-------|-------------|
+| `ac`  | Start a new Claude Code session (`claude` in tmux) |
+| `ap`  | Start a new Pi agent session (`pi` in tmux) |
+| `cac` | Continue/attach to a running Claude Code session |
+| `cap` | Continue/attach to a running Pi agent session |
+
+### Workflow
+
+**Start a session on your Mac:**
+
+```sh
+ac   # starts claude in a tmux session called "agent-claude"
+```
+
+Work as usual. When you need to leave, detach with `Ctrl-b d`.
+
+**Continue from your phone via SSH:**
+
+```sh
+ssh your-mac
+cac  # reattaches to the running claude session
+```
+
+Detach again with `Ctrl-b d` when done.
+
+### Useful tmux commands
+
+| Keys | Action |
+|------|--------|
+| `Ctrl-b d` | Detach from session (leaves it running) |
+| `Ctrl-b [` | Enter scroll/copy mode (navigate with arrows, `q` to exit) |
+| `tmux ls`  | List all running sessions |
+| `tmux kill-session -t agent-claude` | Kill a specific session |

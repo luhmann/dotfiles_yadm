@@ -150,6 +150,12 @@ getTranscodingsSinceHours() {
   --output table
 }
 
+# AI Agent tmux sessions
+ac() { tmux new-session -s agent-claude "claude $*"; }
+ap() { tmux new-session -s agent-pi "pi $*"; }
+alias cac='tmux attach-session -t agent-claude'
+alias cap='tmux attach-session -t agent-pi'
+
 # ============================================================================
 # Complex functions have been moved to ~/.config/zsh/functions/
 #
