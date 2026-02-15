@@ -176,7 +176,7 @@ Run AI coding agents in persistent tmux sessions so you can detach and reattach 
 ac   # starts claude in a tmux session called "agent-claude"
 ```
 
-Work as usual. When you need to leave, detach with `Ctrl-b d`.
+Work as usual. When you need to leave, detach with `Ctrl-a d`.
 
 **Continue from your phone via SSH:**
 
@@ -185,13 +185,13 @@ ssh your-mac
 cac  # reattaches to the running claude session
 ```
 
-Detach again with `Ctrl-b d` when done.
+Detach again with `Ctrl-a d` when done.
 
 ### Useful tmux commands
 
 | Keys | Action |
 |------|--------|
-| `Ctrl-b d` | Detach from session (leaves it running) |
-| `Ctrl-b [` | Enter scroll/copy mode (navigate with arrows, `q` to exit) |
+| `Ctrl-a d` | Detach from session (leaves it running) |
+| `Ctrl-a [` | Enter scroll/copy mode (navigate with arrows, `q` to exit) |
 | `tmux ls`  | List all running sessions |
 | `tmux kill-session -t agent-claude` | Kill a specific session |
