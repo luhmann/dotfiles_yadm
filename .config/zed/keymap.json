@@ -1,0 +1,220 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      // "\\ \\": "file_finder::Toggle",
+      // agents
+      "\\ a c": [
+        "agent::NewExternalAgentThread",
+        {
+          "agent": "claude_code",
+        },
+      ],
+      "\\ a o": [
+        "agent::NewExternalAgentThread",
+        {
+          "agent": "codex",
+        },
+      ],
+      "\\ a g": [
+        "agent::NewExternalAgentThread",
+        {
+          "agent": "gemini",
+        },
+      ],
+      // needs to be open to use inline agents
+      "\\ a t": "agent::NewThread",
+
+      "ctrl-`": "workspace::NewCenterTerminal",
+
+      // panes
+      "\\ p t": "workspace::ToggleLeftDock",
+      "\\ p p": "project_panel::ToggleFocus",
+      "\\ p g": "git_panel::ToggleFocus",
+      "\\ p o": "outline_panel::ToggleFocus",
+      "\\ p d": "diagnostics::Deploy",
+      "\\ p a": "agent::ToggleFocus",
+      "\\ p l": "lsp_tool::ToggleMenu",
+
+      "\\ t r": "task::Rerun",
+      "\\ t t": "task::Spawn",
+
+      // git
+      "\\ g s": ["task::Spawn", { "task_name": "git: gitu" }],
+      "\\ g d": "git::Diff",
+
+      // window
+      "\\ w d": "pane::CloseCleanItems",
+      // alternative fuzzy search leveraging: https://github.com/alexpasmantier/television
+      "cmd-p": [
+        "task::Spawn",
+        { "task_name": "file_finder", "reveal_target": "center" },
+      ],
+      // settings
+      "\\ s g": "zed::OpenSettingsFile",
+      "\\ s s": "zed::OpenSettingsFile",
+      "\\ s p": "zed::OpenProjectSettings",
+      "\\ s k": "zed::OpenKeymapFile",
+      "\\ s t": "zed::OpenTasks",
+      "\\ s t p": "zed::OpenProjectTasks",
+      "\\ s e": "zed::Extensions",
+
+      // buffer
+      "\\ b h": [
+        "workspace::MoveItemToPaneInDirection",
+        {
+          "direction": "left",
+        },
+      ],
+      "\\ b l": [
+        "workspace::MoveItemToPaneInDirection",
+        {
+          "direction": "right",
+        },
+      ],
+    },
+  },
+  {
+    "context": "Editor && vim_mode == insert && !menu",
+    "bindings": {
+      // "j k": "vim::SwitchToNormalMode"
+    },
+  },
+  // {
+  //   // DOES NOT WORK RELIABLY - magit style keybinidng for diffs
+  //   "context": "GitDiff",
+  //   "bindings": {
+  //     //     // Magit: s → stage current thing and go to next
+  //     "s": "git::StageAndNext",
+  //     //     // Magit: u → unstage current thing and go to next
+  //     "u": "git::UnstageAndNext",
+  //     //     // Magit: k → discard
+  //     "x": "git::Restore",
+  //     //     // Magit: TAB → fold/toggle hunk
+  //     "tab": "editor::ToggleFold",
+  //     //     // Magit: n/p → move between hunks
+  //     // "n": "editor::GoToHunk"
+  //     // "p": "editor::goToPreviousHunk"
+  //     //     // Magit: c c → commit
+  //     "c c": "git::Commit",
+  //     "c a": "git::Amend"
+  //   }
+  // },
+  {
+    "context": "Editor && VimControl",
+    "bindings": {
+      // spawn test tasks - overwritten in local task config with actual test commands
+      "\\ t e c": [
+        "task::Spawn",
+        {
+          "task_name": "project:test:cursor",
+        },
+      ],
+      "\\ t e f": [
+        "task::Spawn",
+        {
+          "task_name": "project:test:file",
+        },
+      ],
+      "\\ t e e": [
+        "task::Spawn",
+        {
+          "task_name": "project:test:all",
+        },
+      ],
+
+      // refactor
+      "\\ r r": "editor::Rename", // Rename Symbol from CsCode
+      // file
+      "\\ f c": "workspace::CopyRelativePath", // for @ in agents
+      "\\ f o": "outline::Toggle", // inline outline - great in long test files
+      "\\ f d": "editor::ToggleDiagnostics", // toggle diagnostics in file
+      // find word under cursor
+      "\\ f f": [
+        "pane::DeploySearch",
+        {
+          "replace_enabled": false,
+        },
+      ],
+      // more focused search than above
+      "\\ f a": "editor::FindAllReferences",
+      "\\ f e": [
+        "task::Spawn",
+        {
+          "task_name": "text_finder",
+        },
+      ],
+      "\\ e k": "editor::Hover",
+    },
+  },
+  {
+    "context": "(VimControl && !menu)",
+    "bindings": {
+      "\\ g": "editor::OpenExcerpts", // in multibuffer jump to file
+      "\\ g n": "editor::GoToHunk", // TODO: make this work for next match in multibuffer and next git change
+      "\\ g p": "editor::GoToPreviousHunk",
+      "\\ g b": "git::Blame",
+      "\\ g e": "editor::ExpandAllDiffHunks",
+      "\\ g c": "editor::CollapseAllDiffHunks",
+    },
+  },
+  {
+    "context": "(Editor && mode == full)",
+    "bindings": {
+      // search for word under cursor in current file
+      "\\ f b": [
+        "buffer_search::Deploy",
+        {
+          "selection_search_enabled": true,
+        },
+      ],
+    },
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "\\ t c": "workspace::ToggleCenteredLayout",
+    },
+  },
+  {
+    "bindings": {
+      // search recently open files
+      "\\ b b": "tab_switcher::ToggleAll",
+    },
+  },
+  {
+    "bindings": {
+      // because all of this is not like stable stable
+      "\\ l r": "editor::RestartLanguageServer",
+      "\\ tab": "pane::AlternateFile",
+    },
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "/": "project_panel::NewSearchInDirectory",
+      "a": "project_panel::NewFile",
+      "r": "project_panel::Rename",
+      "d": "project_panel::Delete",
+    },
+  },
+  {
+    "context": "(Editor && multibuffer)",
+    "bindings": {
+      "\\ m n": "editor::MoveToStartOfNextExcerpt",
+      "\\ m p": "editor::MoveToEndOfPreviousExcerpt",
+    },
+  },
+  {
+    "bindings": {
+      "\\ g f": "git::FileHistory",
+    },
+  },
+]

@@ -1,0 +1,112 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette
+{
+  "ssh_connections": [
+    {
+      "host": "box.lan",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/Users/floriandietrich/hosting"
+          ]
+        },
+        {
+          "paths": [
+            "/Users/floriandietrich/icloud/_inbox/_scripts"
+          ]
+        }
+      ]
+    }
+  ],
+  "edit_predictions": {
+    "mode": "subtle",
+  },
+  "project_panel": {
+    "starts_open": false,
+  },
+  "git": {
+    "git_gutter": "tracked_files",
+    "inline_blame": {
+      "enabled": false,
+    },
+  },
+  "agent": {
+    "default_profile": "write",
+    "always_allow_tool_actions": true,
+    "default_model": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5-latest",
+    },
+    "model_parameters": [],
+  },
+  "relative_line_numbers": "disabled",
+  // open file from multibuffer when clicking on it
+  "double_click_in_multibuffer": "open",
+  "autosave": "on_focus_change",
+  "buffer_line_height": "comfortable",
+  "ui_font_size": 16,
+  "buffer_font_size": 14.0,
+  "buffer_font_family": "MonoLisa",
+  "base_keymap": "VSCode",
+  "vim_mode": true,
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "Noctis Azureus",
+  },
+  // rainbow indents
+  "indent_guides": {
+    "enabled": true,
+    "coloring": "indent_aware",
+  },
+  "minimap": {
+    "show": "always",
+  },
+  "language_servers": [
+    // disable built-in eslint when using biome
+    "!eslint",
+    // disable built-in prettier when using biome
+    "!prettier",
+    // vtsls considered superior had problems with `baseUrl` in tsconfig with this
+    "!typescript-language-server",
+    "!expert",
+    "...",
+  ],
+  "terminal": {
+    "font_family": "MesloLGMDZ Nerd Font Mono",
+    "line_height": "standard",
+    "dock": "right",
+    "working_directory": "current_project_directory",
+  },
+  "seed_search_query_from_cursor": "always",
+  "auto_install_extensions": {
+    "tokyo-night": true,
+    "noctis-port": true,
+    "html": true,
+    "toml": true,
+    "sql": true,
+    "make": true,
+    "elixir": true,
+    "biome": true,
+    "graphql": true,
+    "comment": true,
+    "dockerfile": true,
+    "codebook": true,
+    "svelte": true,
+    "oxc": true,
+  },
+  "diagnostics": {
+    // code lens
+    "inline": {
+      "enabled": true,
+      "max_severity": "warning", // all
+    },
+  },
+}
