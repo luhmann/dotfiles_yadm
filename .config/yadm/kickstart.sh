@@ -36,12 +36,16 @@ fi
 if ! command -v brew &>/dev/null; then
     step "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
 
-    if [[ -f /opt/homebrew/bin/brew ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -f /usr/local/bin/brew ]]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
+# Always ensure brew is in PATH (covers fresh install, partial re-runs,
+# and cases where brew is installed but not yet in this shell's PATH).
+# No need to follow Homebrew's suggestion to modify .zprofile — yadm
+# already manages that file.
+if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
 fi
 
 # ---------------------------------------------------------------------------
