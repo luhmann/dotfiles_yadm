@@ -3,7 +3,7 @@
 [user]
 	email = luhmann@users.noreply.github.com
 	name = Jan Florian Dietrich
-  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+WCtF9rB+ZYclQ9nDilbhhGYtmPbmUJxws2vzMxXHO
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+WCtF9rB+ZYclQ9nDilbhhGYtmPbmUJxws2vzMxXHO
 
 [credential]
 	helper = osxkeychain
@@ -116,10 +116,24 @@
 [url "ssh://git@umg-github/umg/"]
   insteadOf = git@github.com:umg/
 
+[url "git@github.com-personal:luhmann/"]
+  insteadOf = git@github.com:luhmann/
+  insteadOf = https://github.com/luhmann/
+
 [includeIf "gitdir:/Users/jfd/dev/dg/"]
   path = /Users/jfd/dev/dg/.gitconfig
+
+[includeIf "gitdir:/Users/fldietrich/dev/jf/"]
+  path = /Users/fldietrich/dev/jf/.gitconfig
+
+[includeIf "gitdir:/Users/fldietrich/dev/z/"]
+  path = /Users/fldietrich/dev/z/.gitconfig
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true
