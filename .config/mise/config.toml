@@ -5,6 +5,8 @@ OPENROUTER_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.
 JIRA_API_TOKEN = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s jira-api-token -w')}}"
 ANTHROPIC_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s anthropic-api-key -w')}}"
 BRAVE_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s brave-api-key -w')}}"
+EXA_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s exa-api-key -w')}}"
+GITHUB_TOKEN = "{{exec(command='gh auth token')}}"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
@@ -16,3 +18,4 @@ node = "24"
 python = "latest"
 rust = "latest"
 "npm:@mariozechner/pi-coding-agent" = "latest"
+maven = "latest"
