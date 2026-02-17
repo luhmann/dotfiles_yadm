@@ -6,9 +6,9 @@ description: Create and update personal documentation. Use when the user asks to
 ## Mandatory conventions
 
 1. Write documentation in **Org mode**.
-2. Store documentation in `~/Documents/org/z`.
+2. Store documentation in `~/icloud/org`.
    - If the user asks to "org-doc as research", store in
-     `~/Documents/org/z/_research`.
+     `~/icloud/org/_research`.
 3. If a diagram is requested, use **D2**.
 4. If code snippets are useful, include them.
 5. When including snippets, use **org-transclusion** with narrow line ranges.
