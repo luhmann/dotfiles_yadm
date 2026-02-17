@@ -5,69 +5,9 @@
   },
   "includeCoAuthoredBy": false,
   "permissions": {
-    "ask": [
-      "WebFetch",
-      "Bash(curl *)",
-      "Bash(wget *)",
-      "Bash(http *)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Bash(rsync *)",
-      "Bash(nc *)",
-      "Bash(ncat *)",
-      "Bash(telnet *)",
-      "Bash(open *)",
-      "Bash(rm *)",
-      "Bash(rm -*)",
-      "Bash(rmdir *)",
-      "Bash(unlink *)",
-      "Bash(trash *)",
-      "Bash(shred *)",
-      "Bash(bash -c *)",
-      "Bash(sh -c *)",
-      "Bash(git clean *)"
-    ],
-    "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "WebSearch",
-      "mcp__sequential-thinking__sequentialthinking",
-      "Bash(git *)",
-      "Bash(gh *)",
-      "Bash(go *)",
-      "Bash(gofmt *)",
-      "Bash(npm *)",
-      "Bash(pnpm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
-      "Bash(bun *)",
-      "Bash(make *)",
-      "Bash(docker *)",
-      "Bash(yadm *)",
-      "Bash(sqlite3 *)",
-      "Bash(jq *)",
-      "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(wc *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(sort *)",
-      "Bash(uniq *)",
-      "Bash(diff *)",
-      "Bash(mkdir *)",
-      "Bash(cp *)",
-      "Bash(mv *)",
-      "Bash(chmod *)",
-      "Bash(which *)",
-      "Bash(echo *)",
-      "Bash(printf *)",
-      "Bash(find *)",
-      "Bash(grep *)",
-      "Bash(pwd)",
-      "Bash(env)"
-    ],
+    "allow": [],
     "deny": [],
+    "ask": [],
     "defaultMode": "default"
   },
   "hooks": {},
@@ -75,12 +15,47 @@
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline --theme=tokyo-night"
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "kotlin-lsp@claude-plugins-official": true
   },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [
+      "docker",
+      "docker-compose",
+      "podman",
+      "open",
+      "ssh",
+      "scp"
+    ],
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.github.com",
+        "*.githubusercontent.com",
+        "proxy.golang.org",
+        "sum.golang.org",
+        "storage.googleapis.com",
+        "registry.npmjs.org",
+        "*.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org",
+        "crates.io",
+        "static.crates.io",
+        "dl.google.com",
+        "formulae.brew.sh"
+      ]
+    }
+  },
   "effortLevel": "medium",
-  "preferredNotifChannel": "terminal_bell"
+  "skipDangerousModePermissionPrompt": true
 }
