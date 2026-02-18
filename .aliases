@@ -158,7 +158,7 @@ alias cac='tmux attach-session -t agent-claude'
 alias cap='tmux attach-session -t agent-pi'
 
 # Claude Code autonomous mode (sandboxed)
-alias cy='claude --dangerously-skip-permissions'
+alias zc='claude --dangerously-skip-permissions'
 
 # ============================================================================
 # Complex functions have been moved to ~/.config/zsh/functions/
