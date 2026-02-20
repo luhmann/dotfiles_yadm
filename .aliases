@@ -164,26 +164,28 @@ alias zc='claude --dangerously-skip-permissions'
 alias mi='mise upgrade --interactive'
 alias mu='mise upgrade'
 
-# Yadm interactive add (fzf-powered, similar to forgit's ga)
+# Yadm interactive add (same UX as forgit's ga)
 ya() {
-  local files=()
-  while IFS='' read -r file; do
-    [[ -n "$file" ]] && files+=("$file")
-  done < <(yadm -c core.quotePath=false -c status.relativePaths=false status -s \
-    | fzf -m --nth 2..,.. \
-        --preview 'echo {} | sed "s/^...//" | xargs -I{} yadm diff --color=always -- "$HOME/{}" 2>/dev/null || echo "new/deleted file"' \
-        --preview-window right:60% \
-    | sed 's/^...//')
-  if [[ ${#files[@]} -gt 0 ]]; then
-    local full_paths=()
-    for f in "${files[@]}"; do
-      full_paths+=("$HOME/$f")
-    done
-    yadm add "${full_paths[@]}" && yadm status -s
-  else
-    echo 'Nothing to add.'
+  local forgit_bin yadm_repo yadm_worktree
+
+  forgit_bin=$(command -v git-forgit 2>/dev/null)
+  if [[ -z "$forgit_bin" && -x "$HOME/.local/share/zinit/plugins/wfxr---forgit/bin/git-forgit" ]]; then
+    forgit_bin="$HOME/.local/share/zinit/plugins/wfxr---forgit/bin/git-forgit"
   fi
+  if [[ -z "$forgit_bin" ]]; then
+    echo "git-forgit not found. Install/enable forgit first."
+    return 1
+  fi
+
+  yadm_repo=$(yadm introspect repo 2>/dev/null)
+  yadm_worktree=$(yadm config core.worktree 2>/dev/null)
+  [[ -z "$yadm_worktree" ]] && yadm_worktree="$HOME"
+
+  GIT_DIR="$yadm_repo" GIT_WORK_TREE="$yadm_worktree" "$forgit_bin" add "$@"
 }
+
+# Uppercase variant to mirror GA naming style
+alias YA='ya'
 
 # ============================================================================
 # Complex functions have been moved to ~/.config/zsh/functions/

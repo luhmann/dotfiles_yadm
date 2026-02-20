@@ -6,7 +6,7 @@ JIRA_API_TOKEN = "{{exec(command='security find-generic-password -a ' ~ env.USER
 ANTHROPIC_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s anthropic-api-key -w')}}"
 BRAVE_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s brave-api-key -w')}}"
 EXA_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s exa-api-key -w')}}"
-GITHUB_TOKEN = "{{exec(command='gh auth token')}}"
+# GITHUB_TOKEN = "{{exec(command='gh auth token')}}"
 _.path = ["~/.bun/bin"]
 
 [settings]
@@ -16,7 +16,7 @@ npm.bun = true
 [tools]
 bun = "latest"
 go = "latest"
-java = "temurin-17"
+java = "21"
 node = "24"
 python = "latest"
 rust = "latest"

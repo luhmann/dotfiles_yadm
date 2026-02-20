@@ -3,7 +3,7 @@
 [user]
 	email = luhmann@users.noreply.github.com
 	name = Jan Florian Dietrich
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+WCtF9rB+ZYclQ9nDilbhhGYtmPbmUJxws2vzMxXHO
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMKa/5i+bK82snBt5dpU0qLNrR9Rqywc6z6YUFjT/R0N florian.dietrich.external@zalando.de
 
 [credential]
 	helper = osxkeychain

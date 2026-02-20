@@ -3,6 +3,10 @@
   "env": {
     "DISABLE_BUG_COMMAND": "1"
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [],
@@ -10,14 +14,21 @@
     "ask": [],
     "defaultMode": "default"
   },
-  "hooks": {},
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\a'"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline --theme=tokyo-night"
-  },
-  "attribution": {
-    "commit": "",
-    "pr": ""
   },
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
@@ -29,14 +40,6 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
-    "excludedCommands": [
-      "docker",
-      "docker-compose",
-      "podman",
-      "open",
-      "ssh",
-      "scp"
-    ],
     "network": {
       "allowedDomains": [
         "github.com",
@@ -54,8 +57,16 @@
         "dl.google.com",
         "formulae.brew.sh"
       ]
-    }
+    },
+    "excludedCommands": [
+      "docker",
+      "docker-compose",
+      "podman",
+      "open",
+      "ssh",
+      "scp"
+    ]
   },
-  "effortLevel": "medium",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "medium"
 }

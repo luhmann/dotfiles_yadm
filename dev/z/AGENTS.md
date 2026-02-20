@@ -1,4 +1,4 @@
-- personal (jfs) documentation is stored in `~/Documents/org/z`, if asked to update docs look for org files named in this manner there
+- emit file references as markdown links with file:// URLs, e.g. [packages/ai/src/foo.ts](file:///Users/fldietrich/dev/jf/pi-mono/packages/ai/src/foo.ts).
 
 ## Nakadi CLI
 
