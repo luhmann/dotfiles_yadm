@@ -160,6 +160,10 @@ alias cap='tmux attach-session -t agent-pi'
 # Claude Code autonomous mode (sandboxed)
 alias zc='claude --dangerously-skip-permissions'
 
+# Mise shortcuts
+alias mi='mise upgrade --interactive'
+alias mu='mise upgrade'
+
 # ============================================================================
 # Complex functions have been moved to ~/.config/zsh/functions/
 #
