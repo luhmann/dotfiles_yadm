@@ -164,6 +164,28 @@ alias zc='claude --dangerously-skip-permissions'
 alias mi='mise upgrade --interactive'
 alias mu='mise upgrade'
 
+# Yadm interactive add (fzf-powered, similar to forgit's ga)
+ya() {
+  local changed untracked files
+  changed=$(yadm config --get-color color.status.changed red)
+  untracked=$(yadm config --get-color color.status.untracked red)
+  files=()
+  while IFS='' read -r file; do
+    [[ -n "$file" ]] && files+=("$file")
+  done < <(yadm -c color.status=always -c core.quotePath=false status -s \
+    | grep -F -e "$changed" -e "$untracked" \
+    | sed -E 's/^(..[^[:space:]]*)[[:space:]]+(.*)$/[\1]  \2/' \
+    | fzf -m --nth 2..,.. --ansi \
+        --preview 'echo {} | sed "s/\[.*\]  //" | xargs -I{} yadm diff --color=always -- {}' \
+        --preview-window right:60% \
+    | sed 's/\[.*\]  //')
+  if [[ ${#files[@]} -gt 0 ]]; then
+    yadm add "${files[@]}" && yadm status -s
+  else
+    echo 'Nothing to add.'
+  fi
+}
+
 # ============================================================================
 # Complex functions have been moved to ~/.config/zsh/functions/
 #
