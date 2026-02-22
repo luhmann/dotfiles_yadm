@@ -173,6 +173,9 @@ defaults write com.apple.dock show-process-indicators -bool true
 # Wipe all default app icons from the Dock
 defaults write com.apple.dock persistent-apps -array
 
+# Show only running applications (no pinned or suggested apps)
+defaults write com.apple.dock static-only -bool true
+
 # Don't animate opening applications
 defaults write com.apple.dock launchanim -bool false
 
@@ -250,7 +253,11 @@ defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 # Restart affected services                                                   #
 ###############################################################################
 
-for app in "cfprefsd" "Dock" "Finder" "SystemUIServer"; do
+# Flush preferences cache so apps pick up the new values
+killall cfprefsd &>/dev/null || true
+sleep 1
+
+for app in "Dock" "Finder" "SystemUIServer"; do
 	killall "${app}" &>/dev/null || true
 done
 
