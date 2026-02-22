@@ -4,7 +4,7 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/luhmann/dotfiles_yadm/main/.config/yadm/kickstart.sh | bash
 #
-# Flags are passed through to yadm bootstrap:
+# Flags are forwarded to yadm bootstrap via environment variables:
 #
 #   curl -fsSL ... | bash -s -- --all --personal
 #
@@ -19,6 +19,14 @@ step() {
     echo ""
     echo "${GREEN}${BOLD}==> $1${RESET}"
 }
+
+# ---------------------------------------------------------------------------
+# Re-attach stdin to the terminal so interactive prompts (sudo, etc.) work
+# even when this script is piped through curl.
+# ---------------------------------------------------------------------------
+if [[ ! -t 0 ]]; then
+    exec < /dev/tty
+fi
 
 # ---------------------------------------------------------------------------
 # 1. Xcode Command Line Tools
@@ -67,5 +75,14 @@ fi
 # ---------------------------------------------------------------------------
 # 5. Run bootstrap
 # ---------------------------------------------------------------------------
+# yadm does not forward CLI args to the bootstrap script, so we pass them
+# as environment variables instead.
+for arg in "$@"; do
+    case "$arg" in
+        --all)      export YADM_BOOTSTRAP_ALL=true ;;
+        --personal) export YADM_BOOTSTRAP_PERSONAL=true ;;
+    esac
+done
+
 step "Running yadm bootstrap..."
-yadm bootstrap "$@"
+yadm bootstrap

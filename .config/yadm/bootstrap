@@ -3,17 +3,26 @@
 # yadm bootstrap - sets up a fresh macOS machine
 #
 # Usage:
-#   yadm bootstrap              # interactive menu (dev packages only)
-#   yadm bootstrap --all        # run all sections (unattended, dev only)
-#   yadm bootstrap --personal   # include personal apps in brew bundle
+#   yadm bootstrap                   # interactive menu (dev packages only)
+#   yadm bootstrap --all             # run all sections (unattended, dev only)
+#   yadm bootstrap --all --personal  # run all sections + personal apps
+#   yadm bootstrap --personal        # interactive menu with personal apps enabled
+#
+# Note: yadm does not forward CLI arguments to the bootstrap script.
+# Flags are passed via environment variables instead:
+#   YADM_BOOTSTRAP_ALL=1 YADM_BOOTSTRAP_PERSONAL=1 yadm bootstrap
 #
 
 set -euo pipefail
 
-INSTALL_PERSONAL=false
+INSTALL_PERSONAL="${YADM_BOOTSTRAP_PERSONAL:-false}"
+RUN_ALL="${YADM_BOOTSTRAP_ALL:-false}"
+
+# Also support direct invocation with flags (e.g. ~/.config/yadm/bootstrap --all)
 for arg in "$@"; do
     case "$arg" in
         --personal) INSTALL_PERSONAL=true ;;
+        --all)      RUN_ALL=true ;;
     esac
 done
 
@@ -279,6 +288,10 @@ setup_brew_bundle() {
         return 1
     fi
 
+    # Pre-authenticate sudo and keep it alive — cask installs write to /Applications
+    sudo -v
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
     local brewfile_dev="$HOME/Brewfile.dev"
     local brewfile_personal="$HOME/Brewfile.personal"
 
@@ -372,8 +385,24 @@ setup_api_keys() {
         return 0
     fi
 
+    # Check if 1Password CLI integration works (requires Developer mode)
     if ! op vault list &>/dev/null 2>&1; then
-        warn "1Password is locked. Unlock and retry. (eval \$(op signin))"
+        echo ""
+        echo "${YELLOW}${BOLD}1Password CLI requires Developer Settings to be enabled:${RESET}"
+        echo "  1. Open ${BOLD}Settings > Privacy & Security > Developer Mode${RESET} and enable it"
+        echo "  2. Open ${BOLD}1Password > Settings > Developer${RESET} and enable:"
+        echo "     - \"Integrate with 1Password CLI\""
+        echo "     - \"Connect with 1Password CLI\""
+        echo ""
+        read -rp "Press Enter once enabled (or 's' to skip): " answer
+        if [[ "$answer" == "s" ]]; then
+            skip "Skipping API key sync."
+            return 0
+        fi
+    fi
+
+    if ! op vault list &>/dev/null 2>&1; then
+        warn "1Password is still not accessible. Skipping API key sync."
         return 0
     fi
 
@@ -404,20 +433,30 @@ setup_api_keys() {
 # Section 10: Disable Spotlight shortcut (for Raycast)
 # ---------------------------------------------------------------------------
 setup_spotlight() {
-    header "Disabling Spotlight shortcut (for Raycast)..."
+    header "Disabling Spotlight shortcuts (for Raycast)..."
 
     local plist="$HOME/Library/Preferences/com.apple.symbolichotkeys.plist"
 
-    if [[ ! -f "$plist" ]]; then
-        warn "Plist file not found at $plist. Skipping."
-        return 0
-    fi
+    # Key 64 = Cmd+Space (Spotlight search)
+    # Key 65 = Cmd+Option+Space (Finder search window)
+    local keys=(64 65)
+    local changed=false
 
-    if /usr/libexec/PlistBuddy "$plist" \
-        -c "Set AppleSymbolicHotKeys:64:enabled false" 2>/dev/null; then
-        ok "Spotlight shortcut disabled."
+    for key in "${keys[@]}"; do
+        # Create the key structure if it doesn't exist, then disable
+        /usr/libexec/PlistBuddy "$plist" \
+            -c "Add AppleSymbolicHotKeys:${key}:enabled bool false" 2>/dev/null \
+        || /usr/libexec/PlistBuddy "$plist" \
+            -c "Set AppleSymbolicHotKeys:${key}:enabled false" 2>/dev/null \
+        && changed=true
+    done
+
+    if [[ "$changed" == true ]]; then
+        # Activate the changes without requiring logout
+        /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+        ok "Spotlight shortcuts disabled (keys 64, 65)."
     else
-        warn "Could not disable Spotlight shortcut (may already be disabled or key path differs)."
+        warn "Could not disable Spotlight shortcuts."
     fi
 }
 
@@ -439,9 +478,82 @@ setup_macos_defaults() {
 }
 
 # ---------------------------------------------------------------------------
+# Section 12: Install tool versions via mise
+# ---------------------------------------------------------------------------
+setup_mise() {
+    header "Installing tool versions via mise..."
+
+    if ! command -v mise &>/dev/null; then
+        warn "mise not found. Install it first (e.g. via brew bundle)."
+        return 0
+    fi
+
+    mise install --yes
+    ok "mise tool versions installed."
+}
+
+# ---------------------------------------------------------------------------
+# Section 13: Enable Remote Login (SSH), File Sharing (SMB), Remote Management (ARD)
+# ---------------------------------------------------------------------------
+setup_sharing() {
+    header "Enabling Remote Login, File Sharing, and Remote Management..."
+
+    echo ""
+    echo "${YELLOW}${BOLD}Your terminal app needs Full Disk Access for this step:${RESET}"
+    echo "  System Settings > Privacy & Security > Full Disk Access"
+    echo "  Add your terminal app (e.g. Ghostty, Terminal, iTerm2) and restart it."
+    echo ""
+    read -rp "Press Enter once granted (or 's' to skip): " answer
+    if [[ "$answer" == "s" ]]; then
+        skip "Skipping sharing setup."
+        return 0
+    fi
+
+    sudo -v
+
+    # Remote Login (SSH)
+    if sudo systemsetup -getremotelogin 2>/dev/null | grep -q "On"; then
+        skip "Remote Login already enabled."
+    else
+        if sudo systemsetup -setremotelogin on 2>&1; then
+            ok "Remote Login (SSH) enabled."
+        else
+            warn "Failed to enable Remote Login. Ensure Full Disk Access is granted."
+        fi
+    fi
+
+    # File Sharing (SMB)
+    if launchctl list 2>/dev/null | grep -q "com.apple.smbd"; then
+        skip "File Sharing already enabled."
+    else
+        sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.smbd.plist
+        ok "File Sharing (SMB) enabled."
+    fi
+
+    # Remote Management (ARD)
+    local ard_kickstart="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart"
+    if [[ ! -x "$ard_kickstart" ]]; then
+        warn "ARD kickstart tool not found. Skipping Remote Management."
+    elif sudo "$ard_kickstart" -checkstatus 2>&1 | grep -q "activated"; then
+        skip "Remote Management already enabled."
+    else
+        sudo "$ard_kickstart" -activate -configure -access -on -restart -agent -privs -all
+        ok "Remote Management (ARD) enabled for all users."
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # --all mode: run everything in order
 # ---------------------------------------------------------------------------
-if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
+if [[ "$RUN_ALL" == true ]]; then
+    echo ""
+    echo "${BOLD}yadm bootstrap --all${RESET}"
+    if [[ "$INSTALL_PERSONAL" == true ]]; then
+        echo "==============${YELLOW} [+personal]${RESET}"
+    else
+        echo "==============${YELLOW} [dev only]${RESET}"
+    fi
+    echo ""
     setup_ssh
     setup_xcode_cli
     setup_dev_dir
@@ -453,6 +565,7 @@ if [[ " $* " == *" --all "* ]] || [[ "${1:-}" == "--all" ]]; then
     setup_api_keys
     setup_spotlight
     setup_macos_defaults
+    setup_mise
     echo ""
     echo "${GREEN}${BOLD}Done!${RESET}"
     exit 0
@@ -480,7 +593,9 @@ while true; do
     echo "  9) Sync API keys from 1Password"
     echo " 10) Disable Spotlight shortcut (for Raycast)"
     echo " 11) Apply macOS defaults"
-    echo "  a) Run all"
+    echo " 12) Install tool versions (mise)"
+    echo " 13) Enable Remote Login + File Sharing + Remote Management"
+    echo "  a) Run all (excludes 13)"
     echo "  q) Quit"
     echo ""
     read -rp "Choose: " choice
@@ -496,6 +611,8 @@ while true; do
         9) setup_api_keys ;;
         10) setup_spotlight ;;
         11) setup_macos_defaults ;;
+        12) setup_mise ;;
+        13) setup_sharing ;;
         a)
             setup_ssh
             setup_xcode_cli
@@ -508,6 +625,7 @@ while true; do
             setup_api_keys
             setup_spotlight
             setup_macos_defaults
+            setup_mise
             echo ""
             echo "${GREEN}${BOLD}Done!${RESET}"
             ;;
