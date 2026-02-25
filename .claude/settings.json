@@ -9,7 +9,7 @@
   },
   "includeCoAuthoredBy": false,
   "permissions": {
-    "allow": [],
+    "allow": ["WebSearch"],
     "deny": [],
     "ask": [],
     "defaultMode": "default"
@@ -67,6 +67,5 @@
       "scp"
     ]
   },
-  "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "medium"
+  "skipDangerousModePermissionPrompt": true
 }

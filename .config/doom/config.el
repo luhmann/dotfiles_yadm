@@ -204,5 +204,97 @@
   (require 'ox-gist)
   (map! :map org-mode-map
         :localleader
-        (:prefix ("e" . "export")
-         "g" #'org-gist-export-to-gist)))
+        :desc "Export to Gist" "G" #'org-gist-export-to-gist))
+
+(after! ox-odt
+  ;; Reduce accidental markup interpretation. Require braces for
+  ;; sub/superscripts, e.g. H_{2}O instead of H_2O.
+  (setq org-use-sub-superscripts '{}
+        org-export-with-sub-superscripts '{}
+        org-export-with-section-numbers nil
+        org-export-with-toc nil))
+
+(after! ox-odt
+  ;; To keep body text sans-serif, create ~/icloud/odt/sans-body.ott in
+  ;; LibreOffice with default paragraph + heading styles set to a sans font.
+  (let ((my/odt-sans-template (expand-file-name "sans-body.ott" "~/icloud/odt/")))
+    (if (file-readable-p my/odt-sans-template)
+        (setq org-odt-styles-file my/odt-sans-template)
+      (message "ODT sans template missing: %s" my/odt-sans-template)))
+
+  (defconst my/org-odt-export-dir
+    (expand-file-name "~/icloud/odt/")
+    "Default target directory for ODT exports.")
+
+  (defun my/org-odt-export-to-target
+      (&optional async subtreep visible-only body-only ext-plist)
+    (interactive)
+    (when body-only
+      (message "ODT export ignores body-only; exporting full document"))
+    (when async
+      (user-error "Target-directory ODT export currently supports sync only"))
+    (let* ((dir (file-name-as-directory my/org-odt-export-dir))
+           (_ (make-directory dir t))
+           ;; Use org-odt-export-to-odt (not org-export-to-file 'odt),
+           ;; because ODT export needs its internal zip workdir setup.
+           (generated (org-odt-export-to-odt nil subtreep visible-only ext-plist))
+           (target (expand-file-name (file-name-nondirectory generated) dir)))
+      (unless (file-equal-p generated target)
+        (rename-file generated target t)
+        (message "Moved ODT export to %s" target))
+      target))
+
+  ;; Add item to existing ODT submenu (C-c C-e o ...) without mutating
+  ;; internal backend structs.
+  (unless (org-export-get-backend 'my-odt-target-menu)
+    (org-export-define-derived-backend 'my-odt-target-menu 'odt
+      :menu-entry
+      '(?o 90
+           ((?T "To icloud/odt target directory"
+                my/org-odt-export-to-target))))))
+
+;; File-path yanking shortcuts.
+(defun my/current-buffer-path ()
+  (or (buffer-file-name (buffer-base-buffer))
+      (bound-and-true-p list-buffers-directory)
+      (user-error "Current buffer is not visiting a file")))
+
+(defun my/copy-to-clipboard (text)
+  (kill-new text)
+  ;; Keep macOS terminal sessions in sync with the system clipboard.
+  (when (and (eq system-type 'darwin)
+             (not (display-graphic-p))
+             (executable-find "pbcopy"))
+    (with-temp-buffer
+      (insert text)
+      (call-process-region (point-min) (point-max) "pbcopy")))
+  text)
+
+(defun my/copy-buffer-path-absolute ()
+  (interactive)
+  (let ((path (expand-file-name (my/current-buffer-path))))
+    (my/copy-to-clipboard path)
+    (message "Copied absolute path: %s" path)))
+
+(defun my/copy-buffer-path-relative ()
+  (interactive)
+  (let* ((path (expand-file-name (my/current-buffer-path)))
+         (root (or (doom-project-root)
+                   default-directory
+                   (file-name-directory path)))
+         (relative-path (file-relative-name path root)))
+    (my/copy-to-clipboard relative-path)
+    (message "Copied relative path: %s" relative-path)))
+
+;; File copy shortcuts under `SPC f c`.
+;; Reclaim `SPC f c` from Doom's default editorconfig binding first.
+(map! :leader
+      (:prefix ("f" . "file")
+       "c" nil))
+
+(map! :leader
+      (:prefix ("f" . "file")
+       (:prefix ("c" . "copy")
+        :desc "Copy absolute file path" "a" #'my/copy-buffer-path-absolute
+        :desc "Copy relative file path" "r" #'my/copy-buffer-path-relative
+        :desc "Open project editorconfig" "e" #'editorconfig-find-current-editorconfig)))

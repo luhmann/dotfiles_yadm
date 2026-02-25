@@ -158,7 +158,15 @@ alias cac='tmux attach-session -t agent-claude'
 alias cap='tmux attach-session -t agent-pi'
 
 # Claude Code autonomous mode (sandboxed)
-alias zc='claude --dangerously-skip-permissions'
+zc() {
+  local tmp=$(mktemp /tmp/claude-settings-XXXXX.json)
+  jq '.sandbox.enabled = true' ~/.claude/settings.json > "$tmp"
+  claude --dangerously-skip-permissions --settings "$tmp" "$@"
+  rm -f "$tmp"
+}
+
+# Claude Code full yolo mode (no sandbox, no permissions)
+alias zx='claude --dangerously-skip-permissions'
 
 # Mise shortcuts
 alias mi='mise upgrade --interactive'
@@ -203,3 +211,26 @@ alias YA='ya'
 # Use `zf-browse` for interactive search
 # Use `zf-help` for more information
 # ============================================================================
+
+alias zex='for d in ~/dev/z/*/; do [ -d "$d/.git" ] && cp ~/dev/z/.exclude-rules "$d/.git/info/exclude"; done'
+
+# Propagate parent .pi resources (skills, extensions, themes) to child .pi/settings.json
+pis() {
+  local parent_pi="$(pwd)/.pi"
+  if [ ! -d "$parent_pi" ]; then
+    echo "No .pi/ directory in $(pwd)" >&2
+    return 1
+  fi
+  for dir in */; do
+    [ -d "$dir" ] || continue
+    local cpi="$dir.pi" sf="$cpi/settings.json"
+    mkdir -p "$cpi"
+    [ -f "$sf" ] || echo '{}' > "$sf"
+    jq --arg s "$parent_pi/skills" \
+       --arg e "$parent_pi/extensions" \
+       --arg t "$parent_pi/themes" \
+       'def add($a;$p): if ($a|index($p)) then $a else $a+[$p] end;
+        .skills=add(.skills//[];$s) | .extensions=add(.extensions//[];$e) | .themes=add(.themes//[];$t)' \
+       "$sf" > "$sf.tmp" && mv "$sf.tmp" "$sf" && echo "✓ $sf"
+  done
+}
