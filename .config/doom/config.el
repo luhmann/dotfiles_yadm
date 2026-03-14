@@ -298,3 +298,18 @@
         :desc "Copy absolute file path" "a" #'my/copy-buffer-path-absolute
         :desc "Copy relative file path" "r" #'my/copy-buffer-path-relative
         :desc "Open project editorconfig" "e" #'editorconfig-find-current-editorconfig)))
+
+;; Find project file sorted by modification time (newest first).
+(defun my/find-file-by-mtime ()
+  "Find project file sorted by modification time (newest first)."
+  (interactive)
+  (let ((projectile-sort-order 'modification-time))
+    (projectile-find-file)))
+
+(after! vertico-multiform
+  (add-to-list 'vertico-multiform-commands
+               '(my/find-file-by-mtime (vertico-sort-function . identity))))
+
+(map! :leader
+      (:prefix ("f" . "file")
+       :desc "Find file by mtime" "t" #'my/find-file-by-mtime))

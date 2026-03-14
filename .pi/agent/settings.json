@@ -1,15 +1,16 @@
 {
-  "lastChangelogVersion": "0.53.0",
+  "lastChangelogVersion": "0.57.1",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.3-codex",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-6",
   "theme": "tokyo-night-pi",
   "enabledModels": [
-    "anthropic/claude-opus-4-6",
-    "openai-codex/gpt-5.3-codex",
-    "openai-codex/gpt-5.3-codex-spark",
     "github-copilot/gemini-3-pro-preview",
-    "anthropic/claude-sonnet-4-6"
+    "anthropic/claude-sonnet-4-6",
+    "github-copilot/claude-opus-4.6",
+    "github-copilot/claude-sonnet-4.6",
+    "github-copilot/gpt-5.3-codex",
+    "anthropic/claude-opus-4-6"
   ]
 }

@@ -38,8 +38,10 @@
     },
   },
   "agent": {
+    "tool_permissions": {
+      "default": "allow"
+    },
     "default_profile": "write",
-    "always_allow_tool_actions": true,
     "default_model": {
       "provider": "anthropic",
       "model": "claude-sonnet-4-5-latest",
@@ -59,7 +61,7 @@
   "theme": {
     "mode": "dark",
     "light": "One Light",
-    "dark": "Noctis Azureus",
+    "dark": "Kanagawa Wave",
   },
   // rainbow indents
   "indent_guides": {

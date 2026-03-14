@@ -1,0 +1,61 @@
+;;; Local machine overrides — appended after safehouse's generated policy
+;;; Loaded via SAFEHOUSE_APPEND_PROFILE
+
+;;; ~/.config — broad read-only (jira-cli, gh, etc.)
+(allow file-read*
+  (home-subpath "/.config"))
+
+;;; ~/.claude — full r/w for Claude Code state
+(allow file-read* file-write*
+  (home-literal "/.claude")
+  (home-subpath "/.claude"))
+
+;;; ~/dev — r/w across all project repos
+(allow file-read* file-write*
+  (home-literal "/dev")
+  (home-subpath "/dev"))
+
+;;; ~/.opencode — r/w for OpenCode agent data
+(allow file-read* file-write*
+  (home-literal "/.opencode")
+  (home-subpath "/.opencode"))
+
+;;; ~/.pi — r/w for pi agent data
+(allow file-read* file-write*
+  (home-literal "/.pi")
+  (home-subpath "/.pi"))
+
+;;; ~/.config/doom — r/w for Doom Emacs
+(allow file-read* file-write*
+  (home-subpath "/.config/doom"))
+
+;;; superset-query — session state and CSRF token
+(allow file-read* file-write*
+  (home-literal "/.superset-cookies")
+  (home-literal "/.superset-csrf-token"))
+
+;;; ~/.local/bin — read+execute for custom symlinked tools
+(allow file-read* process-exec
+  (home-subpath "/.local/bin"))
+
+;;; ztoken — config and token cache in ~/Library/Application Support
+(allow file-read* file-write*
+  (home-literal "/Library/Application Support")
+  (home-literal "/Library/Application Support/zalando-token-cli")
+  (home-subpath "/Library/Application Support/zalando-token-cli"))
+
+;;; ~/.gitconfig — read-only for git configuration
+;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
+(allow file-read*
+  (home-literal "/.gitconfig")
+  (home-literal "/.testcontainers.properties"))
+
+;;; OrbStack — read+execute for docker/kubectl binaries
+(allow file-read* process-exec
+  (home-subpath "/.orbstack")
+  (subpath "/Applications/OrbStack.app/Contents/MacOS/xbin"))
+
+;;; SSH public keys — needed by IdentityFile directives for 1Password agent matching
+(allow file-read*
+  (home-literal "/.ssh/id_zalando.pub")
+  (home-literal "/.ssh/id_personal.pub"))

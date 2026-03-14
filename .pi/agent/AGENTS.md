@@ -1,11 +1,4 @@
-# Global Development Guidelines
-
-## Philosophy
-- Be critical, be wise, be elegant, ask questions when you are unsure.
-
-## TypeScript
-
-- Never use barrel files (index.ts re-exports); import from specific modules directly
+# Pi-Specific Tools
 
 ## Web Research Workflow
 
