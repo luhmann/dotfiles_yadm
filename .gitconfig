@@ -3,7 +3,7 @@
 [user]
 	email = luhmann@users.noreply.github.com
 	name = Jan Florian Dietrich
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMKa/5i+bK82snBt5dpU0qLNrR9Rqywc6z6YUFjT/R0N florian.dietrich.external@zalando.de
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBfwfkx/w8mRkbk4RltRIMtMTfnYIaA2HtUHIL9W01ex jfd@daenen4.de
 
 [credential]
 	helper = osxkeychain
@@ -128,6 +128,9 @@
 
 [includeIf "gitdir:/Users/fldietrich/dev/z/"]
   path = /Users/fldietrich/dev/z/.gitconfig
+
+[includeIf "gitdir:/Users/jfd/dev/z/"]
+  path = /Users/jfd/dev/z/.gitconfig
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f

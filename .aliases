@@ -123,6 +123,9 @@ timezsh() {
 }
 
 # Docker helpers
+alias dcp='docker compose pull'
+alias dcu='docker compose up -d'
+
 build_dockerfile() {
   docker build . -t $1 -f ./Dockerfile
 }
