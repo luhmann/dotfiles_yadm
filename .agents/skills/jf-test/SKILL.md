@@ -9,7 +9,7 @@ A principled methodology for writing high-value tests, based on the framework fr
 
 ## Before You Start
 
-Before writing any test, read `methodology.md` in this skill's directory for the full decision framework. The summary below is your quick-start checklist — the reference file contains the detailed reasoning, examples, and anti-patterns you'll need for non-trivial cases.
+Before writing any test, read `references/methodology.md` in this skill's directory for the full decision framework. The summary below is your quick-start checklist — the reference file contains the detailed reasoning, examples, and anti-patterns you'll need for non-trivial cases.
 
 ## Quick-Start Checklist
 
@@ -119,7 +119,7 @@ After identifying the framework, apply the principles using idiomatic patterns f
 For the complete methodology including detailed reasoning, worked examples, the Humble Object pattern, hexagonal architecture guidance, and the full anti-pattern catalog, read:
 
 ```
-methodology.md
+references/methodology.md
 ```
 
 Always consult the reference when:

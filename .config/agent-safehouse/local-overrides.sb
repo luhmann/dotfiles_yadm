@@ -25,6 +25,15 @@
   (home-literal "/.pi")
   (home-subpath "/.pi"))
 
+;;; ~/.agents — shared agent skills (symlinked from ~/.claude/skills)
+(allow file-read* file-write*
+  (home-literal "/.agents")
+  (home-subpath "/.agents"))
+
+;;; ~/.local/share/yadm — yadm dotfile manager repo
+(allow file-read* file-write*
+  (home-subpath "/.local/share/yadm"))
+
 ;;; ~/.config/doom — r/w for Doom Emacs
 (allow file-read* file-write*
   (home-subpath "/.config/doom"))
