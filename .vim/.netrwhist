@@ -1,3 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =1
+let g:netrw_dirhistcnt =4
+let g:netrw_dirhist_4='/Users/fldietrich/dev/z/sales-order-orchestrator/.git'
+let g:netrw_dirhist_3='/Applications/VoiceInk.app'
+let g:netrw_dirhist_2='/Users/fldietrich/dev/z/.pi'
 let g:netrw_dirhist_1='/Users/jfd/.codex'

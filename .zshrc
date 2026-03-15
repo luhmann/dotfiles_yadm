@@ -258,3 +258,9 @@ claude-recall() {
   done
 }
 export PATH=$PATH:$HOME/.maestro/bin
+
+# Created by `pipx` on 2026-02-16 14:33:34
+export PATH="$PATH:/Users/fldietrich/.local/bin"
+
+# opencode
+export PATH=/Users/fldietrich/.opencode/bin:$PATH
