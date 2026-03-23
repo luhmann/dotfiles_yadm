@@ -34,6 +34,11 @@
 (allow file-read* file-write*
   (home-subpath "/.local/share/yadm"))
 
+;;; ~/.config/gws — r/w for gws token cache and keyring backup
+(allow file-read* file-write*
+  (home-literal "/.config/gws")
+  (home-subpath "/.config/gws"))
+
 ;;; ~/.config/doom — r/w for Doom Emacs
 (allow file-read* file-write*
   (home-subpath "/.config/doom"))
@@ -43,8 +48,8 @@
   (home-literal "/.superset-cookies")
   (home-literal "/.superset-csrf-token"))
 
-;;; ~/.local/bin — read+execute for custom symlinked tools
-(allow file-read* process-exec
+;;; ~/.local/bin — r/w+execute for custom symlinked tools
+(allow file-read* file-write* process-exec
   (home-subpath "/.local/bin"))
 
 ;;; ztoken — config and token cache in ~/Library/Application Support
@@ -63,6 +68,23 @@
 (allow file-read* process-exec
   (home-subpath "/.orbstack")
   (subpath "/Applications/OrbStack.app/Contents/MacOS/xbin"))
+
+;;; ~/icloud → Google Drive symlink; sandbox resolves through it
+;;; Need both the symlink itself and the resolved target path
+(allow file-read* file-write*
+  (home-literal "/icloud")
+  (home-subpath "/icloud")
+  (home-literal "/Library/CloudStorage")
+  (home-literal "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de")
+  (home-literal "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de/My Drive")
+  (home-literal "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de/My Drive/org")
+  (home-subpath "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de/My Drive/org"))
+
+;;; CleanShot — read-only access to screenshot media
+(allow file-read*
+  (home-literal "/Library/Application Support/CleanShot")
+  (home-literal "/Library/Application Support/CleanShot/media")
+  (home-subpath "/Library/Application Support/CleanShot/media"))
 
 ;;; SSH public keys — needed by IdentityFile directives for 1Password agent matching
 (allow file-read*

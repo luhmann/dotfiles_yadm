@@ -6,3 +6,11 @@
   Zalando Nakadi events.
 - Use `nakadi-cli --help` for command and option details.
 - Auth can be provided via `--token`, `NAKADI_TOKEN`, or `ztoken`.
+
+## API Portal CLI
+
+- A global `api-portal` tool is available on PATH for searching and
+  inspecting APIs registered in the Zalando API Portal (apis.zalando.net).
+- Commands: `search`, `info`, `routes`, `endpoints` — use `api-portal --help` for details.
+- All commands support `--json` for machine-readable output.
+- Auth can be provided via `--token`, `ZAPI_TOKEN`, or `ztoken`.

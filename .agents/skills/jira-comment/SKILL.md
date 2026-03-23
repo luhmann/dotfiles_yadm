@@ -80,10 +80,43 @@ h4. Open Items
 
 **You MUST show the full drafted comment to the user and wait for their explicit approval before posting.** Do not post without approval. If the user requests changes, incorporate them and show the revised draft for another round of approval.
 
-Once the user approves, post the comment:
+Once the user approves, post the comment using the **Jira REST API v2 directly** — do NOT use `jira issue comment add` (the `jira-cli` converts wiki markup to Markdown/ADF internally, which mangles headings, links, and formatting).
 
+### Posting via REST API
+
+1. Get the bearer token from the jira-cli config:
 ```bash
-echo '<comment body>' | jira issue comment add <TICKET-ID> --template - --no-input
+TOKEN=$(grep -A0 'pat:' ~/.config/.jira/.config.yml | head -1 | awk '{print $2}')
+```
+If `pat:` is not present, extract it by running `jira issue comment add <TICKET-ID> --debug "probe" 2>&1 | grep 'Authorization: Bearer'` and then delete the "probe" comment.
+
+2. Write the comment body as a JSON file and POST it:
+```bash
+cat <<'BODY' > /tmp/jira-comment.json
+{
+  "body": "<wiki markup with \\n for newlines, quotes escaped as \\\">"
+}
+BODY
+curl -s -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @/tmp/jira-comment.json \
+  "https://jira.zalando.net/rest/api/2/issue/<TICKET-ID>/comment" \
+  | jq '{id, created}'
 ```
 
-Pipe the comment body into stdin via `--template -` and use `--no-input` to skip prompts for optional fields.
+Using the REST API v2 preserves wiki markup exactly as written — headings (`h3.`), links (`[text|url]`), bold, italic, and `{{code}}` all render natively in Jira.
+
+### Deleting a comment (if needed)
+
+```bash
+curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
+  "https://jira.zalando.net/rest/api/2/issue/<TICKET-ID>/comment/<COMMENT-ID>"
+```
+
+To find a comment ID:
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "https://jira.zalando.net/rest/api/2/issue/<TICKET-ID>/comment" \
+  | jq '[.comments[] | {id, author: .author.displayName, created}]'
+```

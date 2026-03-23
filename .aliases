@@ -161,7 +161,7 @@ alias cac='tmux attach-session -t agent-claude'
 alias cap='tmux attach-session -t agent-pi'
 
 # Agent Safehouse — sandboxed CLIs
-alias safehouse='safehouse --enable=docker,shell-init,1password,ssh --env-pass=JIRA_API_TOKEN,BRAVE_API_KEY,EXA_API_KEY --append-profile=~/.config/agent-safehouse/local-overrides.sb'
+alias safehouse='safehouse --enable=docker,shell-init,1password,ssh --env-pass=JIRA_API_TOKEN,BRAVE_API_KEY,EXA_API_KEY,SSL_CERT_FILE --append-profile=~/.config/agent-safehouse/local-overrides.sb'
 alias sc='safehouse claude --dangerously-skip-permissions'
 alias sp='safehouse pi'
 alias so='safehouse opencode'

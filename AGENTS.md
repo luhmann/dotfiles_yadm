@@ -1,9 +1,13 @@
 ## Philosophy
 - Be critical, be wise, be elegant, ask questions when you are unsure.
+- If you are not very sure about an approach offer me several options, each with a confidence on 1 to 10-scale
+
+## Testing
+- **Test observable behavior, not implementation details.** Prefer tests that exercise the public boundary of a feature (e.g., call service → assert on result/DB state/published events) over tests that mock internal collaborators. Tests should break only when behavior changes, not when code is refactored. Isolated tests are warranted for self-contained logic (calculations, parsing, validation) where edge cases are hard to reach through the outer boundary.
 - **Creation tests** should assert the complete resulting data set to catch missing or incorrect defaults. Every asserted value must be explicitly visible in the arrange phase — do not rely on hidden factory defaults for values that appear in assertions.
 - **Focused tests** (updates, single-field mappings, edge cases) should only include the fields relevant to the behaviour under test in both arrange and assert — keep everything else at factory defaults so the test clearly communicates *what* it is checking.
-- make sure each test has visible Arrange, Act, Assert-phases, but DO NOT add comments that say exactly that
-- If you are not very sure about an approach offer me several options, each with a confidence on 1 to 10-scale
+- Make sure each test has visible Arrange, Act, Assert-phases, but DO NOT add comments that say exactly that
+- Follow existing test patterns
 
 ### Core Beliefs
 
@@ -25,7 +29,6 @@
 - Find 3 similar features/components
 - Identify common patterns and conventions
 - Use same libraries/utilities when possible
-- Follow existing test patterns
 
 ### Error Handling
 
@@ -37,6 +40,10 @@
 ## Naming
 
 - Avoid the `Data` suffix on classes — it adds no context since everything is data. Use contextual suffixes that communicate the class's role: `Payload` (event/message body), `Request`, `Response`, `Model`, `Info`, etc.
+
+## Kotlin
+
+- Prefer scope-function pipelines (`.let`, `.also`, `.apply`) over intermediate variables when a function is a linear chain of transformations and side effects. Each step should be a single operation — break the chain if logic branches.
 
 ## TypeScript
 

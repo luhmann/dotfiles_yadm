@@ -14,19 +14,31 @@
       "\\ a c": [
         "agent::NewExternalAgentThread",
         {
-          "agent": "claude_code",
+          "agent": {
+            "custom": {
+              "name": "claude-acp",
+            },
+          },
         },
       ],
       "\\ a o": [
         "agent::NewExternalAgentThread",
         {
-          "agent": "codex",
+          "agent": {
+            "custom": {
+              "name": "codex-acp",
+            },
+          },
         },
       ],
       "\\ a g": [
         "agent::NewExternalAgentThread",
         {
-          "agent": "gemini",
+          "agent": {
+            "custom": {
+              "name": "gemini",
+            },
+          },
         },
       ],
       // needs to be open to use inline agents
