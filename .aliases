@@ -165,6 +165,7 @@ alias safehouse='safehouse --enable=docker,shell-init,1password,ssh --env-pass=J
 alias sc='safehouse claude --dangerously-skip-permissions'
 alias sp='safehouse pi'
 alias so='safehouse opencode'
+alias sx='safehouse codex'
 
 # Claude Code autonomous mode (sandboxed)
 zc() {
@@ -198,7 +199,7 @@ ya() {
   yadm_worktree=$(yadm config core.worktree 2>/dev/null)
   [[ -z "$yadm_worktree" ]] && yadm_worktree="$HOME"
 
-  GIT_DIR="$yadm_repo" GIT_WORK_TREE="$yadm_worktree" "$forgit_bin" add "$@"
+  (cd "$yadm_worktree" && GIT_DIR="$yadm_repo" GIT_WORK_TREE="$yadm_worktree" "$forgit_bin" add "$@")
 }
 
 # Uppercase variant to mirror GA naming style

@@ -1,5 +1,15 @@
 - emit file references as markdown links with file:// URLs, e.g. [packages/ai/src/foo.ts](file:///Users/fldietrich/dev/jf/pi-mono/packages/ai/src/foo.ts).
 
+## Kotlin / Gradle — Final Validation
+
+Before committing changes in any Kotlin/Gradle project, run this sequence **once** at the very end:
+
+```shell
+./gradlew ktlintFormat && ./gradlew check
+```
+
+This auto-fixes formatting first, then runs the full verification suite (tests + coverage + lint + YAML validation). It is time-intensive (~1 min) so do not run it after every small edit — only as the final gate. Any errors must be fixed before committing.
+
 ## Nakadi CLI
 
 - A global `nakadi-cli` tool is available on PATH for investigating

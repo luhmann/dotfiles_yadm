@@ -90,3 +90,24 @@
 (allow file-read*
   (home-literal "/.ssh/id_zalando.pub")
   (home-literal "/.ssh/id_personal.pub"))
+
+;;; Keychain — go-keyring and similar tools in pi/opencode sessions
+;;; (claude-code.sb already injects this; pi.sb and opencode.sb do not)
+(allow mach-lookup
+  (global-name "com.apple.SecurityServer")
+  (global-name "com.apple.security.agent")
+  (global-name "com.apple.securityd.xpc")
+  (global-name "com.apple.security.authhost")
+  (global-name "com.apple.secd")
+  (global-name "com.apple.trustd"))
+(allow file-read* file-write*
+  (home-subpath "/Library/Keychains")
+  (home-literal "/Library/Preferences/com.apple.security.plist"))
+(allow file-read*
+  (literal "/Library/Keychains/System.keychain")
+  (subpath "/private/var/db/mds"))
+(allow file-read-metadata
+  (home-literal "/Library/Keychains")
+  (literal "/Library/Keychains"))
+(allow ipc-posix-shm-read-data ipc-posix-shm-write-create ipc-posix-shm-write-data
+  (ipc-posix-name "com.apple.AppleDatabaseChanged"))
