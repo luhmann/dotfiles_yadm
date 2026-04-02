@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.63.1",
+  "lastChangelogVersion": "0.64.0",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "defaultProvider": "anthropic",
@@ -13,5 +13,22 @@
     "github-copilot/gpt-5.3-codex",
     "anthropic/claude-opus-4-6",
     "openai-codex/gpt-5.3-codex"
+  ],
+  "packages": [
+    {
+      "source": "git:github.com/tmustier/pi-extensions",
+      "extensions": [
+        "files-widget/index.ts"
+      ],
+      "skills": [
+        "-extending-pi/SKILL.md",
+        "-ralph-wiggum/SKILL.md",
+        "-extending-pi/skill-creator/SKILL.md"
+      ]
+    },
+    "npm:pi-web-access"
+  ],
+  "skills": [
+    "+../../.agents/skills/org-doc/SKILL.md"
   ]
 }
