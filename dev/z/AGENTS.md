@@ -10,6 +10,10 @@ Before committing changes in any Kotlin/Gradle project, run this sequence **once
 
 This auto-fixes formatting first, then runs the full verification suite (tests + coverage + lint + YAML validation). It is time-intensive (~1 min) so do not run it after every small edit — only as the final gate. Any errors must be fixed before committing.
 
+**Important:** Always use the Gradle plugin (`./gradlew ktlintFormat`) for formatting — never the standalone `ktlint` CLI. The Gradle plugin is the source of truth for lint config (ktlint version, `.editorconfig`, exclusion filters). The standalone CLI may use a different version and miss project-specific settings.
+
+`ktlintFormat` may reformat lines that are valid but not in its preferred style, producing cosmetic noise beyond your actual changes. This is expected — accept those reformats as part of the commit.
+
 ## Nakadi CLI
 
 - A global `nakadi-cli` tool is available on PATH for investigating

@@ -30,6 +30,13 @@ Refs: <TICKET-ID>
 BREAKING CHANGE: <description, ONLY if this is a breaking change>
 ```
 
+## Workflow
+
+1. Draft the commit message following the format above
+2. Present the draft to the user for approval — do NOT run `git commit` until the user explicitly approves the message
+3. If the user requests changes, revise and present again
+4. Only commit after receiving explicit approval
+
 ## Rules
 
 1. Subject line: Imperative mood ("Add" not "Added"), capitalized, no trailing period, max 72 chars
