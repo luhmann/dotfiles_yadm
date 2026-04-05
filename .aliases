@@ -224,6 +224,19 @@ alias YA='ya'
 
 alias zex='for d in ~/dev/z/*/; do [ -d "$d/.git" ] && cp ~/dev/z/.exclude-rules "$d/.git/info/exclude"; done'
 
+# MLX-VLM: pre-download a model to HuggingFace cache
+mlx-pull() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: mlx-pull <model-repo>  (e.g. mlx-community/Qwen2-VL-2B-Instruct-4bit)" >&2
+    return 1
+  fi
+  uv run --with mlx-vlm python -c "
+from mlx_vlm.utils import get_model_path
+path = get_model_path('$1')
+print(f'✓ {path}')
+"
+}
+
 # Propagate parent .pi resources (skills, extensions, themes) to child .pi/settings.json
 pis() {
   local parent_pi="$(pwd)/.pi"
