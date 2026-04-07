@@ -5,7 +5,8 @@ OPENROUTER_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.
 JIRA_API_TOKEN = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s jira-api-token -w 2>/dev/null || true')}}"
 ANTHROPIC_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s anthropic-api-key -w 2>/dev/null || true')}}"
 BRAVE_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s brave-api-key -w 2>/dev/null || true')}}"
-# EXA_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s exa-api-key -w')}}"
+EXA_API_KEY = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s exa-api-key -w 2>/dev/null || true')}}"
+HF_TOKEN = "{{exec(command='security find-generic-password -a ' ~ env.USER ~ ' -s hf-token -w 2>/dev/null || true')}}"
 # GITHUB_TOKEN = "{{exec(command='gh auth token')}}"
 _.path = ["~/.bun/bin"]
 
