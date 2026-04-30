@@ -7,6 +7,16 @@
 // custom settings, run `zed: open default settings` from the
 // command palette
 {
+  "cli_default_open_behavior": "new_window",
+  "outline_panel": {
+    "dock": "right"
+  },
+  "collaboration_panel": {
+    "dock": "right"
+  },
+  "git_panel": {
+    "dock": "right"
+  },
   "ssh_connections": [
     {
       "host": "box.lan",
@@ -29,6 +39,7 @@
     "mode": "subtle",
   },
   "project_panel": {
+    "dock": "right",
     "starts_open": false,
   },
   "git": {
@@ -38,6 +49,7 @@
     },
   },
   "agent": {
+    "dock": "left",
     "tool_permissions": {
       "default": "allow"
     },
@@ -61,7 +73,7 @@
   "theme": {
     "mode": "dark",
     "light": "One Light",
-    "dark": "Kanagawa Wave",
+    "dark": "ultraViolet",
   },
   // rainbow indents
   "indent_guides": {

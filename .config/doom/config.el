@@ -122,6 +122,9 @@
   (require 'd2-mode nil t)
   (setf (alist-get "typescript" org-src-lang-modes nil nil #'equal) 'typescript)
   (setf (alist-get "d2" org-src-lang-modes nil nil #'equal) 'd2)
+  ;; Override org's default "dot" → fundamental mapping so graphviz
+  ;; src blocks get real syntax highlighting.
+  (setf (alist-get "dot" org-src-lang-modes nil nil #'equal) 'graphviz-dot)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((js . t)
@@ -129,8 +132,43 @@
      (typescript . t)
      (python . t)
      (shell . t)
+     (dot . t)
      ))
 )
+
+(use-package! rego-mode
+  :mode "\\.rego\\'"
+  :config
+  (setq rego-opa-command (or (executable-find "opa") "/opt/homebrew/bin/opa")))
+
+(after! org
+  ;; Register rego so #+begin_src rego and :src rego both get syntax-highlighted
+  (setf (alist-get "rego" org-src-lang-modes nil nil #'equal) 'rego))
+
+(use-package! org-re-reveal
+  :after ox
+  :config
+  (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js@5.1.0"
+        org-re-reveal-revealjs-version "4"
+        org-re-reveal-theme "black"
+        org-re-reveal-transition "slide"
+        org-re-reveal-plugins '(highlight notes search zoom)
+        org-re-reveal-highlight-css "%r/plugin/highlight/monokai.css"))
+
+(defun my/reveal-export ()
+  "Export to reveal.js HTML with org-transclusion read-only override.
+org-transclusion marks transcluded src blocks as read-only.  Org
+export copies the buffer to a temp buffer, losing buffer-local
+inhibit-read-only.  A let-binding here applies dynamically across
+the entire export call, including into the temp buffer."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (org-re-reveal-export-to-html)))
+
+(after! org
+  (map! :map org-mode-map
+        :localleader
+        :desc "Export to reveal.js" "R" #'my/reveal-export))
 
 (after! ob
   (defvar org-babel-default-header-args:d2

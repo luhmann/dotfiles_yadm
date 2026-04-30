@@ -1,18 +1,18 @@
 {
-  "lastChangelogVersion": "0.65.0",
+  "lastChangelogVersion": "0.70.6",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-6",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
   "theme": "tokyo-night-pi",
   "enabledModels": [
-    "github-copilot/gemini-3-pro-preview",
     "anthropic/claude-sonnet-4-6",
     "github-copilot/claude-opus-4.6",
     "github-copilot/claude-sonnet-4.6",
-    "github-copilot/gpt-5.3-codex",
     "anthropic/claude-opus-4-6",
-    "openai-codex/gpt-5.3-codex"
+    "openai-codex/gpt-5.4",
+    "anthropic/claude-opus-4-7",
+    "openai-codex/gpt-5.5"
   ],
   "packages": [
     {
@@ -27,7 +27,8 @@
       ]
     },
     "npm:pi-web-access",
-    "npm:pi-powerline-footer"
+    "npm:pi-powerline-footer",
+    "npm:pi-anthropic-oauth"
   ],
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md"

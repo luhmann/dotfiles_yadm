@@ -58,6 +58,21 @@
   (home-literal "/Library/Application Support/zalando-token-cli")
   (home-subpath "/Library/Application Support/zalando-token-cli"))
 
+;;; Kotlin compiler daemon — marker files for daemon-client liveness checks
+(allow file-read* file-write*
+  (home-literal "/Library/Application Support/kotlin")
+  (home-literal "/Library/Application Support/kotlin/daemon")
+  (home-subpath "/Library/Application Support/kotlin/daemon"))
+
+;;; zalando-aws-cli — Okta token cache and AWS credentials
+;;; greyhound.sh → zalando-aws-cli login → mkdir ~/.okta_cache, write tokens
+;;; greyhound.sh → aws s3 cp → read ~/.aws/credentials
+(allow file-read* file-write*
+  (home-literal "/.okta_cache")
+  (home-subpath "/.okta_cache")
+  (home-literal "/.aws")
+  (home-subpath "/.aws"))
+
 ;;; ~/.gitconfig — read-only for git configuration
 ;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
 (allow file-read*
@@ -111,3 +126,24 @@
   (literal "/Library/Keychains"))
 (allow ipc-posix-shm-read-data ipc-posix-shm-write-create ipc-posix-shm-write-data
   (ipc-posix-name "com.apple.AppleDatabaseChanged"))
+
+;;; Rodney / go-rod — browser automation via Chrome DevTools Protocol
+;;; go-rod downloads Chromium into ~/.cache/rod; rodney stores session in ~/.rodney
+;;; Use safehouse --enable=chromium-headless for full Chromium sandbox support
+;;; (Crashpad, Mach ports, GPU, etc.) — these rules only cover file paths.
+(allow file-read* file-write*
+  (home-literal "/.cache")
+  (home-literal "/.cache/rod")
+  (home-subpath "/.cache/rod")
+  (home-literal "/.rodney")
+  (home-subpath "/.rodney"))
+
+;;; Embedded PostgreSQL (Zonky / test suites) — initdb + postmaster need SysV shm/sem
+;;; and POSIX shm segments under the /PostgreSQL.<nonce> name family. Without these,
+;;; Spring Boot component tests fail with "Failed to load ApplicationContext" because
+;;; embedded-postgres cannot start; one failure cascades across the whole suite.
+(allow ipc-sysv-shm)
+(allow ipc-sysv-sem)
+(allow ipc-posix-shm-read-data ipc-posix-shm-read-metadata
+       ipc-posix-shm-write-create ipc-posix-shm-write-data ipc-posix-shm-write-unlink
+  (ipc-posix-name-regex #"^/PostgreSQL\."))

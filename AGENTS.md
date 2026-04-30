@@ -1,6 +1,7 @@
 ## Philosophy
 - Be critical, be wise, be elegant, ask questions when you are unsure.
 - If you are not very sure about an approach offer me several options, each with a confidence on 1 to 10-scale
+- Prefer brevity in your responses but include just the required level of detail and abstraction. I will start asking questions if need more in-depth explanations.
 
 ## Testing
 - **Test observable behavior, not implementation details.** Prefer tests that exercise the public boundary of a feature (e.g., call service → assert on result/DB state/published events) over tests that mock internal collaborators. Tests should break only when behavior changes, not when code is refactored. Isolated tests are warranted for self-contained logic (calculations, parsing, validation) where edge cases are hard to reach through the outer boundary.
@@ -15,7 +16,7 @@
 - **Learning from existing code** - Study and plan before implementing
 - **Pragmatic over dogmatic** - Adapt to project reality
 - **Clear intent over clever code** - Be boring and obvious
-- Prefer functional programming patterns, like small functions, pipelining and compositon.
+- Prefer functional programming patterns, like small functions, pipelining and composition.
 
 ### Simplicity Means
 

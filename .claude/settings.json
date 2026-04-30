@@ -69,6 +69,6 @@
       "scp"
     ]
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true
 }

@@ -14,6 +14,20 @@ This auto-fixes formatting first, then runs the full verification suite (tests +
 
 `ktlintFormat` may reformat lines that are valid but not in its preferred style, producing cosmetic noise beyond your actual changes. This is expected — accept those reformats as part of the commit.
 
+## Service Tokens
+
+For Zalando API tests that need service/internal scopes, use the Greyhound
+helper checked out at `~/dev/z/frschulze-greyhound`:
+
+```shell
+cd ~/dev/z/frschulze-greyhound
+TOKEN="$(./greyhound.sh -s | jq -r '.access_token')"
+```
+
+The script logs into the `retail-operations` AWS account, downloads the
+required service/client credentials from S3, and requests a service-realm token.
+Use this instead of regular user tokens when POM internal scopes are required.
+
 ## Nakadi CLI
 
 - A global `nakadi-cli` tool is available on PATH for investigating
