@@ -43,3 +43,6 @@ is_any_ai_enabled = false
 
 [agents.warp_agent.other]
 show_agent_notifications = true
+
+[text_editing]
+vim_mode_enabled = true

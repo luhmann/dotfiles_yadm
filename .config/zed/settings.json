@@ -7,6 +7,14 @@
 // custom settings, run `zed: open default settings` from the
 // command palette
 {
+  "agent_servers": {
+    "pi-acp": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
   "cli_default_open_behavior": "new_window",
   "outline_panel": {
     "dock": "right"
@@ -49,6 +57,7 @@
     },
   },
   "agent": {
+    "enable_feedback": false,
     "dock": "left",
     "tool_permissions": {
       "default": "allow"
