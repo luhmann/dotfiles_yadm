@@ -31,3 +31,5 @@ docs/agent
 
 # Auth tokens
 .config/gh/hosts.yml
+fnox.local.toml
+.config/fnox/
