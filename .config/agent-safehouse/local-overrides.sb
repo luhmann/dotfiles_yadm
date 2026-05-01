@@ -84,11 +84,18 @@
   (home-subpath "/.orbstack")
   (subpath "/Applications/OrbStack.app/Contents/MacOS/xbin"))
 
-;;; ~/icloud → Google Drive symlink; sandbox resolves through it
+;;; ~/icloud → iCloud Drive symlink; sandbox resolves through it
 ;;; Need both the symlink itself and the resolved target path
 (allow file-read* file-write*
   (home-literal "/icloud")
   (home-subpath "/icloud")
+  (home-literal "/Library/Mobile Documents")
+  (home-literal "/Library/Mobile Documents/com~apple~CloudDocs")
+  (home-literal "/Library/Mobile Documents/com~apple~CloudDocs/org")
+  (home-subpath "/Library/Mobile Documents/com~apple~CloudDocs/org"))
+
+;;; Google Drive org; sandbox resolves through CloudStorage target path
+(allow file-read* file-write*
   (home-literal "/Library/CloudStorage")
   (home-literal "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de")
   (home-literal "/Library/CloudStorage/GoogleDrive-florian.dietrich.external@zalando.de/My Drive")

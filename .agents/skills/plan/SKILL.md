@@ -28,14 +28,19 @@ your findings into a plan file as you go.
    - If only a ticket ID is available, read the ticket with `jira-cli` to get
      the summary.
 
-3. Create the plan file at:
+3. Determine the project scratch workspace:
+   - Prefer the `get_scratch_path` tool when available.
+   - Otherwise use the scratch workspace path injected into the system prompt.
+
+4. Create the plan file under the project scratch `plans/` directory:
    ```
-   ~/icloud/org/_plans/<DATE>-<TICKET-ID>-<short-name>.md
+   ~/icloud/org/_scratch/<project>/plans/<DATE>_<TICKET-ID>_<short-name>.org
    ```
-   - `<DATE>` is today in `YYYY-MM-DD` format
+   - `<DATE>` is today in `YYYY_MM_DD` format
    - `<TICKET-ID>` is the Jira ticket ID
    - `<short-name>` is a kebab-case slug (3–5 words) derived from the task
-   - Example: `2026-04-07-PT-50123-add-retry-on-timeout.md`
+   - If no ticket ID is inferable, omit it: `<DATE>_<short-name>.org`
+   - Example: `2026_04_07_PT-50123_add-retry-on-timeout.org`
 
 ## The Loop
 
@@ -67,38 +72,39 @@ engaging the user.
 
 ## Plan File Structure
 
-Organize the plan with clear markdown headers. Fill sections incrementally as
+Organize the plan with clear org-mode headings. Fill sections incrementally as
 you learn more.
 
-```markdown
-# <TICKET-ID>: <Title>
+```org
+#+title: <TICKET-ID>: <Title>
+#+date: <YYYY-MM-DD>
 
-## Context
+* Context
 Why this change is being made — the problem, what prompted it, the intended
 outcome.
 
-## Approach
-Your recommended approach. Do NOT list alternatives — pick one and justify it.
+* Approach
+Your recommended approach. Discuss alternatives with the user while uncertain,
+but converge on one recommended approach in the final plan and justify it.
 
-## Steps
+* Steps
 
-### Step 1: <Title>
-**Files:** `path/to/file.kt`
+** Step 1: <Title>
+*Files:* =path/to/file.kt=
 What to do, referencing existing functions/utilities to reuse.
-**Verify:** How to confirm this step works.
+*Verify:* How to confirm this step works.
 
----
-
-### Step 2: <Title>
+** Step 2: <Title>
 ...
 
-## Verification
+* Verification
 How to test the changes end-to-end (run the code, run tests, manual checks).
 ```
 
 ### Plan Content Guidelines
 
-- Include only your recommended approach, not all alternatives
+- Discuss alternatives while planning when there is uncertainty
+- Keep the final plan focused on your recommended approach, not all alternatives
 - Keep it concise enough to scan quickly, detailed enough to execute
 - Include the paths of critical files to be modified
 - Reference existing functions and utilities to reuse, with their file paths
@@ -111,6 +117,11 @@ The plan is ready when you've addressed all ambiguities and it covers:
 - **Which files** to modify
 - **What existing code** to reuse (with file paths)
 - **How to verify** the changes
+
+Before asking for final approval, check whether the user has added `n2c:`
+annotations to the plan. If annotations exist, address each one by one: state
+your understanding, discuss the issue, propose a resolution, and update the
+plan file. Repeat until no annotations remain.
 
 When ready, present a brief summary of the plan and ask the user for final
 approval. Do not ask for approval via a question buried in other text —

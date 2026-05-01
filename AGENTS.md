@@ -1,8 +1,3 @@
-## Philosophy
-- Be critical, be wise, be elegant, ask questions when you are unsure.
-- If you are not very sure about an approach offer me several options, each with a confidence on 1 to 10-scale
-- Prefer brevity in your responses but include just the required level of detail and abstraction. I will start asking questions if need more in-depth explanations.
-
 ## Testing
 - **Test observable behavior, not implementation details.** Prefer tests that exercise the public boundary of a feature (e.g., call service → assert on result/DB state/published events) over tests that mock internal collaborators. Tests should break only when behavior changes, not when code is refactored. Isolated tests are warranted for self-contained logic (calculations, parsing, validation) where edge cases are hard to reach through the outer boundary.
 - **Creation tests** should assert the complete resulting data set to catch missing or incorrect defaults. Every asserted value must be explicitly visible in the arrange phase — do not rely on hidden factory defaults for values that appear in assertions.
@@ -10,26 +5,6 @@
 - Make sure each test has visible Arrange, Act, Assert-phases, but DO NOT add comments that say exactly that
 - Follow existing test patterns
 
-### Core Beliefs
-
-- **Incremental progress over big bangs** - Small changes that compile and pass tests
-- **Learning from existing code** - Study and plan before implementing
-- **Pragmatic over dogmatic** - Adapt to project reality
-- **Clear intent over clever code** - Be boring and obvious
-- Prefer functional programming patterns, like small functions, pipelining and composition.
-
-### Simplicity Means
-
-- Single responsibility per function
-- Avoid premature abstractions
-- No clever tricks - choose the boring solution
-- If you need to explain it, it's too complex
-
-### Learning the Codebase
-
-- Find 3 similar features/components
-- Identify common patterns and conventions
-- Use same libraries/utilities when possible
 
 ### Error Handling
 
@@ -41,6 +16,10 @@
 ## Naming
 
 - Avoid the `Data` suffix on classes — it adds no context since everything is data. Use contextual suffixes that communicate the class's role: `Payload` (event/message body), `Request`, `Response`, `Model`, `Info`, etc.
+
+## General Coding Style
+
+- Prefer functional programming patterns, like small functions, pipelining and composition.
 
 ## Kotlin
 

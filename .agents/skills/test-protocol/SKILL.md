@@ -11,8 +11,8 @@ description: >
 
 Creates a living, executable test protocol document using `showboat` that
 covers happy path and edge cases for the features introduced on the current
-branch. The document is stored in `~/icloud/org/_test-protocols/` and can
-be re-verified at any time with `showboat verify`.
+branch. The document is stored in the project scratch workspace under
+`test_protocols/` and can be re-verified at any time with `showboat verify`.
 
 ## Workflow
 
@@ -31,7 +31,7 @@ Read the output carefully before proceeding.
 
 ```bash
 # Get today's date
-date +%Y-%m-%d
+date +%Y_%m_%d
 
 # Get ticket number from branch
 git branch --show-current
@@ -48,19 +48,24 @@ Read the actual changed files to understand the features introduced.
 
 ### 3. Determine the Output Path
 
-The output directory is always: `~/icloud/org/_test-protocols/`
+Determine the project scratch workspace:
+- Prefer the `get_scratch_path` tool when available.
+- Otherwise use the scratch workspace path injected into the system prompt.
 
-Filename format: `YYYY-MM-DD-TICKET-slug.md`
-- `YYYY-MM-DD` — today's date
+The output directory is: `~/icloud/org/_scratch/<project>/test_protocols/`
+
+Filename format: `YYYY_MM_DD_TICKET_slug.org`
+- `YYYY_MM_DD` — today's date
 - `TICKET` — Jira ticket ID extracted from the branch name (e.g. `SOO-123`)
 - `slug` — short kebab-case summary of what is being tested (e.g. `return-order-creation`)
+- If no ticket ID is inferable, omit it: `YYYY_MM_DD_slug.org`
 
-Example: `2025-06-12-SOO-42-return-order-creation.md`
+Example: `2025_06_12_SOO-42_return-order-creation.org`
 
 ### 4. Initialise the Document
 
 ```bash
-uvx showboat init ~/icloud/org/_test-protocols/<filename> "<Title>"
+uvx showboat init ~/icloud/org/_scratch/<project>/test_protocols/<filename> "<Title>"
 ```
 
 Title format: `<TICKET>: <Human-readable feature description>`
@@ -75,7 +80,7 @@ Structure the document as follows:
 #### 5a. Overview Section
 
 ```bash
-uvx showboat note <file> "## Overview
+uvx showboat note <file> "* Overview
 
 <One paragraph describing what feature/change is being tested and why.
 Summarise the PR/branch purpose here.>"
@@ -84,7 +89,7 @@ Summarise the PR/branch purpose here.>"
 #### 5b. Prerequisites Section
 
 ```bash
-uvx showboat note <file> "## Prerequisites
+uvx showboat note <file> "* Prerequisites
 
 - <Anything that needs to be set up before testing>
 - List environment variables, running services, seed data, etc."
@@ -98,11 +103,11 @@ For each test case:
 
 ```bash
 # Add a descriptive header as a note
-uvx showboat note <file> "### TC-N: <Test Case Title>
+uvx showboat note <file> "** TC-N: <Test Case Title>
 
-**Given:** <precondition>
-**When:** <action taken>
-**Then:** <expected result>"
+*Given:* <precondition>
+*When:* <action taken>
+*Then:* <expected result>"
 
 # Run the actual command and capture output
 uvx showboat exec <file> bash "<the command to run>"
@@ -120,13 +125,13 @@ uvx showboat pop <file>
 After all cases are documented, add a final note:
 
 ```bash
-uvx showboat note <file> "## Re-verification
+uvx showboat note <file> "* Re-verification
 
 To re-run all test cases and verify outputs still match:
 
-\`\`\`bash
-uvx showboat verify ~/icloud/org/_test-protocols/<filename>
-\`\`\`
+#+begin_src bash
+uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename>
+#+end_src
 
 Run this command after any code change to confirm all test outputs still match."
 ```
@@ -167,13 +172,13 @@ Do not fabricate cases that cannot be exercised from the service boundary.
 When the user asks to re-verify or re-run a test protocol:
 
 ```bash
-uvx showboat verify ~/icloud/org/_test-protocols/<filename>
+uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename>
 ```
 
 If outputs have changed and the new behaviour is correct, update the document:
 
 ```bash
-uvx showboat verify ~/icloud/org/_test-protocols/<filename> --output ~/icloud/org/_test-protocols/<filename>
+uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename> --output ~/icloud/org/_scratch/<project>/test_protocols/<filename>
 ```
 
 ## Notes
