@@ -1,0 +1,12 @@
+[providers]
+op = { type = "1password", vault = "Automation" }
+age = { type = "age", recipients = ["age1036xql2lndudv50p6c2ktgwypy27e2j2ynldmjzlg5umrh7tdf6s33fn5m"] }
+
+[secrets]
+OPENAI_API_KEY = { provider = "op", value = "openai-api-key/credential" }
+GEMINI_API_KEY = { provider = "op", value = "gemini-api-key/credential" }
+OPENROUTER_API_KEY = { provider = "op", value = "openrouter-api-key/credential" }
+JIRA_API_TOKEN = { provider = "op", value = "jira-api-token/credential" }
+ANTHROPIC_API_KEY = { provider = "op", value = "anthropic-api-key/credential" }
+BRAVE_API_KEY = { provider = "op", value = "brave-api-key/credential" }
+EXA_API_KEY = { provider = "op", value = "exa-api-key/credential" }

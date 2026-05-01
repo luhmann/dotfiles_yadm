@@ -31,5 +31,7 @@ docs/agent
 
 # Auth tokens
 .config/gh/hosts.yml
+
+# fnox — age private key and local secret cache (age-encrypted ciphertext)
+.config/fnox/age.txt
 fnox.local.toml
-.config/fnox/
