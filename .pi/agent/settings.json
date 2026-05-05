@@ -1,9 +1,9 @@
 {
-  "lastChangelogVersion": "0.71.0",
+  "lastChangelogVersion": "0.73.0",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-6",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
   "theme": "tokyo-night-pi",
   "enabledModels": [
     "anthropic/claude-sonnet-4-6",
