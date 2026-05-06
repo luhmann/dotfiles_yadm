@@ -75,9 +75,11 @@
 
 ;;; ~/.gitconfig — read-only for git configuration
 ;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
+;;; ~/.kagi.toml — Kagi CLI session credentials
 (allow file-read*
   (home-literal "/.gitconfig")
-  (home-literal "/.testcontainers.properties"))
+  (home-literal "/.testcontainers.properties")
+  (home-literal "/.kagi.toml"))
 
 ;;; OrbStack — read+execute for docker/kubectl binaries
 (allow file-read* process-exec
@@ -142,6 +144,8 @@
   (home-literal "/.cache")
   (home-literal "/.cache/rod")
   (home-subpath "/.cache/rod")
+  (home-literal "/.cache/kagi-cli")
+  (home-subpath "/.cache/kagi-cli")
   (home-literal "/.rodney")
   (home-subpath "/.rodney"))
 
