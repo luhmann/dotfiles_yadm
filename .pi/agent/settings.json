@@ -5,29 +5,23 @@
   "defaultProvider": "anthropic",
   "defaultModel": "claude-opus-4-7",
   "theme": "tokyo-night-pi",
-  "defaultModel": "claude-opus-4-6",
-  "defaultProvider": "anthropic",
-  "defaultThinkingLevel": "high",
   "enabledModels": [
     "anthropic/claude-sonnet-4-6",
     "anthropic/claude-opus-4-6",
-    "openai-codex/gpt-5.4",
     "anthropic/claude-opus-4-7",
+    "openai-codex/gpt-5.4",
+    "openai-codex/gpt-5.4-mini",
     "openai-codex/gpt-5.5",
-    "openai-codex/gpt-5.4-mini"
     "ollama/qwen3.6:27b-coding-nvfp4",
     "ollama/qwen3.6:35b-a3b-coding-nvfp4"
   ],
-  "hideThinkingBlock": true,
-  "lastChangelogVersion": "0.71.0",
   "packages": [
     "npm:pi-powerline-footer",
     "npm:pi-anthropic-oauth",
-    "npm:@ollama/pi-web-search"
+    "npm:pi-web-access"
   ],
   "powerline": "default",
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md"
-  ],
-  "theme": "tokyo-night-pi"
+  ]
 }
