@@ -337,17 +337,18 @@ the entire export call, including into the temp buffer."
         :desc "Copy relative file path" "r" #'my/copy-buffer-path-relative
         :desc "Open project editorconfig" "e" #'editorconfig-find-current-editorconfig)))
 
-;; Find project file sorted by modification time (newest first).
-(defun my/find-file-by-mtime ()
-  "Find project file sorted by modification time (newest first)."
-  (interactive)
-  (let ((projectile-sort-order 'modification-time))
-    (projectile-find-file)))
+;; Sort file candidates by modification time (newest first) in find-file.
+(defun my/vertico-sort-files-by-mtime (files)
+  (let ((dir (when (< (minibuffer-prompt-end) (point))
+               (buffer-substring (minibuffer-prompt-end) (point-max)))))
+    (sort files
+          (lambda (a b)
+            (let ((ta (file-attribute-modification-time
+                       (file-attributes (expand-file-name a dir))))
+                  (tb (file-attribute-modification-time
+                       (file-attributes (expand-file-name b dir)))))
+              (and ta tb (time-less-p tb ta)))))))
 
 (after! vertico-multiform
-  (add-to-list 'vertico-multiform-commands
-               '(my/find-file-by-mtime (vertico-sort-function . identity))))
-
-(map! :leader
-      (:prefix ("f" . "file")
-       :desc "Find file by mtime" "t" #'my/find-file-by-mtime))
+  (add-to-list 'vertico-multiform-categories
+               '(file (vertico-sort-override-function . my/vertico-sort-files-by-mtime))))

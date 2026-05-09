@@ -31,3 +31,7 @@
 
 ## PRS
 - when opening prs on my behalf, include the ticket number in the title, have a simple description as PR body, do not include a test plan, include a link to the ticket you should be able to derive it with jira-cli. If the PR is stacked on another Branch/PR that is not `main`, then include references to all prs that need to be merged before this one can go into main
+
+## Tools
+- for researching you have the `search`- and `websearch`-skills available, additionally if they do not yield enough material you can invoke `kagi search --help` for instructions to leverage a full search engine.
+- you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup

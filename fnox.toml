@@ -10,3 +10,4 @@ JIRA_API_TOKEN = { provider = "op", value = "jira-api-token/credential" }
 ANTHROPIC_API_KEY = { provider = "op", value = "anthropic-api-key/credential" }
 BRAVE_API_KEY = { provider = "op", value = "brave-api-key/credential" }
 EXA_API_KEY = { provider = "op", value = "exa-api-key/credential" }
+KAGI_SESSION_TOKEN = { provider = "op", value = "kagi-session-token/credential" }

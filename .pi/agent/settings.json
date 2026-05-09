@@ -1,15 +1,16 @@
 {
-  "lastChangelogVersion": "0.73.0",
+  "lastChangelogVersion": "0.74.0",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.5",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-4-7",
   "theme": "tokyo-night-pi",
   "enabledModels": [
     "anthropic/claude-sonnet-4-6",
     "anthropic/claude-opus-4-6",
     "anthropic/claude-opus-4-7",
-    "openai-codex/gpt-5.5"
+    "openai-codex/gpt-5.5",
+    "openai-codex/gpt-5.4-mini"
   ],
   "packages": [
     "npm:pi-web-access",
