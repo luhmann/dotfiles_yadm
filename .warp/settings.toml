@@ -106,7 +106,7 @@ enabled = true
 agent_mode_query_suggestions_enabled = false
 
 [agents.warp_agent.other]
-show_agent_notifications = true
+show_agent_notifications = false
 
 [agents.third_party]
 should_render_cli_agent_toolbar = true
@@ -118,7 +118,7 @@ agent_mode_coding_permissions = "always_allow_reading"
 is_settings_sync_enabled = false
 
 [warp_drive]
-enabled = false
+enabled = true
 
 [accessibility]
 accessibility_verbosity = "concise"

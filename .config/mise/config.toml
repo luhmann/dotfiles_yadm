@@ -3,7 +3,6 @@ fnox-env = "https://github.com/jdx/mise-env-fnox"
 
 [env]
 _.fnox-env = { tools = true }
-# GITHUB_TOKEN = "{{exec(command='gh auth token')}}"
 _.path = ["~/.bun/bin"]
 
 [settings]
