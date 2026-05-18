@@ -129,6 +129,8 @@
   (home-subpath "/icloud")
   (home-literal "/Library/Mobile Documents")
   (home-literal "/Library/Mobile Documents/com~apple~CloudDocs")
+  (home-literal "/Library/Mobile Documents/com~apple~CloudDocs/_notes")
+  (home-subpath "/Library/Mobile Documents/com~apple~CloudDocs/_notes")
   (home-literal "/Library/Mobile Documents/com~apple~CloudDocs/org")
   (home-subpath "/Library/Mobile Documents/com~apple~CloudDocs/org"))
 
@@ -171,6 +173,15 @@
   (literal "/Library/Keychains"))
 (allow ipc-posix-shm-read-data ipc-posix-shm-write-create ipc-posix-shm-write-data
   (ipc-posix-name "com.apple.AppleDatabaseChanged"))
+
+;;; ~/.aliases — shell alias file
+(allow file-read* file-write*
+  (home-literal "/.aliases"))
+
+;;; ~/notes — research notes and pi research config
+(allow file-read* file-write*
+  (home-literal "/notes")
+  (home-subpath "/notes"))
 
 ;;; Rodney / go-rod — browser automation via Chrome DevTools Protocol
 ;;; go-rod downloads Chromium into ~/.cache/rod; rodney stores session in ~/.rodney

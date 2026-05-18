@@ -157,6 +157,40 @@ ap() { tmux new-session -s agent-pi "pi $*"; }
 alias cac='tmux attach-session -t agent-claude'
 alias cap='tmux attach-session -t agent-pi'
 
+# Research mode: clean pi with research persona + org-mode conventions
+pir() {
+  local pi_web_access_root="${PI_WEB_ACCESS_ROOT:-$(npm root -g)/pi-web-access}"
+  local notes_root="${NOTES_ROOT:-$HOME/notes}"
+
+  pi -nc \
+    --append-system-prompt "$notes_root/.pi/agent/persona.md" \
+    --append-system-prompt "$notes_root/.pi/agent/org-mode.md" \
+    --no-extensions \
+    --extension "$pi_web_access_root" \
+    --no-skills \
+    --skill "$notes_root/.pi/agent/skills" \
+    --session-dir "$notes_root/.pi/agent/sessions" \
+    "$@"
+}
+
+# Sandboxed research mode: notes-only writes, explicit search env, no coding grants
+spr() {
+  local pi_web_access_root="$(npm root -g)/pi-web-access"
+  local notes_root="$(realpath "$HOME/notes")"
+
+  command safehouse \
+    --workdir "" \
+    --env-pass=OPENAI_API_KEY,ANTHROPIC_API_KEY,PERPLEXITY_API_KEY,EXA_API_KEY,GEMINI_API_KEY,BRAVE_API_KEY,KAGI_SESSION_TOKEN,SSL_CERT_FILE \
+    --add-dirs="$HOME/notes:$notes_root" \
+    --add-dirs-ro="$HOME/.aliases:$HOME/.kagi.toml:$HOME/.pi" \
+    --append-profile="$HOME/notes/.pi/agent/research-overrides.sb" \
+    -- \
+    PI_WEB_ACCESS_ROOT="$pi_web_access_root" \
+    XDG_CACHE_HOME="$notes_root/.pi/agent/cache" \
+    NOTES_ROOT="$notes_root" \
+    zsh -f -c 'source ~/.aliases; cd "$NOTES_ROOT"; exec pir "$@"' _ "$@"
+}
+
 # Agent Safehouse — sandboxed CLIs
 alias safehouse='safehouse --enable=docker,shell-init,1password,ssh,clipboard,chromium-headless --env-pass=JIRA_API_TOKEN,BRAVE_API_KEY,EXA_API_KEY,KAGI_SESSION_TOKEN,SSL_CERT_FILE,scalyr_readlog_token,scalyr_server --append-profile=~/.config/agent-safehouse/local-overrides.sb'
 alias sc='safehouse claude --dangerously-skip-permissions'
