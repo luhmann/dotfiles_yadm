@@ -3,7 +3,7 @@
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-7",
+  "defaultModel": "claude-opus-4-6",
   "theme": "tokyo-night-pi",
   "enabledModels": [
     "anthropic/claude-sonnet-4-6",
@@ -11,16 +11,17 @@
     "anthropic/claude-opus-4-7",
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.4-mini",
-    "openai-codex/gpt-5.5",
-    "ollama/qwen3.6:27b-coding-nvfp4",
-    "ollama/qwen3.6:35b-a3b-coding-nvfp4"
+    "openai-codex/gpt-5.5"
   ],
   "packages": [
     "npm:pi-powerline-footer",
     "npm:pi-anthropic-oauth",
     "npm:pi-web-access"
   ],
-  "powerline": "default",
+  "powerline": {
+    "preset": "default",
+    "fixedEditor": false
+  },
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md"
   ]

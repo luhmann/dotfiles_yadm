@@ -9,7 +9,6 @@ zinit light-mode for \
 zinit snippet OMZP::colored-man-pages
 zinit snippet OMZP::encode64
 zinit snippet OMZP::fasd
-zinit snippet OMZP::git-extras
 
 zinit snippet PZT::modules/history
 

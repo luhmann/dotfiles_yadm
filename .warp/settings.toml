@@ -49,7 +49,7 @@ show_global_search = true
 show_project_explorer = true
 show_code_review_button = true
 open_code_panels_file_editor = "warp"
-open_file_editor = { external_editor = "warp" }
+open_file_editor = "warp" 
 
 [code.indexing]
 agent_mode_codebase_context_auto_indexing = true
@@ -71,3 +71,6 @@ vim_mode_enabled = true
 
 [general]
 show_warning_before_quitting = false
+
+[terminal]
+copy_on_select = false

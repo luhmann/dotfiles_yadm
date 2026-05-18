@@ -98,7 +98,7 @@ export FZF_DEFAULT_OPTS='--multi --reverse --height 40% --border'
 
 eval "$(/opt/homebrew/bin/mise activate zsh)"
 
-export PATH="/opt/homebrew/opt/postgresql@13/bin:$PATH"
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 # doom-emacs tools
 export PATH="$HOME/.emacs.d/bin:$PATH"

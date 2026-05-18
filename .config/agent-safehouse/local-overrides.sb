@@ -34,6 +34,11 @@
 (allow file-read* file-write*
   (home-subpath "/.local/share/yadm"))
 
+;;; ~/.local/share/recall — recall transcript search database
+(allow file-read* file-write*
+  (home-literal "/.local/share/recall")
+  (home-subpath "/.local/share/recall"))
+
 ;;; ~/.config/gws — r/w for gws token cache and keyring backup
 (allow file-read* file-write*
   (home-literal "/.config/gws")
@@ -58,6 +63,11 @@
   (home-literal "/Library/Application Support/zalando-token-cli")
   (home-subpath "/Library/Application Support/zalando-token-cli"))
 
+;;; zkubectl — config, kubelogin binary, and cached tokens
+(allow file-read* file-write*
+  (home-literal "/Library/Application Support/zalando-kubectl")
+  (home-subpath "/Library/Application Support/zalando-kubectl"))
+
 ;;; Kotlin compiler daemon — marker files for daemon-client liveness checks
 (allow file-read* file-write*
   (home-literal "/Library/Application Support/kotlin")
@@ -73,13 +83,20 @@
   (home-literal "/.aws")
   (home-subpath "/.aws"))
 
+;;; ~/.kube — r/w for zkubectl / kubectl cluster access
+(allow file-read* file-write*
+  (home-literal "/.kube")
+  (home-subpath "/.kube"))
+
 ;;; ~/.gitconfig — read-only for git configuration
 ;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
 ;;; ~/.kagi.toml — Kagi CLI session credentials
+;;; ~/.zmon-cli.yaml — ZMON CLI configuration (URL + auth)
 (allow file-read*
   (home-literal "/.gitconfig")
   (home-literal "/.testcontainers.properties")
-  (home-literal "/.kagi.toml"))
+  (home-literal "/.kagi.toml")
+  (home-literal "/.zmon-cli.yaml"))
 
 ;;; OrbStack — read+execute for docker/kubectl binaries
 (allow file-read* process-exec

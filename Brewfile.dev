@@ -2,10 +2,10 @@ tap "buo/cask-upgrade"
 tap "d12frosted/emacs-plus"
 tap "danvergara/tools"
 tap "derailed/k9s"
-tap "olleolleolle/adr-tools"
+tap "eugene1g/safehouse"
 tap "peak/tap"
 tap "railwaycat/emacsmacport"
-tap "raine/claude-history"
+tap "zalando-build/taps"
 # Improved shell history for zsh, bash, fish and nushell
 brew "atuin"
 # Official Amazon AWS command-line interface
@@ -16,64 +16,44 @@ brew "bash"
 brew "bat"
 # GNU File, Shell, and Text utilities
 brew "coreutils"
-# Suite of command-line tools for converting to and working with CSV
-brew "csvkit"
-# SQL-like query language for csv
-brew "csvq"
 # Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
-# Modern diagram scripting language that turns text to diagrams
-brew "d2"
 # Modern, maintained replacement for ls
 brew "eza"
 # Simple, fast and user-friendly alternative to find
 brew "fd"
-# Terminal JSON viewer
-brew "fx"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # GNU compiler collection
 brew "gcc"
-# Interact with Google Gemini AI models from the command-line
-brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
 # Distributed revision control system
 brew "git"
-# Small git utilities
-brew "git-extras"
 # Git extension for versioning large files
 brew "git-lfs"
-# TUI Git client inspired by Magit
-brew "gitu"
 # GNU implementation of the famous stream editor
 brew "gnu-sed"
+# Graph visualization software from AT&T and Bell Labs
+brew "graphviz"
 # GNU version of the tar archiving utility
 brew "gnu-tar"
 # GNU grep, egrep and fgrep
 brew "grep"
 # Improved top (interactive process viewer)
 brew "htop"
-# Command-line benchmarking tool
-brew "hyperfine"
 # Tools and libraries to manipulate images in select formats
 brew "imagemagick"
-# Feature-rich interactive Jira CLI
-brew "jira-cli"
 # Lightweight and flexible command-line JSON processor
 brew "jq"
-# Anti-bikeshedding Kotlin linter with built-in formatter
-brew "ktlint"
-# Cross-platform TUI database management tool
-brew "lazysql"
+# Postgres C API library (client only — psql, pg_dump, pg_restore)
+brew "libpq"
 # GUI for vim, made for macOS
 brew "macvim"
 # Mac App Store command-line interface
 brew "mas"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
-# Simple tool to make locally trusted development certificates
-brew "mkcert"
 # NCurses Disk Usage
 brew "ncdu"
 # Port scanning utility for large networks
@@ -84,64 +64,48 @@ cask "istat-menus"
 brew "nushell"
 # Screen measuring tool
 cask "pixelsnap"
-# CLI for Postgres with auto-completion and syntax highlighting
-brew "pgcli"
-# Object-relational database system
-brew "postgresql"
-# Persistent key-value database, with built-in net interface
-brew "redis"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
-# Autoformat shell script source code
-brew "shfmt"
-# Data wrangler with jq-like query language
-brew "sq"
 # Add a public key to a remote machine's authorized_keys file
 brew "ssh-copy-id"
-# General purpose fuzzy finder TUI
-brew "television"
 # Terminal multiplexer
 brew "tmux"
-# Display directories as trees (with optional color/HTML output)
-brew "tree"
-# Extremely fast Python package installer and resolver, written in Rust
-brew "uv"
 # Internet file retriever
 brew "wget"
 # XML command-line utilities
 brew "xmlstarlet"
-# Command-line XML and HTML beautifier and content extractor
-brew "xq"
 # Yet Another Dotfiles Manager
 brew "yadm"
-# Process YAML, JSON, XML, CSV and properties documents from the CLI
-brew "yq"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
 # UNIX shell (command interpreter)
 brew "zsh"
 # GNU Emacs text editor
 brew "d12frosted/emacs-plus/emacs-plus@30"
-# Kubernetes CLI To Manage Your Clusters In Style!
-brew "derailed/k9s/k9s"
-# A command-line tool for working with Architecture Decision Records (ADRs).
-brew "olleolleolle/adr-tools/adr_tools"
+# macOS sandbox wrapper for coding agents
+brew "eugene1g/safehouse/agent-safehouse"
 # Parallel S3 and local filesystem execution tool
 brew "peak/tap/s5cmd"
+# Zalando AWS CLI (work)
+brew "zalando-build/taps/zalando-aws-cli"
 # Chromium based browser
 cask "arc"
 # Password manager that keeps all passwords secure behind one password
 cask "1password"
-# Command-line interface for 1Password
-cask "1password-cli"
 # Code snippet organiser
 cask "cacher"
 # Open source IDE for exploring and testing APIs
 cask "bruno"
-# OpenAI's coding agent that runs in your terminal
-cask "codex"
+# Screen capturing tool
+cask "cleanshot"
+# Google Cloud CLI
+cask "gcloud-cli"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# Voice to text app
+cask "voiceink"
+# Rust-based terminal
+cask "warp"
 # Web browser
 cask "google-chrome"
 # Web browser
@@ -177,89 +141,3 @@ cask "visual-studio-code"
 cask "wireshark"
 # Multiplayer code editor
 cask "zed"
-vscode "4ops.terraform"
-vscode "aaron-bond.better-comments"
-vscode "alefragnani.bookmarks"
-vscode "alextreichler.hurl"
-vscode "anthropic.claude-code"
-vscode "be5invis.toml"
-vscode "bierner.markdown-mermaid"
-vscode "biomejs.biome"
-vscode "blakeh.jump-to-test"
-vscode "bodil.file-browser"
-vscode "bpruitt-goddard.mermaid-markdown-syntax-highlighting"
-vscode "bradlc.vscode-tailwindcss"
-vscode "buenon.scratchpads"
-vscode "charliermarsh.ruff"
-vscode "ckolkman.vscode-postgres"
-vscode "ctenbrinke.vscode-tsv"
-vscode "davidsanders.search-under-cursor"
-vscode "denoland.vscode-deno"
-vscode "donjayamanne.githistory"
-vscode "dotjoshjohnson.xml"
-vscode "eamodio.gitlens"
-vscode "editorconfig.editorconfig"
-vscode "endormi.2077-theme"
-vscode "enkia.enki-vscode-theme"
-vscode "enkia.tokyo-night"
-vscode "esbenp.prettier-vscode"
-vscode "exodiusstudios.comment-anchors"
-vscode "fabiospampinato.vscode-open-in-github"
-vscode "fallenwood.viml"
-vscode "github.codespaces"
-vscode "github.vscode-pull-request-github"
-vscode "graphql.vscode-graphql"
-vscode "graphql.vscode-graphql-syntax"
-vscode "gruntfuggly.todo-tree"
-vscode "hashicorp.terraform"
-vscode "jacobdufault.fuzzy-search"
-vscode "jakebecker.elixir-ls"
-vscode "janisdd.vscode-edit-csv"
-vscode "jasonnutter.search-node-modules"
-vscode "jellydn.vscode-hurl-runner"
-vscode "jock.svg"
-vscode "kahole.magit"
-vscode "katjanakosic.vscode-json5"
-vscode "kisstkondoros.vscode-gutter-preview"
-vscode "mattn.lisp"
-vscode "mechatroner.rainbow-csv"
-vscode "mikestead.dotenv"
-vscode "mkhl.shfmt"
-vscode "mohammadbaqer.better-folding"
-vscode "ms-playwright.playwright"
-vscode "ms-python.debugpy"
-vscode "ms-python.python"
-vscode "ms-python.vscode-pylance"
-vscode "ms-python.vscode-python-envs"
-vscode "ms-toolsai.datawrangler"
-vscode "ms-vscode-remote.remote-containers"
-vscode "ms-vscode-remote.remote-ssh"
-vscode "ms-vscode-remote.remote-ssh-edit"
-vscode "ms-vscode.remote-explorer"
-vscode "ms-vscode.vscode-js-profile-flame"
-vscode "ms-vscode.vscode-typescript-next"
-vscode "mtxr.sqltools"
-vscode "oderwat.indent-rainbow"
-vscode "openai.chatgpt"
-vscode "oven.bun-vscode"
-vscode "primalmotion.primal"
-vscode "redhat.vscode-yaml"
-vscode "rooveterinaryinc.roo-cline"
-vscode "samuel-pordeus.elixir-test"
-vscode "shd101wyy.markdown-preview-enhanced"
-vscode "silofy.hackthebox"
-vscode "thenuprojectcontributors.vscode-nushell-lang"
-vscode "tombonnike.vscode-status-bar-format-toggle"
-vscode "usernamehw.errorlens"
-vscode "vincent-ledu.adr-tools"
-vscode "vitest.explorer"
-vscode "vscode-icons-team.vscode-icons"
-vscode "vscodevim.vim"
-vscode "vsls-contrib.gistfs"
-vscode "vsls-contrib.gitdoc"
-vscode "vspacecode.vspacecode"
-vscode "vspacecode.whichkey"
-vscode "waderyan.gitblame"
-vscode "wengerk.highlight-bad-chars"
-vscode "yoavbls.pretty-ts-errors"
-vscode "yzhang.markdown-all-in-one"
