@@ -4,6 +4,7 @@ fnox-env = "https://github.com/jdx/mise-env-fnox"
 [env]
 _.fnox-env = { tools = true }
 _.path = ["~/.bun/bin"]
+scalyr_server = "https://eu.scalyr.com"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
@@ -16,7 +17,7 @@ bun = "latest"
 go = "latest"
 java = "21"
 node = "24"
-python = "latest"
+python = "3.11.15"
 rust = "latest"
 "npm:@earendil-works/pi-coding-agent" = "latest"
 maven = "latest"
@@ -41,3 +42,4 @@ opa = "1.16.1"
 "github:ankitpokhrel/jira-cli" = "1.7.0"
 "github:googleworkspace/cli" = "0.22.5"
 "npm:@github/copilot" = "latest"
+yarn = "1.22.22"

@@ -26,17 +26,17 @@ When writing git commit messages, ALWAYS follow this exact format:
 \`\`\`
 <Imperative subject line, capitalized, no period, max 72 chars>
 
-## Why
+**Why**
 
 <Context and reasoning for future decision-making by agents and humans.
 Wrap lines at 72 characters. Explain the motivation and background.>
 
-## What
+**What**
 
 - <High level bullet point describing a change>
 - <Another bullet point>
 
-## Modules: <comma-separated list of affected high-level modules>
+**Modules:** <comma-separated list of affected high-level modules>
 
 Refs: <TICKET-ID>
 BREAKING CHANGE: <description, ONLY if this is a breaking change>
@@ -45,9 +45,9 @@ BREAKING CHANGE: <description, ONLY if this is a breaking change>
 **Rules:**
 1. Subject line: Imperative mood ("Add" not "Added"), capitalized, no trailing period, max 72 chars
 2. Blank line after subject
-3. "## Why" section: Required. Provide context that aids future decisions for both agents and human developers
-4. "## What" section: Required. High-level bullet points of what changed
-5. "## Modules" section: Required. Comma-separated list on same line (e.g., \`## Modules: auth, api, config\`)
+3. "**Why**" section: Required. Bold inline label on its own line, followed by a blank line and a paragraph. Provide context that aids future decisions for both agents and human developers
+4. "**What**" section: Required. Bold inline label on its own line, followed by a blank line and bullet points of what changed
+5. "**Modules:**" line: Required. Bold inline label followed by a comma-separated list (e.g., \`**Modules:** auth, api, config\`)
 6. Blank lines between sections
 7. "Refs:" footer: Include ticket reference. Use \`get_branch_ticket\` tool to get it from the branch name
 8. "BREAKING CHANGE:" footer: Only include if there are breaking changes. Omit entirely otherwise
@@ -57,19 +57,19 @@ BREAKING CHANGE: <description, ONLY if this is a breaking change>
 \`\`\`
 Add OAuth2 login flow for external providers
 
-## Why
+**Why**
 
 Users need to authenticate via external identity providers like Google
 and GitHub. This enables enterprise SSO requirements and reduces
 password management burden for end users.
 
-## What
+**What**
 
 - Implement OAuth2 authorization code flow
 - Add provider configuration for Google and GitHub
 - Create callback handling and token exchange
 
-## Modules: auth, api, config
+**Modules:** auth, api, config
 
 Refs: NOR-456
 \`\`\`
@@ -102,16 +102,16 @@ function validateCommitMessage(message: string): { valid: boolean; errors: strin
 	// Check for required sections
 	const fullMessage = message.toLowerCase();
 
-	if (!fullMessage.includes("## why")) {
-		errors.push('Missing required "## Why" section');
+	if (!fullMessage.includes("**why**")) {
+		errors.push('Missing required "**Why**" section');
 	}
 
-	if (!fullMessage.includes("## what")) {
-		errors.push('Missing required "## What" section');
+	if (!fullMessage.includes("**what**")) {
+		errors.push('Missing required "**What**" section');
 	}
 
-	if (!fullMessage.includes("## modules:")) {
-		errors.push('Missing required "## Modules:" section');
+	if (!fullMessage.includes("**modules:**")) {
+		errors.push('Missing required "**Modules:**" line');
 	}
 
 	if (!message.includes("Refs:")) {

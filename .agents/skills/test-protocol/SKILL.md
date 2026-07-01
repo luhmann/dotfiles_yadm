@@ -54,13 +54,13 @@ Determine the project scratch workspace:
 
 The output directory is: `~/icloud/org/_scratch/<project>/test_protocols/`
 
-Filename format: `YYYY_MM_DD_TICKET_slug.org`
+Filename format: `YYYY_MM_DD_TICKET_slug.md`
 - `YYYY_MM_DD` — today's date
 - `TICKET` — Jira ticket ID extracted from the branch name (e.g. `SOO-123`)
 - `slug` — short kebab-case summary of what is being tested (e.g. `return-order-creation`)
-- If no ticket ID is inferable, omit it: `YYYY_MM_DD_slug.org`
+- If no ticket ID is inferable, omit it: `YYYY_MM_DD_slug.md`
 
-Example: `2025_06_12_SOO-42_return-order-creation.org`
+Example: `2025_06_12_SOO-42_return-order-creation.md`
 
 ### 4. Initialise the Document
 
@@ -80,7 +80,7 @@ Structure the document as follows:
 #### 5a. Overview Section
 
 ```bash
-uvx showboat note <file> "* Overview
+uvx showboat note <file> "## Overview
 
 <One paragraph describing what feature/change is being tested and why.
 Summarise the PR/branch purpose here.>"
@@ -89,7 +89,7 @@ Summarise the PR/branch purpose here.>"
 #### 5b. Prerequisites Section
 
 ```bash
-uvx showboat note <file> "* Prerequisites
+uvx showboat note <file> "## Prerequisites
 
 - <Anything that needs to be set up before testing>
 - List environment variables, running services, seed data, etc."
@@ -103,11 +103,11 @@ For each test case:
 
 ```bash
 # Add a descriptive header as a note
-uvx showboat note <file> "** TC-N: <Test Case Title>
+uvx showboat note <file> "### TC-N: <Test Case Title>
 
-*Given:* <precondition>
-*When:* <action taken>
-*Then:* <expected result>"
+**Given:** <precondition>
+**When:** <action taken>
+**Then:** <expected result>"
 
 # Run the actual command and capture output
 uvx showboat exec <file> bash "<the command to run>"
@@ -125,13 +125,13 @@ uvx showboat pop <file>
 After all cases are documented, add a final note:
 
 ```bash
-uvx showboat note <file> "* Re-verification
+uvx showboat note <file> "## Re-verification
 
 To re-run all test cases and verify outputs still match:
 
-#+begin_src bash
+\`\`\`bash
 uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename>
-#+end_src
+\`\`\`
 
 Run this command after any code change to confirm all test outputs still match."
 ```

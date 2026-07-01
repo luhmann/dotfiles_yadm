@@ -88,6 +88,18 @@
   (home-literal "/.kube")
   (home-subpath "/.kube"))
 
+;;; ~/.dash0 — r/w for dash0 CLI profiles and OAuth token cache
+(allow file-read* file-write*
+  (home-literal "/.dash0")
+  (home-subpath "/.dash0"))
+
+;;; ~/.workspace-mcp — r/w for workspace-cli (google-workspace-mcp) OAuth token cache
+;;; Stores Fernet encryption key (.cli-encryption-key) and encrypted tokens (cli-tokens/)
+;;; so a sandboxed agent can reuse the consent granted during interactive login.
+(allow file-read* file-write*
+  (home-literal "/.workspace-mcp")
+  (home-subpath "/.workspace-mcp"))
+
 ;;; ~/.gitconfig — read-only for git configuration
 ;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
 ;;; ~/.kagi.toml — Kagi CLI session credentials
@@ -165,6 +177,18 @@
   (home-subpath "/.cache/kagi-cli")
   (home-literal "/.rodney")
   (home-subpath "/.rodney"))
+
+;;; agent-browser — native browser automation; downloads Chrome for Testing into
+;;; ~/.agent-browser and stores managed profiles/session state alongside it.
+;;; Chrome for Testing also writes Crashpad state under ~/Library/Application Support.
+(allow file-read* file-write* process-exec
+  (home-literal "/.agent-browser")
+  (home-subpath "/.agent-browser"))
+(allow file-read* file-write*
+  (home-literal "/Library/Application Support/Google")
+  (home-subpath "/Library/Application Support/Google")
+  (home-literal "/Library/Application Support/Chromium")
+  (home-subpath "/Library/Application Support/Chromium"))
 
 ;;; Embedded PostgreSQL (Zonky / test suites) — initdb + postmaster need SysV shm/sem
 ;;; and POSIX shm segments under the /PostgreSQL.<nonce> name family. Without these,

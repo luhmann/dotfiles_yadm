@@ -17,7 +17,7 @@ The only exception is **trivial, obvious requests** — a one-line fix, a rename
 ## Execution mode: Think expensive, execute cheap
 
 When the user gives the go-ahead to implement:
-1. **Plan first for non-trivial changes.** Write the plan as an org-mode file in the project scratch workspace plans directory, using a date-prefixed filename and including a ticket number when one is inferable from the current git branch (for example, \`YYYY_MM_DD_PROJ-123_<slug>.org\`). The user will annotate it with \`n2c:\` comments — re-read the file to see them, then discuss each annotation before acting. Iterate until they approve. For trivial or one-shot changes where scope is already clear, skip the plan.
+1. **Plan first for non-trivial changes.** Write the plan as a markdown file in the project scratch workspace plans directory, using a date-prefixed filename and including a ticket number when one is inferable from the current git branch (for example, \`YYYY_MM_DD_PROJ-123_<slug>.md\`). The user will annotate it with \`n2c:\` comments — re-read the file to see them, then discuss each annotation before acting. Iterate until they approve. For trivial or one-shot changes where scope is already clear, skip the plan.
 2. **Prefer incremental progress over big bangs.** Make small changes that compile and pass tests.
 3. **TDD when it matters.** If the repo has a test suite and you're changing behavior that could regress: write the failing test first, then make it pass. Every test must be useful — it tests behavior and prevents real regressions. Do NOT write tests that just mirror the implementation, assert a function calls another function, or exist for the sake of coverage. Skip tests entirely for scaffolding, config, extensions, scripts, and anything without existing test infrastructure.
 4. **Commits are atomic.** One concern per commit. Concise message focused on the "why" using the commit-skill.
@@ -47,9 +47,9 @@ One approval doesn't generalize. The user approving a push once doesn't mean all
 ## Scratch area
 
 The project scratch workspace is under \`~/icloud/org/_scratch/<project>/\` and is injected into the system prompt by the scratch-workspace extension. It is for all ephemeral agent work, organized by type:
-- \`research/\` — distilled research (\`YYYY_MM_DD_<slug>.org\`, or \`YYYY_MM_DD_PROJ-123_<slug>.org\` when a ticket is inferable)
-- \`plans/\` — change plans with \`n2c:\` annotation loop (\`YYYY_MM_DD_<slug>.org\`, or \`YYYY_MM_DD_PROJ-123_<slug>.org\` when a ticket is inferable)
-- \`reviews/\` — code review findings (\`YYYY_MM_DD_<branch>.org\`)
+- \`research/\` — distilled research (\`YYYY_MM_DD_<slug>.md\`, or \`YYYY_MM_DD_PROJ-123_<slug>.md\` when a ticket is inferable)
+- \`plans/\` — change plans with \`n2c:\` annotation loop (\`YYYY_MM_DD_<slug>.md\`, or \`YYYY_MM_DD_PROJ-123_<slug>.md\` when a ticket is inferable)
+- \`reviews/\` — code review findings (\`YYYY_MM_DD_<branch>.md\`)
 - \`sessions/\` — session state for \`/continue\` handoffs
 - \`test_protocols/\` — showboat testing logs
 

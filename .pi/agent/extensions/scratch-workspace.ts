@@ -6,6 +6,7 @@ import { basename, join } from "node:path";
 
 const SCRATCH_BASE = join(homedir(), "icloud", "org", "_scratch");
 const SUBDIRECTORIES = ["plans", "research", "reviews", "sessions", "test_protocols"] as const;
+const SHARED_NOTES = join(SCRATCH_BASE, "_notes");
 const TICKET_PATTERN = /^([A-Z]+-\d+)/;
 
 type ScratchInfo = {
@@ -18,6 +19,7 @@ type ScratchInfo = {
 	test_protocols: string;
 	ticket: string | null;
 	filenamePrefix: string;
+	sharedNotes: string;
 };
 
 function extractRepoName(remoteUrl: string): string | null {
@@ -73,11 +75,15 @@ async function getScratchInfo(pi: ExtensionAPI, cwd: string, signal?: AbortSigna
 		test_protocols: join(root, "test_protocols"),
 		ticket,
 		filenamePrefix: ticket ? `${datePrefix}_${ticket}_` : `${datePrefix}_`,
+		sharedNotes: SHARED_NOTES,
 	};
 }
 
 async function ensureScratchDirectories(info: ScratchInfo): Promise<void> {
-	await Promise.all(SUBDIRECTORIES.map((directory) => mkdir(join(info.root, directory), { recursive: true })));
+	await Promise.all([
+		...SUBDIRECTORIES.map((directory) => mkdir(join(info.root, directory), { recursive: true })),
+		mkdir(info.sharedNotes, { recursive: true }),
+	]);
 }
 
 function formatScratchPrompt(info: ScratchInfo): string {
@@ -91,7 +97,7 @@ function formatScratchPrompt(info: ScratchInfo): string {
 Root: ${info.root}
 Project slug: ${info.project}
 ${ticketHint}
-Default org-mode filename prefix for new scratch files today: ${info.filenamePrefix}<slug>.org
+Default markdown filename prefix for new scratch files today: ${info.filenamePrefix}<slug>.md
 
 Use these subdirectories:
 - plans: ${info.plans}
@@ -100,7 +106,10 @@ Use these subdirectories:
 - sessions: ${info.sessions}
 - test_protocols: ${info.test_protocols} — showboat testing logs
 
-All files written here must be org-mode files with a .org extension and date-prefixed filenames. Include the ticket number in the filename when one is inferable from the current git branch name.
+For durable, non-service-specific knowledge entries (notes, reusable commands, cross-project tips), use the shared notes folder instead of a project subdirectory:
+- shared notes: ${info.sharedNotes} — cross-project, not tied to any repo
+
+All files written here must be markdown files with a .md extension and date-prefixed filenames. Include the ticket number in the filename when one is inferable from the current git branch name.
 `.trim();
 }
 

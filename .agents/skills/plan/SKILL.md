@@ -34,13 +34,13 @@ your findings into a plan file as you go.
 
 4. Create the plan file under the project scratch `plans/` directory:
    ```
-   ~/icloud/org/_scratch/<project>/plans/<DATE>_<TICKET-ID>_<short-name>.org
+   ~/icloud/org/_scratch/<project>/plans/<DATE>_<TICKET-ID>_<short-name>.md
    ```
    - `<DATE>` is today in `YYYY_MM_DD` format
    - `<TICKET-ID>` is the Jira ticket ID
    - `<short-name>` is a kebab-case slug (3–5 words) derived from the task
-   - If no ticket ID is inferable, omit it: `<DATE>_<short-name>.org`
-   - Example: `2026_04_07_PT-50123_add-retry-on-timeout.org`
+   - If no ticket ID is inferable, omit it: `<DATE>_<short-name>.md`
+   - Example: `2026_04_07_PT-50123_add-retry-on-timeout.md`
 
 ## The Loop
 
@@ -72,33 +72,40 @@ engaging the user.
 
 ## Plan File Structure
 
-Organize the plan with clear org-mode headings. Fill sections incrementally as
+Organize the plan with clear markdown headings. Fill sections incrementally as
 you learn more.
 
-```org
-#+title: <TICKET-ID>: <Title>
-#+date: <YYYY-MM-DD>
+```markdown
+# <TICKET-ID>: <Title>
+<YYYY-MM-DD>
 
-* Context
+## Context
 Why this change is being made — the problem, what prompted it, the intended
 outcome.
 
-* Approach
+## Approach
 Your recommended approach. Discuss alternatives with the user while uncertain,
 but converge on one recommended approach in the final plan and justify it.
 
-* Steps
+## Non-goals
+What this change intentionally does NOT cover. Bounds the scope.
 
-** Step 1: <Title>
-*Files:* =path/to/file.kt=
-What to do, referencing existing functions/utilities to reuse.
-*Verify:* How to confirm this step works.
+## Steps
 
-** Step 2: <Title>
+### Step 1: <Title>
+**Files:** [path/to/file.kt:42](file:///abs/path/to/file.kt) — what changes here
+What to do, referencing existing functions/utilities to reuse (link them the
+same way so they can be read alongside the plan).
+**Verify:** Exact command to run + expected result, phrased as observable
+behavior. e.g. `./mvnw test -Dtest="FooTest"` -> passes; or "GET /orders/123
+returns 200 with status CONFIRMED". Not "the code compiles".
+
+### Step 2: <Title>
 ...
 
-* Verification
-How to test the changes end-to-end (run the code, run tests, manual checks).
+## Verification
+How to test the changes end-to-end, phrased as observable behavior with the
+exact commands to run and expected results.
 ```
 
 ### Plan Content Guidelines
@@ -106,8 +113,15 @@ How to test the changes end-to-end (run the code, run tests, manual checks).
 - Discuss alternatives while planning when there is uncertainty
 - Keep the final plan focused on your recommended approach, not all alternatives
 - Keep it concise enough to scan quickly, detailed enough to execute
-- Include the paths of critical files to be modified
-- Reference existing functions and utilities to reuse, with their file paths
+- Describe **what** to change and **why**, not **how** — reference locations
+  and intent; do not paste full implementations into the plan
+- Emit every file reference as a markdown link with a `file://` URL and line
+  number (e.g. [Foo.kt:88](file:///.../Foo.kt)) so the reader can open the
+  code while reading the plan
+- Reference existing functions and utilities to reuse, linked the same way
+- Keep the whole plan under ~200 lines by including only vital information.
+  If it would exceed that, warn the user, and either split by
+  file-ownership/interface boundary or cut detail — your call, but flag it
 - Each step should be independently verifiable where possible
 
 ## When to Converge
