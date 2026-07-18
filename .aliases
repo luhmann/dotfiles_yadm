@@ -14,9 +14,6 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
-# Episodic memory
-alias episodic-memory='~/.claude/plugins/cache/episodic-memory/cli/episodic-memory'
-
 # File operations
 alias fname='find . -iname'
 alias o='open'
@@ -166,6 +163,7 @@ alias sc='safehouse claude --dangerously-skip-permissions'
 alias sp='safehouse pi'
 alias so='safehouse opencode'
 alias sx='safehouse codex'
+alias spf='TERM_PROGRAM= WARP_SESSION_ID= WARP_TERMINAL_SESSION_UUID= sp'
 
 # Claude Code autonomous mode (sandboxed)
 zc() {
@@ -223,6 +221,32 @@ alias YA='ya'
 # ============================================================================
 
 alias zex='for d in ~/dev/z/*/; do [ -d "$d/.git" ] && cp ~/dev/z/.exclude-rules "$d/.git/info/exclude"; done'
+alias pomdb='databow --driver postgresql --uri "postgresql://127.0.0.1:6543/purchase_orders_management?sslmode=require&password=$(ztoken)"'
+runsql() {
+  local csv=0
+  [[ "$1" == "--csv" ]] && csv=1
+  local query
+  query="$(pbpaste)"
+  if [[ -z "${query// }" ]]; then
+    echo "Clipboard is empty; nothing to run." >&2
+    return 1
+  fi
+  echo "--- Query from clipboard ---"
+  echo "$query"
+  echo "----------------------------"
+  if ! read -q "?Run this query? [y/N] "; then
+    echo $'\nAborted.'
+    return 1
+  fi
+  echo
+  local uri="postgresql://127.0.0.1:6543/purchase_orders_management?sslmode=require&password=$(ztoken)"
+  if (( csv )); then
+    local out="query_$(date +%Y%m%d_%H%M%S).csv"
+    databow --driver postgresql --uri "$uri" --query "$query" --output "$out" && echo "Saved to $out"
+  else
+    databow --driver postgresql --uri "$uri" --query "$query"
+  fi
+}
 
 # MLX-VLM: pre-download a model to HuggingFace cache
 mlx-pull() {

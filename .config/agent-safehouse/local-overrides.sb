@@ -48,6 +48,13 @@
 (allow file-read* file-write*
   (home-subpath "/.config/doom"))
 
+;;; ~/.config/nobl9 — r/w for sloctl (Nobl9 CLI)
+;;; Access-token post-hook rewrites config.toml via a temp file in the same
+;;; dir on every invocation, so directory write access is required.
+(allow file-read* file-write*
+  (home-literal "/.config/nobl9")
+  (home-subpath "/.config/nobl9"))
+
 ;;; superset-query — session state and CSRF token
 (allow file-read* file-write*
   (home-literal "/.superset-cookies")
@@ -190,6 +197,18 @@
   (home-literal "/Library/Application Support/Chromium")
   (home-subpath "/Library/Application Support/Chromium"))
 
+;;; JVM self-attach socket (Mockito inline mock maker / ByteBuddy agent).
+;;; safehouse 0.11.0 replaced the blanket (allow network*) with TCP/UDP/DNS-only
+;;; grants, denying UNIX sockets by default. The JDK attach API rendezvous is a
+;;; UNIX socket at $TMPDIR/.java_pid<pid> (kernel-resolved under /private/var/folders),
+;;; so Mockito's self-attach fails with "Could not self-attach" and every mocking
+;;; test errors with "Could not initialize plugin: MockMaker". Scope the grant to
+;;; the JVM attach socket name only; regex tolerates the per-boot /var/folders nonce.
+(allow network-bind network-inbound
+  (local  unix-socket (regex #"^/private/var/folders/[^/]+/[^/]+/T/\.java_pid[0-9]+")))
+(allow network-outbound
+  (remote unix-socket (regex #"^/private/var/folders/[^/]+/[^/]+/T/\.java_pid[0-9]+")))
+
 ;;; Embedded PostgreSQL (Zonky / test suites) — initdb + postmaster need SysV shm/sem
 ;;; and POSIX shm segments under the /PostgreSQL.<nonce> name family. Without these,
 ;;; Spring Boot component tests fail with "Failed to load ApplicationContext" because
@@ -199,3 +218,28 @@
 (allow ipc-posix-shm-read-data ipc-posix-shm-read-metadata
        ipc-posix-shm-write-create ipc-posix-shm-write-data ipc-posix-shm-write-unlink
   (ipc-posix-name-regex #"^/PostgreSQL\."))
+;;; Zonky's postmaster listens on a UNIX socket at /tmp/.s.PGSQL.<port> (kernel-
+;;; resolved under /private/tmp) and the JDBC driver connects to it. safehouse
+;;; 0.11.0's default-deny on UNIX sockets makes postmaster startup fail with
+;;; "Gave up waiting for server to start" / "Connection refused". Scope the grant
+;;; to the PostgreSQL socket name only.
+(allow network-bind network-inbound
+  (local  unix-socket (regex #"^/private/tmp/\.s\.PGSQL\.[0-9]+")))
+(allow network-outbound
+  (remote unix-socket (regex #"^/private/tmp/\.s\.PGSQL\.[0-9]+")))
+
+;;; 1Password SSH agent socket — connect() re-allow for git commit signing.
+;;; safehouse 0.11.0's bundled 55-integrations-optional/1password.sb grants
+;;; file-read*/file-write* on the agent socket but — unlike docker.sb — omits the
+;;; matching network-outbound (connect) re-allow that 0.11.0's default-deny on UNIX
+;;; sockets now requires (see 20-network.sb: blanket (allow network*) was replaced
+;;; with TCP/UDP/DNS-only grants). Result: op-ssh-sign fails with "1Password: Could
+;;; not connect to socket. Is the agent running?" and every signed `git commit`
+;;; aborts with "failed to write commit object", despite --enable=1password being set.
+;;; Upstream bug — still unfixed on main as of 2026-07-10 (profile unchanged); the
+;;; 0.11.0 op-ssh-sign support (PR #108) only added app-bundle *read* access, not the
+;;; socket connect grant. Verified: this rule makes signed commits succeed inside the
+;;; sandbox. Scope to the 1Password agent socket only; team prefix varies per install,
+;;; so mirror the profile's own regex. Remove once upstream ships the connect re-allow.
+(allow network-outbound
+  (remote unix-socket (regex (string-append "^" HOME_DIR "/Library/Group Containers/[A-Za-z0-9]+\\.com\\.1password/t/agent\\.sock$"))))

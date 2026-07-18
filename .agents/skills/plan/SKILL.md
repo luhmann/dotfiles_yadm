@@ -83,6 +83,15 @@ you learn more.
 Why this change is being made — the problem, what prompted it, the intended
 outcome.
 
+## Decisions
+Questions that only the user could resolve, each with the answer and a one-line
+rationale. Preserves *why* a path was chosen so a future session revisiting the
+plan doesn't relitigate settled tradeoffs. Omit if no such decisions arose.
+
+| Question | Decision | Why |
+|---|---|---|
+| Should X handle Y? | No, defer to Z | out of scope for this ticket |
+
 ## Approach
 Your recommended approach. Discuss alternatives with the user while uncertain,
 but converge on one recommended approach in the final plan and justify it.
@@ -98,7 +107,9 @@ What to do, referencing existing functions/utilities to reuse (link them the
 same way so they can be read alongside the plan).
 **Verify:** Exact command to run + expected result, phrased as observable
 behavior. e.g. `./mvnw test -Dtest="FooTest"` -> passes; or "GET /orders/123
-returns 200 with status CONFIRMED". Not "the code compiles".
+returns 200 with status CONFIRMED". Not "the code compiles". For cleanup or
+refactor work, an *absence* check is a legitimate verification — e.g.
+`rg "oldSymbol" src/main` -> no call sites remain.
 
 ### Step 2: <Title>
 ...
@@ -114,7 +125,10 @@ exact commands to run and expected results.
 - Keep the final plan focused on your recommended approach, not all alternatives
 - Keep it concise enough to scan quickly, detailed enough to execute
 - Describe **what** to change and **why**, not **how** — reference locations
-  and intent; do not paste full implementations into the plan
+  and intent; do not paste full implementations into the plan. Small
+  target-state tables and function signatures (e.g. field → old value → new
+  value) count as **what** and are encouraged when they aid scanning; full
+  method bodies are **how** and do not belong in the plan
 - Emit every file reference as a markdown link with a `file://` URL and line
   number (e.g. [Foo.kt:88](file:///.../Foo.kt)) so the reader can open the
   code while reading the plan

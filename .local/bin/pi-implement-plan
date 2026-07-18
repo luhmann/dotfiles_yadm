@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+print_help() {
+  cat <<'EOF'
+Usage:
+  pi-implement-plan [--workspace <directory>] <plan-file>
+  pi-implement-plan -h | --help
+
+Launch a foreground Pi implementation agent for an approved plan.
+
+Arguments:
+  <plan-file>              Plan supplied to the implementation agent.
+
+Options:
+  --workspace <directory>  Working directory for the agent.
+                           Defaults to the current directory.
+  -h, --help               Show this help.
+
+Behavior:
+  The agent uses zllm/openai/gpt-5.6-terra with xhigh thinking.
+  If already inside Agent Safehouse, the child inherits that sandbox.
+  Otherwise, the child is launched through Agent Safehouse.
+
+  Sessions are saved under:
+    ~/.pi/artifacts/tasks/sessions/<task-id>
+
+  For a single repository, use its root as the workspace. For coordinated
+  changes across repositories, use their nearest common parent. The agent
+  reads applicable AGENTS.md or CLAUDE.md files before changing a repository.
+
+Examples:
+  pi-implement-plan --workspace ~/dev/z/service-a /path/to/plan.md
+
+  pi-implement-plan --workspace ~/dev/z \
+    ~/icloud/org/_scratch/z/plans/cross-service-change.md
+EOF
+}
+
+workspace="$PWD"
+plan=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      print_help
+      exit 0
+      ;;
+    --workspace)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --workspace" >&2
+        exit 2
+      fi
+      workspace="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      if [[ $# -ne 1 || -n "$plan" ]]; then
+        echo "Usage: pi-implement-plan [--workspace <directory>] <plan-file>" >&2
+        exit 2
+      fi
+      plan="$1"
+      shift
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      echo "Try 'pi-implement-plan --help' for more information." >&2
+      exit 2
+      ;;
+    *)
+      if [[ -n "$plan" ]]; then
+        echo "Only one plan file may be supplied." >&2
+        exit 2
+      fi
+      plan="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$plan" ]]; then
+  echo "Usage: pi-implement-plan [--workspace <directory>] <plan-file>" >&2
+  echo "Try 'pi-implement-plan --help' for more information." >&2
+  exit 2
+fi
+
+if [[ ! -f "$plan" ]]; then
+  echo "Plan file not found: $plan" >&2
+  exit 2
+fi
+
+if [[ ! -d "$workspace" ]]; then
+  echo "Workspace directory not found: $workspace" >&2
+  exit 2
+fi
+
+plan="$(cd "$(dirname "$plan")" && pwd)/$(basename "$plan")"
+workspace="$(cd "$workspace" && pwd)"
+task_id="$(date -u +%Y%m%dT%H%M%SZ)-$(uuidgen | cut -c1-8 | tr '[:upper:]' '[:lower:]')"
+session_name="task-$task_id"
+session_dir="$HOME/.pi/artifacts/tasks/sessions/$task_id"
+mkdir -p "$session_dir"
+
+cd "$workspace"
+echo "Implementer workspace: $workspace"
+echo "Implementer session: $session_dir"
+
+pi_args=(
+  --print
+  --model zllm/openai/gpt-5.6-terra
+  --thinking xhigh
+  --no-extensions
+  --name "$session_name"
+  --session-dir "$session_dir"
+  "@$plan"
+  "Act as the implementation agent.
+
+Implement the supplied plan in the current workspace.
+Before modifying a repository, locate and read all applicable AGENTS.md or
+CLAUDE.md files for that repository and the files being changed.
+Follow those instructions and existing conventions.
+Make all required edits.
+Run the relevant tests, type checks, formatters, and linters.
+Do not merely describe changes.
+Do not commit or push changes.
+Preserve unrelated existing work.
+
+Finish with:
+1. files changed
+2. checks run and their results
+3. unresolved blockers"
+)
+
+if [[ "${APP_SANDBOX_CONTAINER_ID:-}" == "agent-safehouse" ]]; then
+  pi "${pi_args[@]}"
+else
+  safehouse \
+    --enable=docker,shell-init,1password,ssh,clipboard,chromium-headless \
+    --env-pass=JIRA_API_TOKEN,BRAVE_API_KEY,EXA_API_KEY,KAGI_SESSION_TOKEN,SSL_CERT_FILE,scalyr_readlog_token,scalyr_server \
+    --append-profile="$HOME/.config/agent-safehouse/local-overrides.sb" \
+    pi "${pi_args[@]}"
+fi

@@ -1,30 +1,21 @@
 {
-  "lastChangelogVersion": "0.80.3",
+  "lastChangelogVersion": "0.80.7",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-8",
+  "defaultModel": "claude-fable-5",
   "theme": "tokyo-night-pi",
   "enabledModels": [
-    "anthropic/claude-sonnet-4-6",
-    "openai-codex/gpt-5.5",
     "anthropic/claude-opus-4-8",
     "zllm/bedrock/anthropic.claude-sonnet-4-6",
-    "zllm/gemini/gemini-3.5-flash",
-    "zllm/bedrock/moonshotai.kimi-k2.5",
-    "zllm/openai/gpt-5.4",
     "anthropic/claude-fable-5",
-    "opencode/glm-5.2",
-    "github-copilot/claude-opus-4.8",
-    "anthropic/claude-sonnet-5"
+    "openai-codex/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-terra",
+    "zllm/openai/gpt-5.6-terra",
+    "zllm/openai/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-sol"
   ],
   "packages": [
-    {
-      "source": "npm:pi-powerline-footer",
-      "extensions": [
-        "-index.ts"
-      ]
-    },
     "npm:pi-anthropic-oauth",
     {
       "source": "npm:pi-web-access",
@@ -41,16 +32,34 @@
         "-skills/pi-subagents/SKILL.md"
       ],
       "prompts": [
+        "-prompts/review-loop.md",
         "-prompts/gather-context-and-clarify.md",
         "-prompts/parallel-cleanup.md",
         "-prompts/parallel-context-build.md",
         "-prompts/parallel-handoff-plan.md",
         "-prompts/parallel-research.md",
-        "-prompts/parallel-review.md",
-        "-prompts/review-loop.md"
+        "-prompts/parallel-review.md"
       ]
     },
-    "npm:pi-goal"
+    {
+      "source": "npm:pi-goal",
+      "extensions": [
+        "-.pi/extensions/pi-goal/index.ts"
+      ],
+      "skills": [
+        "-skills/pi-goal-writer/SKILL.md"
+      ]
+    },
+    {
+      "source": "npm:pi-intercom",
+      "extensions": [
+        "-index.ts"
+      ],
+      "skills": [
+        "-skills/pi-intercom/SKILL.md"
+      ]
+    },
+    "git:github.com/capyup/pi-warp"
   ],
   "powerline": {
     "preset": "default",

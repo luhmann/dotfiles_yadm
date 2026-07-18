@@ -1,10 +1,5 @@
-## General
-
-- Be concise and brief in all your replies. Assume that the person is not expertly familiar with the codebase but still is a very seasoned programmer. I will ask for more information if I need it. If there are variants of what could be done mention them without going into detail.
-- emit file references as markdown links with file:// URLs, e.g. [packages/ai/src/foo.ts](file:///Users/fldietrich/dev/jf/pi-mono/packages/ai/src/foo.ts).
 
 ## Testing
-
 - **Test observable behavior, not implementation details.** Prefer tests that exercise the public boundary of a feature (e.g., call service → assert on result/DB state/published events) over tests that mock internal collaborators. Tests should break only when behavior changes, not when code is refactored. Isolated tests are warranted for self-contained logic (calculations, parsing, validation) where edge cases are hard to reach through the outer boundary.
 - **Creation tests** should assert the complete resulting data set to catch missing or incorrect defaults. Every asserted value must be explicitly visible in the arrange phase — do not rely on hidden factory defaults for values that appear in assertions.
 - **Focused tests** (updates, single-field mappings, edge cases) should only include the fields relevant to the behaviour under test in both arrange and assert — keep everything else at factory defaults so the test clearly communicates *what* it is checking.
@@ -16,10 +11,6 @@
 - Include context for debugging
 - Handle errors at appropriate level
 - Never silently swallow exceptions
-
-## Naming
-
-- Avoid the `Data` suffix on classes — it adds no context since everything is data. Use contextual suffixes that communicate the class's role: `Payload` (event/message body), `Request`, `Response`, `Model`, `Info`, etc.
 
 ## General Coding Style
 - Prefer simple, elegant and easy to understand solutions at all times.
@@ -40,3 +31,21 @@
 ## Tools
 - for researching you have the `search`- and `websearch`-skills available, additionally if they do not yield enough material you can invoke `kagi search --help` for instructions to leverage a full search engine.
 - you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup
+- `recall` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `recall search --json "<query>"` to find prior conversations, `recall view <session-id>` to read them.
+
+### Java / JDK (mise)
+- Java is managed by `mise` (not asdf). Non-login shells don't have JAVA_HOME set, so `./mvnw`/`./gradlew` fail with "Unable to locate a Java Runtime".
+- Fix: `export JAVA_HOME="$(mise where java <version>)"` before the build, e.g. `export JAVA_HOME="$(mise where java 21.0.2)"` (match the repo's mise/`.tool-versions` pin).
+
+### CLI gotchas
+- `rg`: ripgrep recurses by default — never add a `-r`-style flag for that. `-r`/`--replace` consumes the next token as a replacement string and rewrites matches (e.g. `rg -rln "pat"` becomes `--replace=ln` and prints garbage). Use `-l` for "files with matches".
+- `rg`/Grep "No matches" can be a false negative (`.gitignore`/`.ignore`, binary/NUL files, symlinks). Never conclude code doesn't exist from an empty result in a repo you know contains it — recheck with `rg -uu "pat"` first.
+- Use `rg -F` for literal strings containing `.`, `(`, `{`, `[`, `*` (e.g. `rg -F "User.findOne({id})"`); use regex mode only when you actually want a pattern.
+- Prefer native `rg` flags over pipes: `-t kotlin`/`-t java`/`--glob` to filter, `-l` files-only, `-c` counts, `-C 2 -n` for context+line numbers. Avoid `rg | grep | awk` chains.
+- awk here is macOS BSD awk (no `gawk`); avoid GNU-only features (`gensub`, `--version`). Prefer structured queries (`jq`, `yq`, `xmlstarlet`) over hand-rolled awk range-matching for specific JSON/YAML nodes.
+
+### Structural search (`ast-grep`)
+- Use `ast-grep` (installed) for structure-aware queries where `rg` gives noise — "who calls X", find a code shape, distinguish a call from a same-named comment/string. Stick with `rg` for plain text/known symbols.
+- Syntax: `ast-grep run -p '<pattern>' --lang kotlin` (or `--lang java`). `--lang` is mandatory. Metavars: `$X` = one node, `$$$` = zero-or-more (args/stmts). E.g. `-p 'data class $N($$$)' --lang kotlin`.
+- Gotcha: `-l` is `--lang`, NOT "files with matches" (opposite of `rg`/`grep`). For paths-only use `--files-with-matches`; for automation use `--json=compact`.
+- Patterns match ASTs, not text: a bare `class $N { $$$ }` misses classes with modifiers/annotations. Start loose, add structure only as needed; verify a pattern with `--debug-query` if it matches nothing.

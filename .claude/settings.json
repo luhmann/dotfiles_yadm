@@ -1,83 +1,44 @@
 {
-  "cleanupPeriodDays": 99999,
+  "apiKeyHelper": "ztoken token -n zllm",
+  "respectGitignore": true,
+  "cleanupPeriodDays": 365,
   "env": {
-    "DISABLE_BUG_COMMAND": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_EXTRA_USAGE_COMMAND": "1",
+    "DISABLE_FEEDBACK_COMMAND": "1",
+    "DISABLE_INSTALL_GITHUB_APP_COMMAND": "1",
+    "DISABLE_LOGIN_COMMAND": "1",
+    "DISABLE_LOGOUT_COMMAND": "1",
+    "DISABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "CLAUDE_CODE_ENABLE_AWAY_SUMMARY": "0",
+    "CLAUDE_CODE_API_KEY_HELPER_TTL_MS": "3600000",
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1",
+    "ANTHROPIC_BASE_URL": "https://zllm.data.zalan.do",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "bedrock/anthropic.claude-sonnet-4-6",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "bedrock/anthropic.claude-haiku-4-5-20251001-v1:0",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "bedrock/anthropic.claude-sonnet-4-6"
   },
-  "attribution": {
-    "commit": "",
-    "pr": ""
-  },
-  "includeCoAuthoredBy": false,
-  "permissions": {
-    "allow": [
-      "WebSearch",
-      "WebFetch"
-    ],
-    "deny": [],
-    "ask": [],
-    "defaultMode": "default"
-  },
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "printf '\\a'"
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "npx -y @owloops/claude-powerline@latest --style=powerline --theme=tokyo-night"
-  },
-  "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true,
-    "kotlin-lsp@claude-plugins-official": true,
-    "warp@claude-code-warp": true
-  },
+  "model": "sonnet",
+  "availableModels": [
+    "sonnet",
+    "haiku"
+  ],
   "extraKnownMarketplaces": {
-    "claude-code-warp": {
+    "purchasing-business-configurations": {
       "source": {
         "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
+        "repo": "zalando-partner/purchasing-business-configurations"
       }
     }
   },
-  "sandbox": {
-    "enabled": false,
-    "autoAllowBashIfSandboxed": true,
-    "allowUnsandboxedCommands": false,
-    "network": {
-      "allowedDomains": [
-        "github.com",
-        "*.github.com",
-        "*.githubusercontent.com",
-        "proxy.golang.org",
-        "sum.golang.org",
-        "storage.googleapis.com",
-        "registry.npmjs.org",
-        "*.npmjs.org",
-        "pypi.org",
-        "files.pythonhosted.org",
-        "crates.io",
-        "static.crates.io",
-        "dl.google.com",
-        "formulae.brew.sh"
-      ]
-    },
-    "excludedCommands": [
-      "docker",
-      "docker-compose",
-      "podman",
-      "open",
-      "ssh",
-      "scp"
-    ]
-  },
-  "effortLevel": "xhigh",
-  "skipDangerousModePermissionPrompt": true
+  "spinnerTipsEnabled": false,
+  "alwaysThinkingEnabled": false,
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.116",
+  "skipDangerousModePermissionPrompt": true,
+  "enabledPlugins": {
+    "business-configurations@purchasing-business-configurations": true
+  }
 }
