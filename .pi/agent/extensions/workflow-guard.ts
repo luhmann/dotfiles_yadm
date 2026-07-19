@@ -46,7 +46,7 @@ One approval doesn't generalize. The user approving a push once doesn't mean all
 
 ## Scratch area
 
-The project scratch workspace is under \`~/icloud/org/_scratch/<project>/\` and is injected into the system prompt by the scratch-workspace extension. It is for all ephemeral agent work, organized by type:
+The project scratch workspace is under \`~/jcloud/org/_scratch/<project>/\` and is injected into the system prompt by the scratch-workspace extension. It is for all ephemeral agent work, organized by type:
 - \`research/\` — distilled research (\`YYYY_MM_DD_<slug>.md\`, or \`YYYY_MM_DD_PROJ-123_<slug>.md\` when a ticket is inferable)
 - \`plans/\` — change plans with \`n2c:\` annotation loop (\`YYYY_MM_DD_<slug>.md\`, or \`YYYY_MM_DD_PROJ-123_<slug>.md\` when a ticket is inferable)
 - \`reviews/\` — code review findings (\`YYYY_MM_DD_<branch>.md\`)

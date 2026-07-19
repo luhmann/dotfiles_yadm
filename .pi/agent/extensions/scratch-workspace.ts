@@ -4,7 +4,7 @@ import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
-const SCRATCH_BASE = join(homedir(), "icloud", "org", "_scratch");
+const SCRATCH_BASE = join(homedir(), "jcloud", "org", "_scratch");
 const SUBDIRECTORIES = ["plans", "research", "reviews", "sessions", "test_protocols"] as const;
 const SHARED_NOTES = join(SCRATCH_BASE, "_notes");
 const TICKET_PATTERN = /^([A-Z]+-\d+)/;
