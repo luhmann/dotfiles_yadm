@@ -1,83 +1,24 @@
 {
-  "lastChangelogVersion": "0.80.7",
+  "lastChangelogVersion": "0.80.5",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-fable-5",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
   "theme": "tokyo-night-pi",
   "enabledModels": [
-    "anthropic/claude-opus-4-8",
-    "zllm/bedrock/anthropic.claude-sonnet-4-6",
-    "anthropic/claude-fable-5",
     "openai-codex/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-sol",
     "openai-codex/gpt-5.6-terra",
-    "zllm/openai/gpt-5.6-terra",
-    "zllm/openai/gpt-5.6-luna",
-    "openai-codex/gpt-5.6-sol"
+    "anthropic/claude-fable-5",
+    "anthropic/claude-opus-4-8"
   ],
   "packages": [
-    "npm:pi-anthropic-oauth",
-    {
-      "source": "npm:pi-web-access",
-      "skills": [
-        "-skills/librarian/SKILL.md"
-      ]
-    },
-    {
-      "source": "npm:pi-subagents",
-      "extensions": [
-        "-src/extension/index.ts"
-      ],
-      "skills": [
-        "-skills/pi-subagents/SKILL.md"
-      ],
-      "prompts": [
-        "-prompts/review-loop.md",
-        "-prompts/gather-context-and-clarify.md",
-        "-prompts/parallel-cleanup.md",
-        "-prompts/parallel-context-build.md",
-        "-prompts/parallel-handoff-plan.md",
-        "-prompts/parallel-research.md",
-        "-prompts/parallel-review.md"
-      ]
-    },
-    {
-      "source": "npm:pi-goal",
-      "extensions": [
-        "-.pi/extensions/pi-goal/index.ts"
-      ],
-      "skills": [
-        "-skills/pi-goal-writer/SKILL.md"
-      ]
-    },
-    {
-      "source": "npm:pi-intercom",
-      "extensions": [
-        "-index.ts"
-      ],
-      "skills": [
-        "-skills/pi-intercom/SKILL.md"
-      ]
-    },
-    "git:github.com/capyup/pi-warp"
+    "npm:pi-web-access",
+    "npm:pi-powerline-footer",
+    "npm:pi-anthropic-oauth"
   ],
-  "powerline": {
-    "preset": "default",
-    "fixedEditor": false
-  },
   "skills": [
-    "+../../.agents/skills/org-doc/SKILL.md",
-    "-skills/start-story/SKILL.md",
-    "-skills/pr-overview/SKILL.md",
-    "-skills/func-arch/SKILL.md",
-    "-skills/delivery-plan/SKILL.md",
-    "-skills/jf-test/SKILL.md",
-    "-skills/jira-read/SKILL.md",
-    "-skills/zolaris-testing/SKILL.md",
-    "-skills/local-dev/SKILL.md",
-    "-skills/n2c-pr-review/SKILL.md"
+    "+../../.agents/skills/org-doc/SKILL.md"
   ],
-  "extensions": [
-    "-extensions/herdr-agent-state.ts"
-  ]
+  "powerline": "default"
 }
