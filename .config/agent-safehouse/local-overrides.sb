@@ -193,6 +193,8 @@
   (home-subpath "/.cache/rod")
   (home-literal "/.cache/kagi-cli")
   (home-subpath "/.cache/kagi-cli")
+  (home-literal "/.cache/huggingface")
+  (home-subpath "/.cache/huggingface")
   (home-literal "/.rodney")
   (home-subpath "/.rodney"))
 
