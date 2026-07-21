@@ -1,10 +1,9 @@
 {
-  "lastChangelogVersion": "0.80.5",
+  "lastChangelogVersion": "0.80.10",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-sol",
-  "theme": "tokyo-night-pi",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-fable-5",
   "enabledModels": [
     "openai-codex/gpt-5.6-luna",
     "openai-codex/gpt-5.6-sol",
@@ -13,12 +12,33 @@
     "anthropic/claude-opus-4-8"
   ],
   "packages": [
-    "npm:pi-web-access",
-    "npm:pi-powerline-footer",
-    "npm:pi-anthropic-oauth"
+    {
+      "source": "npm:pi-web-access",
+      "skills": [
+        "-skills/librarian/SKILL.md"
+      ]
+    },
+    "npm:pi-anthropic-oauth",
+    "npm:@ineersa/my-pi-themes"
   ],
   "skills": [
-    "+../../.agents/skills/org-doc/SKILL.md"
+    "+../../.agents/skills/org-doc/SKILL.md",
+    "-skills/delivery-plan/SKILL.md",
+    "-skills/func-arch/SKILL.md",
+    "-skills/google-workspace/SKILL.md",
+    "-skills/grafana-dashboards/SKILL.md",
+    "-skills/jira/SKILL.md",
+    "-skills/jira-read/SKILL.md",
+    "-skills/local-dev/SKILL.md",
+    "-skills/n2c-pr-review/SKILL.md",
+    "-skills/org-doc/SKILL.md",
+    "-skills/pr-overview/SKILL.md",
+    "+skills/plan/SKILL.md",
+    "-skills/scalyr-cli/SKILL.md",
+    "-skills/start-story/SKILL.md",
+    "-skills/sunrise/SKILL.md",
+    "-skills/worm-review/SKILL.md",
+    "-skills/zolaris-testing/SKILL.md"
   ],
-  "powerline": "default"
+  "theme": "cyberpunk"
 }

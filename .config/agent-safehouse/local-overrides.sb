@@ -15,6 +15,11 @@
   (home-literal "/dev")
   (home-subpath "/dev"))
 
+;;; ~/jcloud — r/w for Syncthing-synced org files and agent scratch workspace
+(allow file-read* file-write*
+  (home-literal "/jcloud")
+  (home-subpath "/jcloud"))
+
 ;;; ~/.opencode — r/w for OpenCode agent data
 (allow file-read* file-write*
   (home-literal "/.opencode")
