@@ -19,6 +19,9 @@
 	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 [commit]
 	gpgsign = true
+[credential]
+	# reset inherited helpers (system osxkeychain fails inside the sandbox with -50)
+	helper =
 [credential "https://github.com"]
 	helper = !gh auth git-credential
 [url "https://github.com/"]
