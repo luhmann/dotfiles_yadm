@@ -1,0 +1,118 @@
+{
+  "extends": [
+    "nolabs-ai/pi"
+  ],
+  "meta": {
+    "name": "pi-dev",
+    "version": "",
+    "description": null,
+    "author": null
+  },
+  "security": {
+    "signal_mode": null,
+    "process_info_mode": null,
+    "ipc_mode": null,
+    "capability_elevation": null,
+    "wsl2_proxy_policy": null
+  },
+  "groups": {
+    "include": ["mise_manager"],
+    "exclude": []
+  },
+  "commands": {
+    "allow": [],
+    "deny": []
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/jcloud",
+      "$HOME/dev"
+    ],
+    "read": [
+      "$HOME/.config",
+      "$HOME/.orbstack",
+      "$HOME/.docker"
+    ],
+    "write": [],
+    "allow_file": [],
+    "read_file": [
+      "$HOME/.testcontainers.properties"
+    ],
+    "write_file": [],
+    "unix_socket": [
+      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    ],
+    "unix_socket_bind": [],
+    "unix_socket_dir": [],
+    "unix_socket_dir_bind": [],
+    "unix_socket_subtree": [],
+    "unix_socket_subtree_bind": [],
+    "deny": [],
+    "bypass_protection": [
+      "$HOME/.docker"
+    ],
+    "suppress_save_prompt": []
+  },
+  "network": {
+    "block": false,
+    "allow_http2": false,
+    "allow_domain": ["pi.dev"],
+    "deny_domain": [],
+    "open_port": [],
+    "open_port_range": [],
+    "listen_port": [],
+    "listen_port_range": [],
+    "connect_port": [],
+    "no_proxy": [],
+    "custom_credentials": {},
+    "tls_intercept": null,
+    "upstream_proxy": null,
+    "upstream_bypass": []
+  },
+  "diagnostics": {
+    "suppress_system_services": []
+  },
+  "linux": {
+    "af_unix_mediation": null,
+    "sandbox_policy": null
+  },
+  "env_credentials": {
+    "op://Automation/scalyr-api-token/password": "scalyr_readlog_token",
+    "op://Automation/jira-api-token/credential": "JIRA_API_TOKEN",
+    "op://Automation/brave-api-key/credential": "BRAVE_API_KEY",
+    "op://Automation/kagi-session-token/credential": "KAGI_SESSION_TOKEN",
+    "op://Automation/exa-api-key/credential": "EXA_API_KEY"
+  },
+  "environment": {
+    "deny_vars": [
+      "OPENAI_API_KEY",
+      "ANTHROPIC_API_KEY",
+      "GEMINI_API_KEY",
+      "OPENROUTER_API_KEY",
+      "PERPLEXITY_API_KEY",
+      "JIRA_API_TOKEN",
+      "BRAVE_API_KEY",
+      "EXA_API_KEY",
+      "KAGI_SESSION_TOKEN",
+      "scalyr_readlog_token"
+    ],
+    "set_vars": {}
+  },
+  "credential_capture": {},
+  "credential_providers": {},
+  "credential_routes": [],
+  "workdir": {
+    "access": "readwrite"
+  },
+  "hooks": {},
+  "session_hooks": {},
+  "rollback": {
+    "exclude_patterns": [],
+    "exclude_globs": []
+  },
+  "interactive": false,
+  "skipdirs": [],
+  "packs": [],
+  "command_args": [],
+  "unsafe_macos_seatbelt_rules": []
+}
