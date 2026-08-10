@@ -26,7 +26,8 @@
   "filesystem": {
     "allow": [
       "$HOME/jcloud",
-      "$HOME/dev"
+      "$HOME/dev",
+      "$HOME/hosting"
     ],
     "read": [
       "$HOME/.config",
@@ -96,7 +97,9 @@
       "KAGI_SESSION_TOKEN",
       "scalyr_readlog_token"
     ],
-    "set_vars": {}
+    "set_vars": {
+      "GIT_CONFIG_GLOBAL": "$HOME/.config/git/nono-sandbox.gitconfig"
+    }
   },
   "credential_capture": {},
   "credential_providers": {},

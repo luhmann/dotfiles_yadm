@@ -201,11 +201,12 @@ alias spf='TERM_PROGRAM= WARP_SESSION_ID= WARP_TERMINAL_SESSION_UUID= sp'
 
 # nono-wrapped pi — path rules live in ~/.config/nono/profiles/pi-dev.json;
 # CLI-only grants (unix sockets, network) live here
-alias np='nono run --allow-cwd --profile pi-dev --network-profile developer -- pi'
+# GH_TOKEN: captured from host keyring at launch — no PAT; gh + git-over-HTTPS inside
+alias np='GH_TOKEN=$(gh auth token) nono run --allow-cwd --profile pi-dev --network-profile developer -- pi'
 # verbose variant for the profile build-up phase: shows every ALLOW/DENY
-alias npv='nono run -vv --allow-cwd --profile pi-dev --network-profile developer -- pi'
+alias npv='GH_TOKEN=$(gh auth token) nono run -vv --allow-cwd --profile pi-dev --network-profile developer -- pi'
 # docker-enabled variant — socket grant is the opt-in escape hatch (Testcontainers/builds)
-alias npd='nono run --allow-cwd --profile pi-dev --network-profile developer --allow-unix-socket "$HOME/.orbstack/run/docker.sock" -- pi'
+alias npd='GH_TOKEN=$(gh auth token) nono run --allow-cwd --profile pi-dev --network-profile developer --allow-unix-socket "$HOME/.orbstack/run/docker.sock" -- pi'
 
 # Claude Code autonomous mode (sandboxed)
 zc() {

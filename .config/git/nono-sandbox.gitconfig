@@ -1,0 +1,26 @@
+# Global gitconfig for nono-sandboxed agents (GIT_CONFIG_GLOBAL).
+# Replaces ~/.gitconfig inside the sandbox: SSH transport is impossible there
+# (nono's network proxy is HTTP(S)-only), so remotes are rewritten to HTTPS
+# and auth flows through gh + GH_TOKEN. Signing still uses the 1Password
+# agent socket, which is a local grant, not network.
+[user]
+	name = Jan Florian Dietrich
+	email = luhmann@users.noreply.github.com
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBfwfkx/w8mRkbk4RltRIMtMTfnYIaA2HtUHIL9W01ex jfd@daenen4.de
+[init]
+	defaultBranch = main
+[push]
+	default = current
+[pull]
+	rebase = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true
+[credential "https://github.com"]
+	helper = !gh auth git-credential
+[url "https://github.com/"]
+	insteadOf = git@github.com:
+	insteadOf = git@github.com-personal:
