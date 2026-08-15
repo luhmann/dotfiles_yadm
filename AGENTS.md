@@ -16,6 +16,12 @@
 - Prefer simple, elegant and easy to understand solutions at all times.
 - Prefer functional programming patterns, like small functions, pipelining and composition.
 
+## Communication
+- Lead with the outcome. Use concise, plain language and bullets when useful.
+- Explain material decisions, tradeoffs, risks, and blockers instead of routine mechanics or a blow-by-blow transcript.
+- Keep long-running work visible with brief status updates.
+- Make final responses self-contained.
+
 ## Kotlin
 
 - Prefer scope-function pipelines (`.let`, `.also`, `.apply`) over intermediate variables when a function is a linear chain of transformations and side effects. Each step should be a single operation — break the chain if logic branches.
@@ -44,8 +50,3 @@
 - Prefer native `rg` flags over pipes: `-t kotlin`/`-t java`/`--glob` to filter, `-l` files-only, `-c` counts, `-C 2 -n` for context+line numbers. Avoid `rg | grep | awk` chains.
 - awk here is macOS BSD awk (no `gawk`); avoid GNU-only features (`gensub`, `--version`). Prefer structured queries (`jq`, `yq`, `xmlstarlet`) over hand-rolled awk range-matching for specific JSON/YAML nodes.
 
-### Structural search (`ast-grep`)
-- Use `ast-grep` (installed) for structure-aware queries where `rg` gives noise — "who calls X", find a code shape, distinguish a call from a same-named comment/string. Stick with `rg` for plain text/known symbols.
-- Syntax: `ast-grep run -p '<pattern>' --lang kotlin` (or `--lang java`). `--lang` is mandatory. Metavars: `$X` = one node, `$$$` = zero-or-more (args/stmts). E.g. `-p 'data class $N($$$)' --lang kotlin`.
-- Gotcha: `-l` is `--lang`, NOT "files with matches" (opposite of `rg`/`grep`). For paths-only use `--files-with-matches`; for automation use `--json=compact`.
-- Patterns match ASTs, not text: a bare `class $N { $$$ }` misses classes with modifiers/annotations. Start loose, add structure only as needed; verify a pattern with `--debug-query` if it matches nothing.
