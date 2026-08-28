@@ -25,7 +25,7 @@ your findings into a plan file as you go.
 
 2. Determine the **task description**:
    - If `$ARGUMENTS` is free-form text, use it.
-   - If only a ticket ID is available, read the ticket with `jira-cli` to get
+   - If only a ticket ID is available, read the ticket with `linear issue title <TICKET-ID>` to get
      the summary.
 
 3. Determine the project scratch workspace:
@@ -34,10 +34,10 @@ your findings into a plan file as you go.
 
 4. Create the plan file under the project scratch `plans/` directory:
    ```
-   ~/icloud/org/_scratch/<project>/plans/<DATE>_<TICKET-ID>_<short-name>.md
+   ~/jcloud/org/_scratch/<project>/plans/<DATE>_<TICKET-ID>_<short-name>.md
    ```
    - `<DATE>` is today in `YYYY_MM_DD` format
-   - `<TICKET-ID>` is the Jira ticket ID
+   - `<TICKET-ID>` is the Linear ticket ID
    - `<short-name>` is a kebab-case slug (3–5 words) derived from the task
    - If no ticket ID is inferable, omit it: `<DATE>_<short-name>.md`
    - Example: `2026_04_07_PT-50123_add-retry-on-timeout.md`

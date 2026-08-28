@@ -11,8 +11,13 @@ its flags. Issue the initial batch of searches in parallel in a single
 turn.
 
 Pick the most promising URLs from the combined results and pull them
-with `fetch_content` (batch independent URLs in one call). Follow up
-with more targeted searches if there are obvious gaps.
+with `fetch_content` (batch independent URLs in one call) — do not
+rely only on the synthesized search snippets. Follow up with more
+targeted searches if there are obvious gaps.
+
+Synthesize the combined results: cross-check claims across backends,
+prefer agreeing sources, cite URLs for non-obvious claims, and distill
+rather than dumping raw output.
 
 Reply with a concise summary of the findings, then ask whether to
 persist them as a markdown file. Only write the file after the user says

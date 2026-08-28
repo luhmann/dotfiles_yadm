@@ -1,7 +1,7 @@
 ---
 name: start-story
 description: >
-  Start working on a Jira story: read the ticket, create a feature branch, and add a tracking entry
+  Start working on a Linear issue: read the ticket, create a feature branch, and add a tracking entry
   to the org file. Use when the user asks to "start story", "start ticket", "begin work on",
   or provides a ticket number to start working on.
 argument-hint: "<TICKET-ID>"
@@ -14,11 +14,11 @@ argument-hint: "<TICKET-ID>"
 - If the user provided `$ARGUMENTS`, use that as the ticket ID.
 - Otherwise, ask the user for the ticket ID. Do not proceed without one.
 
-## 2. Read the Jira story
+## 2. Read the Linear issue
 
-Use the `/jira-read` skill with the ticket ID to fetch and understand the story.
+Use the `/linear-read` skill with the ticket ID to fetch and understand the story.
 
-Run: `/jira-read <TICKET-ID>`
+Run: `/linear-read <TICKET-ID>`
 
 From the story, extract:
 - **Ticket ID** (e.g., `ULTRA-1234`)
@@ -31,7 +31,7 @@ From the story, extract:
    git checkout main && git pull
    ```
 2. Create a new branch named `<TICKET-ID>/<short-description>` where:
-   - `<TICKET-ID>` is the Jira ticket ID in its original casing (e.g., `ULTRA-1234`)
+   - `<TICKET-ID>` is the Linear ticket ID in its original casing (e.g., `ULTRA-1234`)
    - `<short-description>` is a kebab-case slug (3-5 words) derived from the story title
    - Example: `ULTRA-1234/add-partner-invoice-export`
 3. Switch to the new branch:
@@ -41,7 +41,7 @@ From the story, extract:
 
 ## 4. Add entry to zalando.org
 
-Add an org-mode entry under the `* Stories` top-level heading in `~/icloud/org/zalando.org`.
+Add an org-mode entry under the `* Stories` top-level heading in `~/jcloud/org/zalando.org`.
 
 - If the `* Stories` heading does not exist yet, create it at the end of the file.
 - Add a new entry in this format:

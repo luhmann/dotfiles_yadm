@@ -32,12 +32,12 @@
 
 ## Git
 - Before committing any changes run the projects tasks for formatting, linting and the whole test suite. Check the project setup what the tools are (eg. ktlint format, maven/gradle tests)
-- when opening prs on my behalf, include the ticket number in the title, have a simple description as PR body, do not include a test plan, include a link to the ticket you should be able to derive it with jira-cli. If the PR is stacked on another Branch/PR that is not `main`, then include references to all prs that need to be merged before this one can go into main
+- when opening prs on my behalf, include the ticket number in the title, have a simple description as PR body, do not include a test plan, include a link to the ticket you should be able to derive it with `linear --help`. If the PR is stacked on another Branch/PR that is not `master/main`, then include references to all prs that need to be merged before this one can go into main
 
 ## Tools
 - for researching you have the `search`- and `websearch`-skills available, additionally if they do not yield enough material you can invoke `kagi search --help` for instructions to leverage a full search engine.
 - you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup
-- `recall` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `recall search --json "<query>"` to find prior conversations, `recall view <session-id>` to read them.
+- `mem --help` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `mem search --json "<query>"` to find prior conversations, `mem view <session-id>` to read them.
 
 ### Java / JDK (mise)
 - Java is managed by `mise` (not asdf). Non-login shells don't have JAVA_HOME set, so `./mvnw`/`./gradlew` fail with "Unable to locate a Java Runtime".
@@ -50,3 +50,7 @@
 - Prefer native `rg` flags over pipes: `-t kotlin`/`-t java`/`--glob` to filter, `-l` files-only, `-c` counts, `-C 2 -n` for context+line numbers. Avoid `rg | grep | awk` chains.
 - awk here is macOS BSD awk (no `gawk`); avoid GNU-only features (`gensub`, `--version`). Prefer structured queries (`jq`, `yq`, `xmlstarlet`) over hand-rolled awk range-matching for specific JSON/YAML nodes.
 
+## Wiki
+- A curated personal wiki lives at `~/jcloud/org/wiki/` — domain (Zalando purchasing/orders) + engineering knowledge that compounds across sessions.
+- For cross-service or domain questions, consult `~/jcloud/org/wiki/index.md` first; search specifics with `rg` in that directory.
+- Never write to the wiki directly — mutations only go through the wiki skill.

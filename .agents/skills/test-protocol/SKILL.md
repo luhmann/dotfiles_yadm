@@ -52,11 +52,11 @@ Determine the project scratch workspace:
 - Prefer the `get_scratch_path` tool when available.
 - Otherwise use the scratch workspace path injected into the system prompt.
 
-The output directory is: `~/icloud/org/_scratch/<project>/test_protocols/`
+The output directory is: `~/jcloud/org/_scratch/<project>/test_protocols/`
 
 Filename format: `YYYY_MM_DD_TICKET_slug.md`
 - `YYYY_MM_DD` — today's date
-- `TICKET` — Jira ticket ID extracted from the branch name (e.g. `SOO-123`)
+- `TICKET` — Linear ticket ID extracted from the branch name (e.g. `SOO-123`)
 - `slug` — short kebab-case summary of what is being tested (e.g. `return-order-creation`)
 - If no ticket ID is inferable, omit it: `YYYY_MM_DD_slug.md`
 
@@ -65,7 +65,7 @@ Example: `2025_06_12_SOO-42_return-order-creation.md`
 ### 4. Initialise the Document
 
 ```bash
-uvx showboat init ~/icloud/org/_scratch/<project>/test_protocols/<filename> "<Title>"
+uvx showboat init ~/jcloud/org/_scratch/<project>/test_protocols/<filename> "<Title>"
 ```
 
 Title format: `<TICKET>: <Human-readable feature description>`
@@ -130,7 +130,7 @@ uvx showboat note <file> "## Re-verification
 To re-run all test cases and verify outputs still match:
 
 \`\`\`bash
-uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename>
+uvx showboat verify ~/jcloud/org/_scratch/<project>/test_protocols/<filename>
 \`\`\`
 
 Run this command after any code change to confirm all test outputs still match."
@@ -172,13 +172,13 @@ Do not fabricate cases that cannot be exercised from the service boundary.
 When the user asks to re-verify or re-run a test protocol:
 
 ```bash
-uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename>
+uvx showboat verify ~/jcloud/org/_scratch/<project>/test_protocols/<filename>
 ```
 
 If outputs have changed and the new behaviour is correct, update the document:
 
 ```bash
-uvx showboat verify ~/icloud/org/_scratch/<project>/test_protocols/<filename> --output ~/icloud/org/_scratch/<project>/test_protocols/<filename>
+uvx showboat verify ~/jcloud/org/_scratch/<project>/test_protocols/<filename> --output ~/jcloud/org/_scratch/<project>/test_protocols/<filename>
 ```
 
 ## Notes

@@ -53,6 +53,7 @@ show_agent_notifications = true
 should_render_cli_agent_toolbar = true
 
 [agents.third_party.cli_agent_toolbar_enabled_commands]
+np = "Pi"
 sc = "Claude"
 sp = "Pi"
 

@@ -1,6 +1,6 @@
 ---
 name: delivery-plan
-description: Add or update rows in a Google Sheets delivery plan. Use when the user asks to update a delivery plan, add tickets to a spreadsheet, or sync Jira tickets to a sheet.
+description: Add or update rows in a Google Sheets delivery plan. Use when the user asks to update a delivery plan, add tickets to a spreadsheet, or sync Linear tickets to a sheet.
 argument-hint: "[sheet URL] [instructions]"
 ---
 
@@ -62,12 +62,12 @@ Multiple rows can be copied in a single `batchUpdate` with multiple requests.
 ### Step 2: Update only the cells that differ
 
 After cloning, update **only** the cells whose values need to change. Typically
-this is just the ticket hyperlink in column B:
+this is just the ticket hyperlink in column B (get the URL via `linear issue url <TICKET>`):
 
 ```
 gws sheets spreadsheets values update \
   --params '{"spreadsheetId": "<ID>", "range": "B<row>", "valueInputOption": "USER_ENTERED"}' \
-  --json '{"values": [["=HYPERLINK(\"https://jira.zalando.net/browse/<TICKET>\",\"<TICKET> - <Summary>\")"]]}'
+  --json '{"values": [["=HYPERLINK(\"<TICKET-URL>\",\"<TICKET> - <Summary>\")"]]}'
 ```
 
 **Critical**: Do NOT overwrite cells that already have the correct value from
@@ -167,7 +167,7 @@ These are typical but **may vary per sheet**. Always verify by reading first.
 | Column | Content | Notes |
 |--------|---------|-------|
 | A | Assigned checkbox | Formula like `=COUNTA(F<row>:AU<row>)>0`, auto-computed |
-| B | Ticket link | `=HYPERLINK("https://jira.zalando.net/browse/<ID>","<ID> - <Summary>")` |
+| B | Ticket link | `=HYPERLINK("<TICKET-URL>","<ID> - <Summary>")` — get `<TICKET-URL>` via `linear issue url <ID>` |
 | C | Status dropdown | Chip-style dropdown (BACKLOG, TO DO, IN PROGRESS, IN REVIEW, QA, DONE, CANCELED, BLOCKED, ON HOLD) |
 | D | (varies) | |
 | E | Notes | |

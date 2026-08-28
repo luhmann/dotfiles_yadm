@@ -45,7 +45,7 @@ BREAKING CHANGE: <description, ONLY if this is a breaking change>
 4. "**What**" section: Required. Bold inline label on its own line, followed by a blank line and bullet points of what changed
 5. "**Modules:**" line: Required. Bold inline label followed by a comma-separated list (e.g., `**Modules:** auth, api, config`)
 
-Note: Use bold inline labels (`**Why**`), not Markdown headings (`#### Why`). Heading-style labels start with `#`, which git's editor-input commit cleanup mode strips as comments. Bold labels render the same in GitHub/Jira and survive every cleanup mode.
+Note: Use bold inline labels (`**Why**`), not Markdown headings (`#### Why`). Heading-style labels start with `#`, which git's editor-input commit cleanup mode strips as comments. Bold labels render the same in GitHub/Linear and survive every cleanup mode.
 6. Blank lines between sections
 7. "Refs:" footer: Include ticket reference. Extract the ticket ID from the branch name by running `git branch --show-current` — the ticket ID is the leading `PROJ-123` prefix (pattern: `^[A-Z]+-\d+`). If no ticket is found in the branch, ask the user
 8. "BREAKING CHANGE:" footer: Only include if there are breaking changes. Omit entirely otherwise

@@ -7,9 +7,13 @@
  * - Footer with ticket reference (inferred from branch) and optional breaking change
  *
  * Works by:
- * 1. Injecting format guidelines into the system prompt
- * 2. Providing a tool to get the current branch's ticket reference
- * 3. Intercepting git commit commands to validate format
+ * 1. Providing a tool to get the current branch's ticket reference
+ * 2. Intercepting git commit commands to validate format; on violations
+ *    the full format guidelines are returned so the agent can self-correct
+ *
+ * The guidelines themselves live in the commit skill
+ * (~/.agents/skills/commit/SKILL.md) and are loaded on demand — they are
+ * intentionally NOT injected into every system prompt.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -122,11 +126,18 @@ function validateCommitMessage(message: string): { valid: boolean; errors: strin
 }
 
 function extractMessageFromCommand(command: string): string | null {
+	// Heredoc first: -m "$(cat <<'EOF' ... EOF)" — the generic quoted
+	// patterns below would otherwise capture the $(cat <<'EOF' scaffolding
+	// as part of the message, producing bogus validation errors
+	const heredoc = command.match(/-m\s+"\$\(cat\s+<<\s*'?(\w+)'?\n([\s\S]*?)\n\1\s*\n?\s*\)"/);
+	if (heredoc && heredoc[2]) {
+		return heredoc[2];
+	}
+
 	// Match -m "message" or -m 'message' patterns
 	const patterns = [
 		/-m\s+"([^"]+)"/,
 		/-m\s+'([^']+)'/,
-		/-m\s+"([^"]+)"/g,
 		/--message[=\s]+"([^"]+)"/,
 		/--message[=\s]+'([^']+)'/,
 	];
@@ -148,13 +159,6 @@ function extractMessageFromCommand(command: string): string | null {
 }
 
 export default function (pi: ExtensionAPI) {
-	// Inject commit format guidelines into system prompt
-	pi.on("before_agent_start", async (event, _ctx) => {
-		return {
-			systemPrompt: event.systemPrompt + "\n\n" + COMMIT_FORMAT_GUIDELINES,
-		};
-	});
-
 	// Register tool to get ticket reference from branch name
 	pi.registerTool({
 		name: "get_branch_ticket",
@@ -201,7 +205,7 @@ export default function (pi: ExtensionAPI) {
 		const command = event.input.command;
 
 		// Check if this is a git commit command
-		if (!command.includes("git commit") && !command.includes("git commit")) {
+		if (!command.includes("git commit")) {
 			return;
 		}
 
@@ -210,16 +214,10 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 
-		// Try to extract the commit message
+		// Try to extract the commit message; editor/-F workflows can't be
+		// validated — let them through silently
 		const message = extractMessageFromCommand(command);
-
 		if (!message) {
-			// Can't validate if using editor or file - let it through but remind
-			if (!command.includes("-m") && !command.includes("--message")) {
-				if (ctx.hasUI) {
-					ctx.ui.notify("Reminder: Ensure commit follows the required format", "info");
-				}
-			}
 			return;
 		}
 
@@ -227,19 +225,20 @@ export default function (pi: ExtensionAPI) {
 		const { valid, errors } = validateCommitMessage(message);
 
 		if (!valid) {
+			const errorList = errors.map((e) => `• ${e}`).join("\n");
+			const blockReason = `Commit blocked due to format issues:\n${errorList}\n\nRewrite the commit message to follow this format:\n\n${COMMIT_FORMAT_GUIDELINES}`;
+
 			if (ctx.hasUI) {
-				const errorList = errors.map((e) => `• ${e}`).join("\n");
 				const proceed = await ctx.ui.confirm(
 					"Commit Format Issues",
 					`The commit message has format issues:\n\n${errorList}\n\nProceed anyway?`
 				);
 
 				if (!proceed) {
-					return {
-						block: true,
-						reason: `Commit blocked due to format issues:\n${errorList}\n\nPlease fix the commit message to follow the required format.`,
-					};
+					return { block: true, reason: blockReason };
 				}
+			} else {
+				return { block: true, reason: blockReason };
 			}
 		}
 	});

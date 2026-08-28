@@ -58,7 +58,7 @@ uvx rodney open "https://zolaris-release.retail-operations-test.zalan.do/"
 
 ```bash
 # Create test protocol document
-uvx showboat init ~/icloud/org/_test_protocols/<date>-<ticket>-<name>.md "Title"
+uvx showboat init ~/jcloud/org/_test_protocols/<date>-<ticket>-<name>.md "Title"
 
 # Add commentary
 uvx showboat note <file> "Some note"

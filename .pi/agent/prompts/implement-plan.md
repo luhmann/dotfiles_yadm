@@ -4,7 +4,7 @@ argument-hint: "[plan-path] [workspace]"
 ---
 
 Delegate implementation of an existing approved plan to the external
-`pi-implement-plan` command.
+`pi-agent implement` command.
 
 Plan argument supplied to this template:
 
@@ -31,7 +31,7 @@ Determine the implementation workspace as follows:
 Run this foreground command with the bash tool:
 
 ```bash
-pi-implement-plan --workspace "<resolved-workspace>" "<resolved-plan-path>"
+pi-agent implement --workspace "<resolved-workspace>" "<resolved-plan-path>"
 ```
 
 Do not implement the plan yourself and do not make edits while the command is

@@ -8,9 +8,9 @@ description: Create and update personal documentation. Use when the user asks to
 1. Write documentation in **Org mode**.
 2. Every generated file name must start with the current date in the
    format `YYYY_MM_DD`, e.g. `2026_02_18_my-topic.org`.
-3. Store documentation in `~/icloud/org`.
+3. Store documentation in `~/jcloud/org`.
    - If the user asks to "org-doc as research", store in
-     `~/icloud/org/_research`.
+     `~/jcloud/org/_research`.
 4. If a diagram is requested, use **D2**.
 5. If code snippets are useful, include them.
 6. When including snippets, use **org-transclusion** with narrow line ranges.

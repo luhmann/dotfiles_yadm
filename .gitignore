@@ -35,3 +35,7 @@ docs/agent
 # fnox — age private key and local secret cache (age-encrypted ciphertext)
 .config/fnox/age.txt
 fnox.local.toml
+
+.pi-subagents
+.pi
+.npmrc

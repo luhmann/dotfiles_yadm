@@ -16,7 +16,9 @@
     "wsl2_proxy_policy": null
   },
   "groups": {
-    "include": ["mise_manager"],
+    "include": [
+      "mise_manager"
+    ],
     "exclude": []
   },
   "commands": {
@@ -27,25 +29,54 @@
     "allow": [
       "$HOME/jcloud",
       "$HOME/dev",
-      "$HOME/hosting"
+      "$HOME/hosting",
+      "$HOME/.local/share/mem",
+      "$HOME/.dash0",
+      "$HOME/.config/nobl9",
+      "$HOME/Library/Application Support/zalando-token-cli",
+      "$HOME/Library/Application Support/zalando-kubectl",
+      "$HOME/.kube",
+      "$HOME/.okta_cache",
+      "$HOME/.workspace-mcp",
+      "$HOME/.claude",
+      "$HOME/.agents",
+      "$HOME/.m2",
+      "$HOME/.local/state/mise",
+      "~/Library/Application Support",
+      "~/Library/Application Support/zalando-aws-cli"
     ],
     "read": [
       "$HOME/.config",
       "$HOME/.orbstack",
-      "$HOME/.docker"
+      "$HOME/.docker",
+      "$HOME/.aws"
     ],
     "write": [],
-    "allow_file": [],
+    "allow_file": [
+      "~/AGENTS.MD",
+      "~/AGENTS.md",
+      "~/.databrickscfg",
+      "~/.orbstack/run/docker.sock"
+    ],
     "read_file": [
-      "$HOME/.testcontainers.properties"
+      "$HOME/.testcontainers.properties",
+      "$HOME/.kagi.toml",
+      "$HOME/.zmon-cli.yaml",
+      "$HOME/.gitignore",
+      "$HOME/.gitattributes"
     ],
     "write_file": [],
     "unix_socket": [
-      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
+      "$HOME/.orbstack/run/docker.sock",
+      "/var/run/docker.sock"
     ],
     "unix_socket_bind": [],
     "unix_socket_dir": [],
-    "unix_socket_dir_bind": [],
+    "unix_socket_dir_bind": [
+      "/private/var/folders/zf/n2t15scs76dfydpdtrpvtczh0000gp/T",
+      "/private/tmp"
+    ],
     "unix_socket_subtree": [],
     "unix_socket_subtree_bind": [],
     "deny": [],
@@ -57,7 +88,41 @@
   "network": {
     "block": false,
     "allow_http2": false,
-    "allow_domain": ["pi.dev"],
+    "allow_domain": [
+      "pi.dev",
+      "jira.zalando.net",
+      "api.exa.ai",
+      "api.search.brave.com",
+      "kagi.com",
+      "*.github.com",
+      "*.githubusercontent.com",
+      "stackoverflow.com",
+      "openpolicyagent.org",
+      "*.openpolicyagent.org",
+      "kubernetes.io",
+      "*.kubernetes.io",
+      "sqlite.org",
+      "*.sqlite.org",
+      "*.jdx.dev",
+      "litestream.io",
+      "d2lang.com",
+      "deepwiki.com",
+      "docs.aws.amazon.com",
+      "*.npmjs.com",
+      "docs.syncthing.net",
+      "docs.warp.dev",
+      "*.scalyr.com",
+      "*.dataset.com",
+      "*.nobl9.com",
+      "*.dash0.com",
+      "*.zalando.net",
+      "*.zalan.do",
+      "identity.zalando.com",
+      "sandbox.identity.zalando.com",
+      "*.auth.zalando.com",
+      "chatgpt.com",
+      "auth.openai.com"
+    ],
     "deny_domain": [],
     "open_port": [],
     "open_port_range": [],
@@ -78,11 +143,11 @@
     "sandbox_policy": null
   },
   "env_credentials": {
-    "op://Automation/scalyr-api-token/password": "scalyr_readlog_token",
-    "op://Automation/jira-api-token/credential": "JIRA_API_TOKEN",
-    "op://Automation/brave-api-key/credential": "BRAVE_API_KEY",
     "op://Automation/kagi-session-token/credential": "KAGI_SESSION_TOKEN",
-    "op://Automation/exa-api-key/credential": "EXA_API_KEY"
+    "op://Automation/brave-api-key/credential": "BRAVE_API_KEY",
+    "op://Automation/exa-api-key/credential": "EXA_API_KEY",
+    "op://Automation/jira-api-token/credential": "JIRA_API_TOKEN",
+    "op://Automation/scalyr-api-token/password": "scalyr_readlog_token"
   },
   "environment": {
     "deny_vars": [

@@ -3,6 +3,11 @@
 # (nono's network proxy is HTTP(S)-only), so remotes are rewritten to HTTPS
 # and auth flows through gh + GH_TOKEN. Signing still uses the 1Password
 # agent socket, which is a local grant, not network.
+[core]
+	# Not inherited from ~/.gitconfig, which this file replaces: without it
+	# git falls back to the XDG default ~/.config/git/ignore, leaving
+	# .DS_Store, *.swp, .idea/ etc. unignored in every sandboxed repo.
+	excludesfile = ~/.gitignore
 [user]
 	name = Jan Florian Dietrich
 	email = luhmann@users.noreply.github.com
