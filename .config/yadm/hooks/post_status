@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+command -v pi-settings-drift >/dev/null || exit 0
+pi-settings-drift || true

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+live="$HOME/.pi/agent/settings.json"
+template="$HOME/.pi/agent/settings.json##template.default"
+fluid='del(.defaultModel, .defaultProvider, .defaultThinkingLevel, .lastChangelogVersion)'
+
+[[ -f "$live" && -f "$template" ]] || exit 0
+
+render_template() {
+  grep -v '^{%' "$template" | sed "s|{{env.HOME}}|$HOME|g" | jq -S "$fluid"
+}
+
+if ! drift=$(diff -u <(render_template) <(jq -S "$fluid" "$live")); then
+  echo "pi settings.json drifted from template — fold into settings.json##template.default:"
+  echo "$drift"
+  exit 1
+fi

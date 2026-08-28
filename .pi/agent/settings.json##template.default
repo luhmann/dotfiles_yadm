@@ -1,9 +1,15 @@
 {
   "lastChangelogVersion": "0.84.3",
-  "defaultThinkingLevel": "high",
-  "hideThinkingBlock": true,
+{% if yadm.hostname == "KXTXH7LK76" %}
   "defaultProvider": "anthropic",
   "defaultModel": "claude-fable-5",
+  "defaultThinkingLevel": "high",
+{% else %}
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-5",
+  "defaultThinkingLevel": "medium",
+{% endif %}
+  "hideThinkingBlock": true,
   "enabledModels": [
     "anthropic/claude-opus-4-8",
     "zllm/bedrock/anthropic.claude-sonnet-4-6",
@@ -77,7 +83,7 @@
       ]
     },
     {
-      "source": "/Users/fldietrich/.config/nono/packages/nolabs-ai/pi"
+      "source": "{{env.HOME}}/.config/nono/packages/nolabs-ai/pi"
     },
     "git:github.com/capyup/pi-warp",
     "npm:pi-agent-browser-native",
