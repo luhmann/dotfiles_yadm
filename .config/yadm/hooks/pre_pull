@@ -2,6 +2,6 @@
 command -v pi-settings-drift >/dev/null || exit 0
 if ! pi-settings-drift; then
   echo "Blocking yadm pull: fold the drift above into settings.json##template.default first,"
-  echo "otherwise auto-alt would overwrite it. Bypass: yadm config yadm.auto-alt false"
+  echo "then run yadm alt. Bypass: chmod -x ~/.config/yadm/hooks/pre_pull"
   exit 1
 fi
