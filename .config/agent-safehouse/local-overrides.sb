@@ -1,5 +1,5 @@
 ;;; Local machine overrides — appended after safehouse's generated policy
-;;; Loaded via SAFEHOUSE_APPEND_PROFILE
+;;; Loaded via the safehouse alias in ~/.aliases (--append-profile)
 
 ;;; ~/.config — broad read-only (jira-cli, gh, etc.)
 (allow file-read*
@@ -29,6 +29,21 @@
 (allow file-read* file-write*
   (home-literal "/.pi")
   (home-subpath "/.pi"))
+
+;;; prime-agent — daemon state (~/.prime/agent: sessions, worker descriptors,
+;;; recovery journals, worker auth tokens). sprime redirects TMPDIR to
+;;; ~/.prime/safehouse-tmp so the daemon socket dir stays inside these grants.
+(allow file-read* file-write*
+  (home-literal "/.prime")
+  (home-subpath "/.prime"))
+
+;;; prime-agent daemon unix sockets — supervisor + per-worker sockets live in
+;;; $TMPDIR/prime-agent-<uid>/; safehouse 0.11 default-denies unix sockets, so
+;;; file grants alone don't allow bind/connect.
+(allow network-bind network-inbound
+  (local  unix-socket (regex (string-append "^" HOME_DIR "/\\.prime/safehouse-tmp/prime-agent-[0-9]+/"))))
+(allow network-outbound
+  (remote unix-socket (regex (string-append "^" HOME_DIR "/\\.prime/safehouse-tmp/prime-agent-[0-9]+/"))))
 
 ;;; ~/.agents — shared agent skills (symlinked from ~/.claude/skills)
 (allow file-read* file-write*

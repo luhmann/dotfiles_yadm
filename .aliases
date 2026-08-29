@@ -197,9 +197,11 @@ alias sc='safehouse claude --dangerously-skip-permissions'
 alias scz='safehouse claude --dangerously-skip-permissions --settings ~/.claude/settings-zalando.json'
 alias sp='safehouse pi'
 alias so='safehouse opencode'
-# prime-agent: extra profile grants ~/.prime + daemon sockets; TMPDIR redirect keeps
-# its daemon inside the sandbox (host-daemon attach/unlink hazard otherwise)
-alias sprime='safehouse --append-profile="$HOME/.config/agent-safehouse/prime-agent.sb" -- TMPDIR="$HOME/.prime/safehouse-tmp" prime-agent'
+# prime-agent: grants (~/.prime + daemon unix sockets) live in local-overrides.sb;
+# TMPDIR redirect keeps its daemon socket dir inside the sandbox (host-daemon
+# attach/unlink hazard otherwise); process-control for `ps` worker-identity checks
+# + crash-recovery process-group reaping
+alias sprime='mkdir -p "$HOME/.prime/safehouse-tmp" && safehouse --enable=process-control -- TMPDIR="$HOME/.prime/safehouse-tmp" prime-agent'
 alias sx='safehouse codex'
 alias spf='TERM_PROGRAM= WARP_SESSION_ID= WARP_TERMINAL_SESSION_UUID= sp'
 
