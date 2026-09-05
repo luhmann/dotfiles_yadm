@@ -30,7 +30,7 @@
         "-skills/librarian/SKILL.md"
       ]
     },
-    "npm:pi-anthropic-oauth",
+    "{{env.HOME}}/dev/pi-anthropic-oauth",
     {
       "source": "npm:@ineersa/my-pi-themes",
       "themes": [
