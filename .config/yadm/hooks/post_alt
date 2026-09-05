@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+dir="$HOME/.pi/agent"
+live="$dir/settings.json"
+shared="$dir/settings.shared.json"
+prev="$dir/settings.shared.prev.json"
+
+[[ -f "$shared" ]] || exit 0
+
+if [[ -d "$live.lock" ]]; then
+  echo "pi holds $live.lock (running session?); skipping settings merge" >&2
+  exit 1
+fi
+
+if [[ ! -f "$live" ]]; then
+  cp "$shared" "$live"
+  cp "$shared" "$prev"
+  exit 0
+fi
+
+removed='[]'
+if [[ -f "$prev" ]]; then
+  removed=$(jq -c --slurpfile n "$shared" 'keys - ($n[0] | keys)' "$prev")
+fi
+
+tmp=$(mktemp "$live.XXXXXX")
+if jq --argjson rm "$removed" --slurpfile s "$shared" \
+     'delpaths($rm | map([.])) * $s[0]' "$live" > "$tmp" && [[ -s "$tmp" ]]; then
+  mv "$tmp" "$live"
+  cp "$shared" "$prev"
+else
+  rm -f "$tmp"
+  echo "pi settings merge failed; $live left untouched" >&2
+  exit 1
+fi

@@ -2,17 +2,17 @@
 set -euo pipefail
 
 live="$HOME/.pi/agent/settings.json"
-template="$HOME/.pi/agent/settings.json##template.default"
-fluid='del(.defaultModel, .defaultProvider, .defaultThinkingLevel, .lastChangelogVersion)'
+shared="$HOME/.pi/agent/settings.shared.json"
 
-[[ -f "$live" && -f "$template" ]] || exit 0
+[[ -f "$live" && -f "$shared" ]] || exit 0
 
-render_template() {
-  grep -v '^{%' "$template" | sed "s|{{env.HOME}}|$HOME|g" | jq -S "$fluid"
+keys=$(jq -c 'keys' "$shared")
+project_live() {
+  jq -S --argjson k "$keys" 'with_entries(select(.key as $x | $k | index($x)))' "$live"
 }
 
-if ! drift=$(diff -u <(render_template) <(jq -S "$fluid" "$live")); then
-  echo "pi settings.json drifted from template — fold into settings.json##template.default:"
+if ! drift=$(diff -u <(jq -S . "$shared") <(project_live)); then
+  echo "pi settings.json drifted from shared — fold into settings.shared.json##template.default:"
   echo "$drift"
   exit 1
 fi
