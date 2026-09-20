@@ -1,0 +1,2 @@
+#!/bin/zsh
+exec python3 /Users/jfd/dev/ai-usage/ai_usage.py "$@"

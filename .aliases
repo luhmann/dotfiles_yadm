@@ -21,6 +21,9 @@ alias oo='open .'
 alias v='vim'
 alias exclude='vim .git/info/exclude'
 
+# AI subscription usage
+alias aiu='ai-usage'
+
 # System utilities
 alias hosts='sudo vim /etc/hosts'
 alias sudo='sudo '
