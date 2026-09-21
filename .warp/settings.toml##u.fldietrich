@@ -3,10 +3,7 @@ spacing = "normal"
 
 [appearance.themes]
 system_theme = false
-
-[appearance.themes.theme.custom_base_16]
-name = "Base16 Atelier Lakeside"
-path = "/Users/fldietrich/.warp/themes/base16_atelier_lakeside.yaml"
+theme = { custom_base_16 = { name = "Base16 Atelier Lakeside", path = "base16_atelier_lakeside.yaml" } }
 
 [appearance.vertical_tabs]
 enabled = true

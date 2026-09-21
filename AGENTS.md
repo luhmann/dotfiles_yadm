@@ -35,9 +35,11 @@
 - when opening prs on my behalf, include the ticket number in the title, have a simple description as PR body, do not include a test plan, include a link to the ticket you should be able to derive it with `linear --help`. If the PR is stacked on another Branch/PR that is not `master/main`, then include references to all prs that need to be merged before this one can go into main
 
 ## Tools
+- When creating Linear tickets, verify the team's workflow states with `linear team states <TEAM>` and explicitly pass `--state Todo` (using the team's exact spelling) to bypass Triage unless another state is requested.
 - for researching you have the `search`- and `websearch`-skills available, additionally if they do not yield enough material you can invoke `kagi search --help` for instructions to leverage a full search engine.
 - you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup
 - `mem --help` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `mem search --json "<query>"` to find prior conversations, `mem view <session-id>` to read them.
+- Never poll a spawned subagent (`sleep` loops, repeated status checks) — it messages you when done; just end your turn. And don't build while a child builds in the same checkout: you'll collide over `target/`.
 
 ### Java / JDK (mise)
 - Java is managed by `mise` (not asdf). Non-login shells don't have JAVA_HOME set, so `./mvnw`/`./gradlew` fail with "Unable to locate a Java Runtime".
@@ -49,6 +51,7 @@
 - Use `rg -F` for literal strings containing `.`, `(`, `{`, `[`, `*` (e.g. `rg -F "User.findOne({id})"`); use regex mode only when you actually want a pattern.
 - Prefer native `rg` flags over pipes: `-t kotlin`/`-t java`/`--glob` to filter, `-l` files-only, `-c` counts, `-C 2 -n` for context+line numbers. Avoid `rg | grep | awk` chains.
 - awk here is macOS BSD awk (no `gawk`); avoid GNU-only features (`gensub`, `--version`). Prefer structured queries (`jq`, `yq`, `xmlstarlet`) over hand-rolled awk range-matching for specific JSON/YAML nodes.
+- `ps` and `top` fail with "Operation not permitted" inside agent-safehouse. They are setuid root, and macOS blocks setuid exec from any Seatbelt sandbox — no policy change can fix it, so don't try to debug it. Use `pgrep -l -f <pat>` for lookup, `lsof -nP -c <name>` for sockets/files, and `kill`/`pkill` for signalling (these need `--enable=process-control` to reach host processes; without it `pgrep` reports "sysmond service not found").
 
 ## Wiki
 - A curated personal wiki lives at `~/jcloud/org/wiki/` — domain (Zalando purchasing/orders) + engineering knowledge that compounds across sessions.

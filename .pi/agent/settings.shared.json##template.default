@@ -7,18 +7,13 @@
         "-skills/librarian/SKILL.md"
       ]
     },
-    "{{env.HOME}}/dev/pi-anthropic-oauth",
     {
-      "source": "npm:@ineersa/my-pi-themes",
-      "themes": [
-        "-themes/catppuccin-mocha.json",
-        "-themes/cyberpunk.json",
-        "-themes/gruvbox-dark.json",
-        "-themes/nord.json",
-        "-themes/oh-p-dark.json",
-        "-themes/tokyo-night.json"
+      "source": "{{env.HOME}}/dev/pi-anthropic-oauth",
+      "extensions": [
+        "+src/index.ts"
       ]
     },
+    "{{env.HOME}}/dev/jf-pi-heartbeat",
     {
       "source": "git:github.com/obra/superpowers",
       "extensions": [
@@ -41,35 +36,8 @@
         "-skills/systematic-debugging/SKILL.md"
       ]
     },
-    {
-      "source": "npm:pi-subagents",
-      "extensions": [
-        "-index.ts"
-      ],
-      "skills": [
-        "-skills/pi-subagents/SKILL.md",
-        "-skills/council-mode/SKILL.md"
-      ],
-      "prompts": [
-        "-prompts/gather-context-and-clarify.md",
-        "-prompts/parallel-cleanup.md",
-        "-prompts/parallel-research.md",
-        "-prompts/parallel-review.md",
-        "-prompts/review-loop.md",
-        "-prompts/council.md"
-      ]
-    },
-    {
-      "source": "{{env.HOME}}/.config/nono/packages/nolabs-ai/pi"
-    },
     "git:github.com/capyup/pi-warp",
-    "npm:pi-agent-browser-native",
-    {
-      "source": "npm:pi-continual",
-      "extensions": [
-        "-extensions/continual.ts"
-      ]
-    }
+    "npm:pi-agent-browser-native"
   ],
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md",
@@ -88,7 +56,9 @@
     "-skills/start-story/SKILL.md",
     "-skills/sunrise/SKILL.md",
     "-skills/worm-review/SKILL.md",
-    "-skills/zolaris-testing/SKILL.md"
+    "-skills/zolaris-testing/SKILL.md",
+    "-skills/jf-test/SKILL.md",
+    "-skills/linear-read/SKILL.md"
   ],
   "theme": "tokyo-night-pi",
   "showCacheMissNotices": true,

@@ -4,7 +4,6 @@
 # Starship prompt is loaded via zinit in ~/.zinitrc
 # No instant prompt needed as Starship is fast by default
 
-
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
     print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
@@ -88,7 +87,6 @@ export FZF_ALT_C_OPTS="
 
 # Enhanced default options (multi-select, reverse layout, border, height)
 export FZF_DEFAULT_OPTS='--multi --reverse --height 40% --border'
-
 
 # use python from homebrew
 # export PATH="/usr/local/opt/python/libexec/bin:$PATH"

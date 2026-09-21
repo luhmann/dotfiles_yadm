@@ -89,6 +89,10 @@
 (allow file-read* file-write* process-exec
   (home-subpath "/.local/bin"))
 
+;;; prime-agent installation target (the ~/.local/bin entry is a symlink)
+(allow file-read* process-exec
+  (home-subpath "/.local/share/prime-agent"))
+
 ;;; ztoken — config and token cache in ~/Library/Application Support
 (allow file-read* file-write*
   (home-literal "/Library/Application Support")
@@ -131,6 +135,13 @@
 (allow file-read* file-write*
   (home-literal "/.workspace-mcp")
   (home-subpath "/.workspace-mcp"))
+
+;;; ~/.google_workspace_mcp — r/w for the workspace-mcp server itself
+;;; (Google OAuth client credentials, session store, file log). Needed to run
+;;; the server in streamable-http mode from inside the sandbox.
+(allow file-read* file-write*
+  (home-literal "/.google_workspace_mcp")
+  (home-subpath "/.google_workspace_mcp"))
 
 ;;; ~/.gitconfig — read-only for git configuration
 ;;; ~/.testcontainers.properties — OrbStack docker socket path for Testcontainers
