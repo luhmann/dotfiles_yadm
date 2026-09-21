@@ -64,6 +64,11 @@
   (home-literal "/.local/share/mem")
   (home-subpath "/.local/share/mem"))
 
+;;; ~/.local/share/ai-usage — tests and notes for the ai-usage dotfile command
+(allow file-read* file-write*
+  (home-literal "/.local/share/ai-usage")
+  (home-subpath "/.local/share/ai-usage"))
+
 ;;; ~/.config/gws — r/w for gws token cache and keyring backup
 (allow file-read* file-write*
   (home-literal "/.config/gws")

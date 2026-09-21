@@ -98,6 +98,8 @@ cask "cacher"
 cask "bruno"
 # Screen capturing tool
 cask "cleanshot"
+# Menu bar usage monitor for Codex and Claude, backs the ai-usage command
+cask "codexbar"
 # Google Cloud CLI
 cask "gcloud-cli"
 # Terminal emulator that uses platform-native UI and GPU acceleration

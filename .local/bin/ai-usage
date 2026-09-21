@@ -1,2 +1,220 @@
-#!/bin/zsh
-exec python3 /Users/jfd/dev/ai-usage/ai_usage.py "$@"
+#!/usr/bin/env python3
+"""Render CodexBar subscription quotas without owning credentials."""
+
+import argparse
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import textwrap
+from datetime import datetime, timezone
+
+
+COLORS = {"dim": 90, "claude": 33, "codex": 36, "green": 32, "amber": 33, "red": 31}
+
+
+def paint(text, color, enabled):
+    return f"\033[{COLORS[color]}m{text}\033[0m" if enabled else text
+
+
+def timestamp(value):
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def countdown(value, now):
+    reset = timestamp(value)
+    if reset is None:
+        return "—"
+    minutes = max(0, math.ceil((reset - now).total_seconds() / 60))
+    if not minutes:
+        return "due now"
+    days, minutes = divmod(minutes, 1440)
+    hours, minutes = divmod(minutes, 60)
+    return f"{days}d {hours}h" if days else f"{hours}h {minutes}m"
+
+
+def percent(window):
+    value = window.get("usedPercent")
+    return value if isinstance(value, (int, float)) and math.isfinite(value) else None
+
+
+def weekly(window):
+    return window.get("windowMinutes") == 10080
+
+
+def same_week(a, b):
+    ar, br = timestamp(a.get("resetsAt")), timestamp(b.get("resetsAt"))
+    return (weekly(a) and weekly(b) and percent(a) is not None
+            and percent(a) == percent(b) and ar is not None and br is not None
+            and abs((ar - br).total_seconds()) <= 60)
+
+
+def window_label(key, window):
+    minutes = window.get("windowMinutes")
+    if minutes == 10080:
+        return "Weekly"
+    if minutes == 300:
+        return "Session · 5h"
+    if minutes:
+        return f"{key.title()} · {minutes / 60:g}h"
+    return key.title()
+
+
+def windows(payload):
+    usage = payload.get("usage") or {}
+    primary, secondary = usage.get("primary") or {}, usage.get("secondary") or {}
+    duplicate = same_week(primary, secondary)
+    rows = []
+    for key in ("primary", "secondary", "tertiary"):
+        window = usage.get(key)
+        if window and not (key == "secondary" and duplicate):
+            label = window_label(key, window)
+            rows.append((label + (" *" if key == "primary" and duplicate else ""), window))
+    for extra in usage.get("extraRateWindows") or []:
+        window = extra.get("window") or {}
+        label = extra.get("title") or extra.get("id") or "Additional quota"
+        if weekly(window) and "week" not in label.lower():
+            label += " · weekly"
+        rows.append((label, window))
+    dashboard = payload.get("openaiDashboard") or {}
+    review = dashboard.get("codeReviewLimit")
+    if review:
+        rows.append(("Code review", review))
+    return rows, duplicate
+
+
+def currency(value, code):
+    symbol = {"EUR": "€", "USD": "$", "GBP": "£"}.get(code)
+    return f"{symbol}{value:,.2f}" if symbol else f"{value:,.2f} {code}"
+
+
+def summaries(payload):
+    usage = payload.get("usage") or {}
+    pace = payload.get("pace") or {}
+    selected = pace.get("secondary") or pace.get("primary")
+    result = []
+    if selected:
+        expected = selected.get("expectedUsedPercent")
+        lasts = selected.get("willLastToReset")
+        label = "Within pace" if lasts is True else "Above pace" if lasts is False else "Pace unknown"
+        scope = "weekly" if pace.get("secondary") else "primary"
+        result.append(f"{label} (est.; {scope} baseline {expected:g}%)" if isinstance(expected, (int, float)) else f"{label} (est.)")
+    cost = usage.get("providerCost") or {}
+    code = cost.get("currencyCode", "")
+    if cost.get("balance") is not None:
+        result.append(f"{currency(cost['balance'], code)} extra-usage balance")
+    if cost.get("used") is not None and code != "Credits":
+        spend = currency(cost["used"], code)
+        if (cost.get("limit") or 0) > 0:
+            spend += " / " + currency(cost["limit"], code)
+        result.append(f"Extra usage: {spend}")
+    credits = payload.get("credits") or {}
+    if credits.get("balanceReadSucceeded") and credits.get("remaining") is not None:
+        result.append(f"{credits['remaining']:g} credits")
+    renewal = timestamp(usage.get("subscriptionRenewsAt"))
+    if renewal:
+        result.append(f"Renews {renewal.astimezone():%b %d}")
+    return result
+
+
+def render(data, *, now=None, color=False, width=80, details=False):
+    now = now or datetime.now(timezone.utc)
+    width = max(40, min(width, 88))
+    lines = [" AI USAGE  ·  bars show used quota", paint(" " + "─" * (width - 2), "dim", color)]
+    ordered = sorted(data, key=lambda p: {"claude": 0, "codex": 1}.get(p.get("provider"), 2))
+    all_labels = [label for payload in ordered for label, _ in windows(payload)[0]]
+    label_width = min(27 if width >= 72 else 18, max([16] + [len(label) for label in all_labels]))
+    for payload in ordered:
+        provider = payload.get("provider", "unknown")
+        usage = payload.get("usage") or {}
+        plan = usage.get("loginMethod") or (usage.get("identity") or {}).get("loginMethod", "")
+        lines.append(paint(f" {provider.upper()}  {plan}", provider if provider in COLORS else "dim", color))
+        if payload.get("error"):
+            lines.append(paint(f" Unavailable: {payload['error']}", "red", color))
+        rows, duplicate = windows(payload)
+        bar_width = 16 if width >= 72 else 8
+        for label, window in rows:
+            used = percent(window)
+            if used is None:
+                bar, number, shade = "·" * bar_width, "  —", "dim"
+            else:
+                units = round(max(0, min(100, used)) / 100 * bar_width * 8)
+                filled, fraction = divmod(units, 8)
+                partial = " ▏▎▍▌▋▊▉"[fraction] if fraction else ""
+                bar = "█" * filled + partial + "░" * (bar_width - filled - bool(fraction))
+                number, shade = f"{used:g}%", "red" if used >= 90 else "amber" if used >= 70 else "green"
+            label = label if len(label) <= label_width else label[:label_width - 1] + "…"
+            lines.append(f" {label:<{label_width}} {paint(bar, shade, color)} {number:>5}  ↻ {countdown(window.get('resetsAt'), now)}")
+            if details and timestamp(window.get("resetsAt")):
+                lines.append(paint(f"   Reset: {timestamp(window['resetsAt']).astimezone():%Y-%m-%d %H:%M %Z}", "dim", color))
+        if not rows and not payload.get("error"):
+            lines.append(" No quota windows reported")
+        summary_text = " · ".join(summaries(payload))
+        lines.extend(paint(" " + line, "dim", color) for line in textwrap.wrap(summary_text, width=width - 2))
+        if duplicate:
+            lines.append(paint(" * Matching weekly windows merged (reset times within 1 minute)", "dim", color))
+        fetched = timestamp(usage.get("updatedAt"))
+        age = max(0, int((now - fetched).total_seconds())) if fetched else None
+        freshness = "just now" if age is not None and age < 60 else f"{age // 60}m ago" if age is not None else "unknown"
+        lines.append(paint(f" Source: {payload.get('source', 'unknown')} · updated {freshness}", "dim", color))
+        if details:
+            history = (payload.get("openaiDashboard") or {}).get("usageBreakdown") or []
+            if history:
+                lines.append(" Reported daily usage · credits (missing dates not assumed zero)")
+                for day in sorted(history, key=lambda d: d.get("day", "")):
+                    total = day.get("totalCreditsUsed")
+                    services = ", ".join(f"{s.get('service', 'Unknown')}: {s['creditsUsed']:.2f}" for s in day.get("services", []) if isinstance(s.get("creditsUsed"), (int, float)))
+                    lines.append(f"   {day.get('day', '?')}  {total:.2f}  {services}" if isinstance(total, (int, float)) else f"   {day.get('day', '?')}  —")
+            for section in usage.get("details") or []:
+                if section.get("title"):
+                    lines.append(" " + section["title"])
+                for row in section.get("rows") or []:
+                    lines.append(f"   {row.get('label', '')}: {row.get('value', '')} {row.get('secondaryValue') or ''}".rstrip())
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--details", action="store_true", help="Show reset timestamps and reported credit history")
+    parser.add_argument("--json", action="store_true", help="Pass through original CodexBar JSON (includes account identity)")
+    parser.add_argument("--no-color", action="store_true")
+    parser.add_argument("--provider", choices=("both", "claude", "codex"), default="both")
+    parser.add_argument("--source", choices=("web", "auto", "oauth", "cli"), default="web")
+    args = parser.parse_args()
+    executable = shutil.which("codexbar")
+    if not executable and Path("/opt/homebrew/bin/codexbar").is_file():
+        executable = "/opt/homebrew/bin/codexbar"
+    if not executable:
+        parser.exit(1, "ai-usage: codexbar not found on PATH\n")
+    try:
+        result = subprocess.run([executable, "usage", "--provider", args.provider, "--source", args.source, "--format", "json"], capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        parser.exit(1, f"ai-usage: could not fetch CodexBar usage: {error}\n")
+    if args.json:
+        print(result.stdout, end="")
+    else:
+        try:
+            data = json.loads(result.stdout)
+            if not isinstance(data, list) or not all(isinstance(p, dict) for p in data):
+                raise ValueError("expected a JSON array of provider objects")
+            if not data:
+                raise ValueError("CodexBar returned no providers")
+        except (ValueError, json.JSONDecodeError) as error:
+            if result.stderr:
+                print(result.stderr, file=sys.stderr, end="")
+            parser.exit(1, f"ai-usage: invalid CodexBar response: {error}\n")
+        print(render(data, color=sys.stdout.isatty() and not args.no_color and "NO_COLOR" not in os.environ and os.environ.get("TERM") != "dumb", width=shutil.get_terminal_size().columns, details=args.details))
+    if result.stderr:
+        print(result.stderr, file=sys.stderr, end="")
+    return result.returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())
