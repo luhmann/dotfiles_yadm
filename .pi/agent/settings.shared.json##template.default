@@ -64,5 +64,8 @@
   "showCacheMissNotices": true,
   "warnings": {
     "anthropicExtraUsage": false
-  }
+  },
+  "defaultTools": [
+    "+codemode"
+  ]
 }
