@@ -33,11 +33,17 @@
         "-skills/verification-before-completion/SKILL.md",
         "-skills/writing-plans/SKILL.md",
         "-skills/writing-skills/SKILL.md",
-        "-skills/systematic-debugging/SKILL.md"
+        "-skills/systematic-debugging/SKILL.md",
+        "-skills/diagnosing-superpowers/SKILL.md"
       ]
     },
     "git:github.com/capyup/pi-warp",
-    "npm:pi-agent-browser-native"
+    {
+      "source": "npm:pi-agent-browser-native",
+      "extensions": [
+        "+dist/extensions/agent-browser/index.js"
+      ]
+    }
   ],
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md",
@@ -62,6 +68,7 @@
   ],
   "theme": "tokyo-night-pi",
   "showCacheMissNotices": true,
+  "cacheWarming": "idle",
   "warnings": {
     "anthropicExtraUsage": false
   },
