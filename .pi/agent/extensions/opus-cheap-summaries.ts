@@ -1,23 +1,16 @@
 /**
- * `jfd/opus`: Opus 5.5 for the conversation, GPT-6.1 Sol for side requests (compaction and
- * branch summaries, extension calls through `ctx.modelRegistry.streamSimple()`).
+ * `jfd/opus`: Opus 5.5 for the conversation, Sonnet 5.5 without thinking for side requests
+ * (compaction and branch summaries, extension calls through `ctx.modelRegistry.streamSimple()`).
  *
- * Side requests fall back to Opus when Sol is unavailable or the conversation is too large for
- * Sol's 272K window: compaction does not chunk its input, and Opus sessions grow towards 1M.
+ * Measured on a ~160K-token session, Sonnet/off compacted in 37s versus 44s for Opus/medium and
+ * kept the same facts. Side requests fall back to Opus when Sonnet is unavailable.
  */
 
-import type { Message } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext, ModelRoute, ModelRouteRequest } from "@earendil-works/pi-coding-agent";
-import { estimateTokens } from "@earendil-works/pi-coding-agent";
 
 const MAIN = { provider: "anthropic", id: "claude-opus-5-5" } as const;
-const SIDE = { provider: "openai-codex", id: "gpt-6.1-sol" } as const;
-const SIDE_THINKING = "medium";
-/** Headroom below Sol's context window for instructions and the summary itself. */
-const SIDE_MAX_INPUT_TOKENS = 200_000;
-
-const conversationTokens = (messages: readonly Message[]): number =>
-	messages.reduce((sum, message) => sum + estimateTokens(message), 0);
+const SIDE = { provider: "anthropic", id: "claude-sonnet-5-5" } as const;
+const SIDE_THINKING = "off";
 
 const findAvailable = (ctx: ExtensionContext, ref: { provider: string; id: string }) => {
 	const model = ctx.modelRegistry.find(ref.provider, ref.id);
@@ -32,15 +25,14 @@ const routeMain = (request: ModelRouteRequest, ctx: ExtensionContext): ModelRout
 
 const routeSide = (request: ModelRouteRequest, ctx: ExtensionContext): ModelRoute => {
 	const side = findAvailable(ctx, SIDE);
-	const fits = conversationTokens(request.messages) <= SIDE_MAX_INPUT_TOKENS;
-	return side && fits ? { model: side, thinkingLevel: SIDE_THINKING } : routeMain(request, ctx);
+	return side ? { model: side, thinkingLevel: SIDE_THINKING } : routeMain(request, ctx);
 };
 
 export default function (pi: ExtensionAPI) {
 	pi.registerVirtualModel({
 		provider: "jfd",
 		id: "opus",
-		name: "Opus (Sol summaries)",
+		name: "Opus (Sonnet summaries)",
 		thinkingLevels: ["off", "low", "medium", "high", "xhigh"],
 		contextWindow: 1_000_000,
 		maxTokens: 128_000,
