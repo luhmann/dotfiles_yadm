@@ -84,6 +84,8 @@
     "anthropic/claude-opus-5-5",
     "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6-sol",
-    "jfd/opus"
+    "jfd/opus",
+    "zllm/openai/gpt-6.1-sol",
+    "zllm/openai/gpt-6-luna"
   ]
 }
