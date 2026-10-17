@@ -9,6 +9,7 @@ scalyr_server = "https://eu.scalyr.com"
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
 npm.bun = true
+env_cache = true
 
 [tools]
 age = "latest"

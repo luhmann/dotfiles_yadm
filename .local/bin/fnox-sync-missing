@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Sync fnox secrets that have no local age cache yet.
+# Unsynced secrets make every mise env load fall back to `op`, which
+# floods 1Password approval prompts (Raycast, Warp, shims).
+set -euo pipefail
+
+config="$HOME/fnox.toml"
+local_config="$HOME/fnox.local.toml"
+
+[[ -f "$config" ]] || exit 0
+
+declared() { yq -p toml -oy '.secrets | keys | .[]' "$config" | sort; }
+synced() {
+  [[ -f "$local_config" ]] || return 0
+  yq -p toml -oy '.secrets | to_entries | map(select(.value.sync)) | .[].key' "$local_config" | sort
+}
+
+missing=$(comm -23 <(declared) <(synced))
+[[ -n "$missing" ]] || exit 0
+
+echo "fnox: syncing secrets without local cache: $(echo $missing)"
+# shellcheck disable=SC2086
+(cd "$HOME" && fnox sync --provider age --config fnox.local.toml --force $missing)

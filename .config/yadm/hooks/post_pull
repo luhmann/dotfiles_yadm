@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
 yadm alt
+command -v fnox-sync-missing >/dev/null || exit 0
+fnox-sync-missing || echo "fnox-sync-missing failed; run ~/.config/fnox/setup.sh" >&2
