@@ -55,7 +55,15 @@ sha1() {
 }
 
 # System updates
-alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; brew cu; zinit update;'
+update() {
+  sudo softwareupdate -i -a
+  brew update
+  brew upgrade
+  brew services list --json | jq -r '.[] | select(.status=="started") | .name' | xargs -n1 brew services restart
+  brew cleanup
+  brew cu
+  zinit update
+}
 alias vimup='vim +PlugUpgrade +PlugUpdate +qa!'
 
 # macOS desktop
