@@ -43,7 +43,8 @@
       "extensions": [
         "+dist/extensions/agent-browser/index.js"
       ]
-    }
+    },
+    "npm:@juicesharp/rpiv-todo"
   ],
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md",
@@ -80,12 +81,15 @@
   "enabledModels": [
     "openai-codex/gpt-5.6-terra",
     "anthropic/claude-fable-5-1",
-    "openai-codex/gpt-6-astra",
     "anthropic/claude-opus-5-5",
     "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6-sol",
     "jfd/opus",
     "zllm/openai/gpt-6.1-sol",
-    "zllm/openai/gpt-6-luna"
+    "zllm/openai/gpt-6-luna",
+    "github-copilot/claude-opus-5.5",
+    "openai/gpt-6-astra",
+    "anthropic/claude-haiku-5-5",
+    "anthropic/claude-sonnet-5-5"
   ]
 }
