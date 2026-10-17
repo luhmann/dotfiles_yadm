@@ -34,6 +34,18 @@ local repository until forced).
   alert queries, and SLO metric sources — some API endpoints (e.g.
   `/api/signal-to-metrics/configs`) require org admin and will 403.
 
+## Scalyr (application logs)
+
+- Application logs live in Scalyr, not Dash0 (Dash0 only has spans/metrics for
+  our services). Use the global `scalyr` CLI (`scalyr --help`); server and token
+  come from the `scalyr_server` / `scalyr_readlog_token` env vars.
+- Filter by `$application`, `$environment`, `$component`; useful fields are
+  `level`, `logger`, `message_`, `pod`, `version` (CDP build, e.g. `master-446`):
+
+```shell
+scalyr power-query "\$application == 'block-orders' \$environment == 'live' \$component == 'block-orders-backend' level == 'ERROR' | group n=count() by version, logger" --start 24h --output csv
+```
+
 ## Sunrise CLI
 
 - `sunrise-cli --help` is available to answer lot of internal infrastructure questions, eg to see available APIs and there interfaces

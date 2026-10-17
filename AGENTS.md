@@ -40,6 +40,8 @@
 - you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup
 - `mem --help` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `mem search --json "<query>"` to find prior conversations, `mem view <session-id>` to read them.
 - Never poll a spawned subagent (`sleep` loops, repeated status checks) — it messages you when done; just end your turn. And don't build while a child builds in the same checkout: you'll collide over `target/`.
+- `workspace-cli` (Google Workspace: Chat, Gmail, Drive, Calendar) defaults to `--url http://localhost:8000/mcp`, which is wrong — always pass `--url https://google-workspace-mcp.wa-test.zalan.do/mcp` (or set `WORKSPACE_MCP_URL`). The remote server derives the Google account from the cached OAuth token in `~/.workspace-mcp/cli-tokens`, so passing `user_google_email` is rejected as an unexpected keyword. Never start a local `workspace-mcp` server — it has no OAuth client secrets and will send you down a dead-end interactive consent flow.
+- Google Chat: `search_messages` is weak (no real full-text history search). To read a thread linked as `chat.google.com/room/<SPACE>/<THREAD>/<MSG>`, use `workspace-cli call get_messages space_id=spaces/<SPACE> page_size=100 order_by="createTime asc" message_filter='thread.name = "spaces/<SPACE>/threads/<THREAD>"'`.
 
 ### Java / JDK (mise)
 - Java is managed by `mise` (not asdf). Non-login shells don't have JAVA_HOME set, so `./mvnw`/`./gradlew` fail with "Unable to locate a Java Runtime".
