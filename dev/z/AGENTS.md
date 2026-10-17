@@ -38,3 +38,7 @@ local repository until forced).
 
 - `sunrise-cli --help` is available to answer lot of internal infrastructure questions, eg to see available APIs and there interfaces
 - includes infos about teams, cdp build status, can answer questions against the zalando documentation
+
+## PR Review Requests
+
+- `$PR_REVIEW_WEBHOOK_URL` is a Google Chat webhook for the PR-review channel. Draft the message and get my approval before posting. Start the message with `From Florian:`, keep it concise and professional with no emojis, and link the PR as `<url|repo#123>`. Post with `jq -n --arg text "$msg" '{text: $text}' | curl -sS -X POST -H 'Content-Type: application/json; charset=UTF-8' --data @- "$PR_REVIEW_WEBHOOK_URL"`.

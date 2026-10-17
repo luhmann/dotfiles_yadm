@@ -11,4 +11,6 @@ ANTHROPIC_API_KEY = { provider = "op", value = "anthropic-api-key/credential" }
 BRAVE_API_KEY = { provider = "op", value = "brave-api-key/credential" }
 EXA_API_KEY = { provider = "op", value = "exa-api-key/credential" }
 KAGI_SESSION_TOKEN = { provider = "op", value = "kagi-session-token/credential" }
+PR_REVIEW_WEBHOOK_URL = { provider = "op", value = "google-chat-pr-post-webhook/credential" }
+CLUSTER_ACCESS_WEBHOOK_URL = { provider = "op", value = "google-chat-cluser-access-webhook/credential" }
 scalyr_readlog_token = { provider = "op", value = "scalyr-api-token/password" }
