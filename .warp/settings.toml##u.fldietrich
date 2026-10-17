@@ -21,7 +21,7 @@ match_ai_font = false
 app_icon = "classic_1"
 
 [appearance.window]
-zoom_level = 100
+zoom_level = 90
 
 [warp_drive]
 enabled = false
