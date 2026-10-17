@@ -124,6 +124,12 @@
   (home-literal "/.aws")
   (home-subpath "/.aws"))
 
+;;; databricks CLI — profile config (~/.databrickscfg) and token cache dir (~/.databricks)
+(allow file-read* file-write*
+  (home-literal "/.databrickscfg")
+  (home-literal "/.databricks")
+  (home-subpath "/.databricks"))
+
 ;;; ~/.kube — r/w for zkubectl / kubectl cluster access
 (allow file-read* file-write*
   (home-literal "/.kube")
