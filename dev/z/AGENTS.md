@@ -12,6 +12,17 @@ Use this instead of regular user tokens when internal scopes are required.
 
 When user tokens are required you can use `ztoken --help`
 
+## POM live DB (read replica)
+
+When the user has opened the tunnel, the purchase-orders-management live read
+replica is reachable on `localhost:6543`, user `fldietrich`, password from
+`ztoken`, database `purchase_orders_management`, tables in schema `zpom_data`.
+Read-only: never write data fixes through the DB, use the service API.
+
+```shell
+PGPASSWORD="$(ztoken)" psql "host=localhost port=6543 user=fldietrich dbname=purchase_orders_management options=--search_path=zpom_data"
+```
+
 ## Maven / Build 403 errors
 
 A `403 Forbidden` from maven.zalando.net during a build usually means the
