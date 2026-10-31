@@ -1,16 +1,21 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["mlx-whisper"]
+# dependencies = ["mlx-whisper", "truststore"]
 # ///
 import argparse
 import html
+import os
 import re
 import subprocess
 import sys
 import time
 import urllib.request
 from pathlib import Path
+
+import truststore
+
+truststore.inject_into_ssl()
 
 AUDIO_RE = re.compile(r"""https?://[^"'\s<>]+\.(?:mp3|m4a|aac|ogg|opus)[^"'\s<>]*""")
 
@@ -90,9 +95,10 @@ def write_article(episode, transcript, llm_model, out_path):
 def main():
     p = argparse.ArgumentParser(description="Transcribe a podcast episode and turn it into an article.")
     p.add_argument("url", help="Overcast share link (overcast.fm/+...) or direct audio URL")
-    p.add_argument("-o", "--out-dir", type=Path, default=Path.cwd())
+    p.add_argument("-o", "--out-dir", type=Path,
+                   default=Path(os.environ.get("PODCAST_DIGEST_OUT_DIR", "~/jcloud/podcasts")).expanduser())
     p.add_argument("--whisper-model", default="mlx-community/whisper-large-v3-turbo")
-    p.add_argument("--llm-model", default="sonnet", help="model passed to `pi --model`, e.g. sonnet, opus:high")
+    p.add_argument("--llm-model", default=os.environ.get("PODCAST_DIGEST_LLM_MODEL", "sonnet"), help="model passed to `pi --model`, e.g. sonnet, opus:high")
     p.add_argument("--no-article", action="store_true", help="only produce the transcript")
     args = p.parse_args()
 
@@ -122,6 +128,7 @@ def main():
         log(f"writing article with pi ({args.llm_model})")
         write_article(episode, transcript_path.read_text(), args.llm_model, article_path)
         log(f"article: {article_path}")
+    print(transcript_path if args.no_article else article_path)
 
 
 if __name__ == "__main__":
