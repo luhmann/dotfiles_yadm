@@ -18,6 +18,15 @@
       "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
       "installedAt": "2026-04-14T12:15:52.729Z",
       "updatedAt": "2026-04-14T12:15:52.729Z"
+    },
+    "hunk-review": {
+      "source": "modem-dev/hunk",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/modem-dev/hunk.git",
+      "skillPath": ".agents/skills/hunk-review/SKILL.md",
+      "skillFolderHash": "48ebdc86f8d7d4aea4e01379d65f2911b8b3c93f",
+      "installedAt": "2026-10-30T08:25:16.047Z",
+      "updatedAt": "2026-10-30T08:25:16.047Z"
     }
   },
   "dismissed": {
@@ -25,17 +34,19 @@
   },
   "lastSelectedAgents": [
     "amp",
-    "antigravity",
     "cline",
     "codex",
     "cursor",
-    "deepagents",
-    "firebender",
+    "droid",
+    "fx",
     "gemini-cli",
     "github-copilot",
-    "kimi-cli",
+    "kilo",
+    "kimi-code-cli",
     "opencode",
+    "pi",
     "warp",
+    "zed",
     "claude-code"
   ]
 }
