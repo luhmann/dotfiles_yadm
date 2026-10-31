@@ -30,12 +30,34 @@
   (home-literal "/.pi")
   (home-subpath "/.pi"))
 
+;;; ~/.hunk — Hunk session daemon state
+(allow file-read* file-write*
+  (home-literal "/.hunk")
+  (home-subpath "/.hunk"))
+
+;;; ~/.archon — r/w for Archon workflow engine (db, workflows, worktrees, logs)
+(allow file-read* file-write*
+  (home-literal "/.archon")
+  (home-subpath "/.archon"))
+
+;;; archon live-owner sockets (/tmp/archon-<uid>/); safehouse default-denies unix sockets
+(allow network-bind network-inbound
+  (local unix-socket (regex "^/private/tmp/archon-502/")))
+(allow network-outbound
+  (remote unix-socket (regex "^/private/tmp/archon-502/")))
+
 ;;; prime-agent — daemon state (~/.prime/agent: sessions, worker descriptors,
 ;;; recovery journals, worker auth tokens). sprime redirects TMPDIR to
 ;;; ~/.prime/safehouse-tmp so the daemon socket dir stays inside these grants.
 (allow file-read* file-write*
   (home-literal "/.prime")
   (home-subpath "/.prime"))
+
+;;; ~/.plannotator — Plannotator config, plan archive, drafts and inbox
+;;; (the CLI lives in ~/.local/bin, the pi extension in ~/.pi; both already granted)
+(allow file-read* file-write*
+  (home-literal "/.plannotator")
+  (home-subpath "/.plannotator"))
 
 ;;; prime-agent daemon unix sockets — supervisor + per-worker sockets live in
 ;;; $TMPDIR/prime-agent-<uid>/; safehouse 0.11 default-denies unix sockets, so
@@ -168,6 +190,13 @@
 (allow file-read* process-exec
   (home-subpath "/.orbstack")
   (subpath "/Applications/OrbStack.app/Contents/MacOS/xbin"))
+
+;;; /Applications — metadata-only so a sandboxed `open <url>` can validate app bundles.
+;;; Without it LaunchServices treats denied bundles (Orion, Arc, ...) as deleted and
+;;; unregisters them via lsd.modifydb, so links fall back to Safari system-wide.
+(allow file-read-metadata
+  (literal "/Applications")
+  (subpath "/Applications"))
 
 ;;; ~/icloud → iCloud Drive symlink; sandbox resolves through it
 ;;; Need both the symlink itself and the resolved target path
