@@ -1,0 +1,128 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["mlx-whisper"]
+# ///
+import argparse
+import html
+import re
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+AUDIO_RE = re.compile(r"""https?://[^"'\s<>]+\.(?:mp3|m4a|aac|ogg|opus)[^"'\s<>]*""")
+
+ARTICLE_PROMPT = """You are given a machine-generated podcast transcript (expect misheard names and terms; correct them from context).
+Turn it into a well-structured markdown article for an engineer who did not listen to the episode.
+
+Structure:
+- `# <episode title>` followed by one line with show, host, guest, and duration if known.
+- `## TL;DR`: 5-8 bullets with the core claims.
+- Thematic `##` sections in the order the conversation develops. Keep the guest's concrete practices, numbers, examples, and opinions. Use a short blockquote for a standout line.
+- `## Takeaways worth trying`: concrete, actionable bullets.
+
+Skip sponsor reads and intro/outro. Be concise and specific, no filler. Output only the markdown.
+
+Episode metadata:
+{meta}
+
+Transcript:
+{transcript}
+"""
+
+
+def log(msg):
+    print(f"[podcast-digest] {msg}", file=sys.stderr, flush=True)
+
+
+def fetch(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read()
+
+
+def meta_content(page, name):
+    m = re.search(rf'<meta[^>]+(?:name|property)="{name}"[^>]+content="([^"]*)"', page)
+    return html.unescape(m.group(1)) if m else ""
+
+
+def resolve_episode(url):
+    if AUDIO_RE.fullmatch(url):
+        return {"title": Path(url.split("?")[0]).stem, "description": "", "audio": url}
+    page = fetch(url).decode("utf-8", "replace")
+    audio = AUDIO_RE.search(page)
+    if not audio:
+        sys.exit(f"No audio URL found on {url}. Pass a direct audio URL instead.")
+    return {
+        "title": meta_content(page, "og:title") or "episode",
+        "description": meta_content(page, "og:description"),
+        "audio": html.unescape(audio.group(0)).split("#")[0],
+    }
+
+
+def slugify(text):
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:80] or "episode"
+
+
+def transcribe(audio_path, model_name, out_path):
+    import mlx_whisper
+
+    result = mlx_whisper.transcribe(str(audio_path), path_or_hf_repo=model_name, language="en", verbose=False)
+    lines = [f"[{int(s['start'] // 60):02d}:{int(s['start'] % 60):02d}] {s['text'].strip()}" for s in result["segments"]]
+    out_path.write_text("\n".join(lines) + "\n")
+
+
+def write_article(episode, transcript, llm_model, out_path):
+    meta = f"Title: {episode['title']}\nDescription: {episode['description']}"
+    prompt = ARTICLE_PROMPT.format(meta=meta, transcript=transcript)
+    result = subprocess.run(
+        ["pi", "-p", "--no-tools", "--no-extensions", "--no-session", "--model", llm_model,
+         "--system-prompt", "You write clear, well-structured markdown articles."],
+        input=prompt, text=True, capture_output=True,
+    )
+    if result.returncode != 0:
+        sys.exit(f"pi -p failed ({result.returncode}): {(result.stderr or result.stdout).strip()}")
+    out_path.write_text(result.stdout)
+
+
+def main():
+    p = argparse.ArgumentParser(description="Transcribe a podcast episode and turn it into an article.")
+    p.add_argument("url", help="Overcast share link (overcast.fm/+...) or direct audio URL")
+    p.add_argument("-o", "--out-dir", type=Path, default=Path.cwd())
+    p.add_argument("--whisper-model", default="mlx-community/whisper-large-v3-turbo")
+    p.add_argument("--llm-model", default="sonnet", help="model passed to `pi --model`, e.g. sonnet, opus:high")
+    p.add_argument("--no-article", action="store_true", help="only produce the transcript")
+    args = p.parse_args()
+
+    episode = resolve_episode(args.url)
+    slug = slugify(episode["title"])
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    transcript_path = args.out_dir / f"{slug}_transcript.txt"
+    article_path = args.out_dir / f"{slug}.md"
+    log(f"episode: {episode['title']}")
+
+    if transcript_path.exists():
+        log(f"reusing {transcript_path}")
+    else:
+        cache = Path.home() / ".cache" / "podcast-digest"
+        cache.mkdir(parents=True, exist_ok=True)
+        audio_path = cache / f"{slug}{Path(episode['audio'].split('?')[0]).suffix or '.mp3'}"
+        if not audio_path.exists():
+            log(f"downloading {episode['audio']}")
+            audio_path.write_bytes(fetch(episode["audio"]))
+        log(f"transcribing with {args.whisper_model}")
+        started = time.time()
+        transcribe(audio_path, args.whisper_model, transcript_path)
+        audio_path.unlink()
+        log(f"transcript: {transcript_path} ({time.time() - started:.0f}s)")
+
+    if not args.no_article:
+        log(f"writing article with pi ({args.llm_model})")
+        write_article(episode, transcript_path.read_text(), args.llm_model, article_path)
+        log(f"article: {article_path}")
+
+
+if __name__ == "__main__":
+    main()
