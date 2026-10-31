@@ -1,0 +1,2 @@
+PODCAST_DIGEST_OUT_DIR="$HOME/jcloud/podcasts"
+PODCAST_DIGEST_LLM_MODEL=sonnet
