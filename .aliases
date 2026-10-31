@@ -213,7 +213,6 @@ alias so='safehouse opencode'
 # attach/unlink hazard otherwise); process-control for `ps` worker-identity checks
 # + crash-recovery process-group reaping
 alias sprime='mkdir -p "$HOME/.prime/safehouse-tmp" && safehouse --enable=process-control -- TMPDIR="$HOME/.prime/safehouse-tmp" prime-agent'
-alias sx='safehouse codex'
 alias spf='TERM_PROGRAM= WARP_SESSION_ID= WARP_TERMINAL_SESSION_UUID= sp'
 
 # nono-wrapped pi — path rules live in ~/.config/nono/profiles/pi-dev.json;
@@ -238,7 +237,7 @@ alias zx='claude --dangerously-skip-permissions'
 
 # Mise shortcuts
 alias mi='mise upgrade --interactive'
-alias mu='mise upgrade'
+alias mu='mise upgrade && mise install -f "pipx:git+ssh://github.com/zalando-build/zllm-cli.git@main"'
 
 # Yadm interactive add (same UX as forgit's ga)
 ya() {

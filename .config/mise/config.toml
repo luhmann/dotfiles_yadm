@@ -25,7 +25,6 @@ maven = "latest"
 1password-cli = "latest"
 claude-code = "latest"
 "github:Microck/kagi-cli" = "0.5.2"
-codex = "latest"
 
 # Migrated from Brewfile.dev (2026-05-10)
 fx = "39.2.0"
