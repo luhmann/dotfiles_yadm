@@ -121,7 +121,7 @@ export default function (pi: ExtensionAPI) {
 		await ensureScratchDirectories(info);
 
 		if (ctx.hasUI) {
-			ctx.ui.setStatus("scratch", `scratch:${info.project}`);
+			ctx.ui.setStatus("scratch", `· scratch:${info.project}`);
 		}
 	});
 
