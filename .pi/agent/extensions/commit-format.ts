@@ -242,11 +242,4 @@ export default function (pi: ExtensionAPI) {
 			}
 		}
 	});
-
-	// Notify on load
-	pi.on("session_start", async (_event, ctx) => {
-		if (ctx.hasUI) {
-			ctx.ui.setStatus("commit-format", "📝");
-		}
-	});
 }
