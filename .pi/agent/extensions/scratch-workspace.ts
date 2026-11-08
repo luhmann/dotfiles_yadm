@@ -110,6 +110,8 @@ For durable, non-service-specific knowledge entries (notes, reusable commands, c
 - shared notes: ${info.sharedNotes} — cross-project, not tied to any repo
 
 All files written here must be markdown files with a .md extension and date-prefixed filenames. Include the ticket number in the filename when one is inferable from the current git branch name.
+
+When a file here references code, generate the reference with \`coderef <path> [<symbol>|<start>-<end>]\` (\`--link-only\` for a permalink without embed) and add a one-line summary of what the code does. Never build permalinks or embeds by hand.
 `.trim();
 }
 
