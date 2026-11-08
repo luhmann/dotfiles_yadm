@@ -15,36 +15,11 @@
     },
     "{{env.HOME}}/dev/jf-pi-heartbeat",
     {
-      "source": "git:github.com/obra/superpowers",
-      "extensions": [
-        "-.pi/extensions/superpowers.ts"
-      ],
-      "skills": [
-        "-skills/brainstorming/SKILL.md",
-        "-skills/dispatching-parallel-agents/SKILL.md",
-        "-skills/executing-plans/SKILL.md",
-        "-skills/finishing-a-development-branch/SKILL.md",
-        "-skills/receiving-code-review/SKILL.md",
-        "-skills/requesting-code-review/SKILL.md",
-        "-skills/subagent-driven-development/SKILL.md",
-        "-skills/test-driven-development/SKILL.md",
-        "-skills/using-git-worktrees/SKILL.md",
-        "-skills/using-superpowers/SKILL.md",
-        "-skills/verification-before-completion/SKILL.md",
-        "-skills/writing-plans/SKILL.md",
-        "-skills/writing-skills/SKILL.md",
-        "-skills/systematic-debugging/SKILL.md",
-        "-skills/diagnosing-superpowers/SKILL.md"
-      ]
-    },
-    "git:github.com/capyup/pi-warp",
-    {
       "source": "npm:pi-agent-browser-native",
       "extensions": [
         "+dist/extensions/agent-browser/index.js"
       ]
-    },
-    "npm:@juicesharp/rpiv-todo"
+    }
   ],
   "skills": [
     "+../../.agents/skills/org-doc/SKILL.md",
@@ -65,7 +40,9 @@
     "-skills/worm-review/SKILL.md",
     "-skills/zolaris-testing/SKILL.md",
     "-skills/jf-test/SKILL.md",
-    "-skills/linear-read/SKILL.md"
+    "-skills/linear-read/SKILL.md",
+    "-skills/swamp/SKILL.md",
+    "-skills/swamp-getting-started/SKILL.md"
   ],
   "showCacheMissNotices": true,
   "cacheWarming": "idle",
