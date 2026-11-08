@@ -332,3 +332,14 @@
 ;;; so mirror the profile's own regex. Remove once upstream ships the connect re-allow.
 (allow network-outbound
   (remote unix-socket (regex (string-append "^" HOME_DIR "/Library/Group Containers/[A-Za-z0-9]+\\.com\\.1password/t/agent\\.sock$"))))
+
+;;; Rex multiplexer CLI — lets agents open tabs/splits and read panes.
+;;; Client state is read-only; only the server control socket is connectable.
+;;; REX_SESSION/REX_BLOCK/REX_SERVER are passed via --env-pass in ~/.aliases.
+(allow file-read*
+  (home-literal "/Library/Application Support/rex")
+  (home-subpath "/Library/Application Support/rex"))
+(allow file-write*
+  (home-literal "/Library/Application Support/rex/server.sock"))
+(allow network-outbound
+  (remote unix-socket (path-literal (string-append HOME_DIR "/Library/Application Support/rex/server.sock"))))
