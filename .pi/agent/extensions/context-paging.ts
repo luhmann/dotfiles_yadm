@@ -15,6 +15,7 @@ const readConfig = (pi: ExtensionAPI): Config => ({
 	...((pi.getSettings() as { contextPaging?: Partial<Config> }).contextPaging ?? {}),
 });
 
+const turns = (n: number) => `paged ${n} ${n === 1 ? "turn" : "turns"}`;
 const sumTokens = (ms: AgentMessage[]) => ms.reduce((sum, m) => sum + estimateTokens(m), 0);
 const userIndexes = (ms: AgentMessage[]) => ms.flatMap((m, i) => (m.role === "user" ? [i] : []));
 
@@ -70,11 +71,16 @@ export default function (pi: ExtensionAPI) {
 	let userTurnPending = false;
 	let forceCut = false;
 
-	const showStatus = (ctx: ExtensionContext) => {
-		if (ctx.hasUI) ctx.ui.setStatus("paging", enabled ? "paging on" : "paging off");
+	const statusText = () => {
+		if (!enabled) return "paging off";
+		return cut ? turns(cut.evictedTurns) : "paging on";
 	};
-	const reset = () => {
+	const showStatus = (ctx: ExtensionContext) => {
+		if (ctx.hasUI) ctx.ui.setStatus("paging", statusText());
+	};
+	const reset = (ctx: ExtensionContext) => {
 		cut = undefined;
+		showStatus(ctx);
 	};
 	const capped = (tokens: number, ctx: ExtensionContext) => {
 		const window = ctx.getContextUsage()?.contextWindow ?? ctx.model?.contextWindow;
@@ -89,8 +95,8 @@ export default function (pi: ExtensionAPI) {
 	pi.on("before_agent_start", (event) => {
 		userTurnPending = event.messageType === "user";
 	});
-	pi.on("session_compact", reset);
-	pi.on("session_tree", reset);
+	pi.on("session_compact", (_event, ctx) => reset(ctx));
+	pi.on("session_tree", (_event, ctx) => reset(ctx));
 
 	pi.on("context", (event, ctx) => {
 		if (!enabled) return;
@@ -99,7 +105,7 @@ export default function (pi: ExtensionAPI) {
 		userTurnPending = false;
 
 		const full = event.messages;
-		if (cut && keepIndex(full, cut) < 0) reset();
+		if (cut && keepIndex(full, cut) < 0) reset(ctx);
 		const current = cut ? applyCut(full, cut) : full;
 		const tokens = Math.max(ctx.getContextUsage()?.tokens ?? 0, sumTokens(current));
 
@@ -108,7 +114,8 @@ export default function (pi: ExtensionAPI) {
 			const next = newCut(full, cut?.evictedTurns ?? 0, excess, ctx.sessionManager.getSessionId());
 			if (next) {
 				cut = next;
-				ctx.ui.notify(`context paging: turns 1-${next.evictedTurns} paged out`, "info");
+				showStatus(ctx);
+				ctx.ui.notify(`context paging: ${turns(next.evictedTurns)}`, "info");
 				return { messages: applyCut(full, next) };
 			}
 		}
@@ -125,14 +132,13 @@ export default function (pi: ExtensionAPI) {
 			const action = args.trim() || "status";
 			if (action === "on" || action === "off") {
 				enabled = action === "on";
-				reset();
-				showStatus(ctx);
+				reset(ctx);
 			} else if (action !== "status") {
 				ctx.ui.notify(`Unknown argument "${action}". Use on | off | status`, "error");
 				return;
 			}
 			const tokens = ctx.getContextUsage()?.tokens;
-			const state = cut ? `turns 1-${cut.evictedTurns} paged out` : "no cut";
+			const state = cut ? turns(cut.evictedTurns) : "no cut";
 			ctx.ui.notify(`paging ${enabled ? "on" : "off"}, ${state}, usage ${tokens ?? "unknown"} tokens`, "info");
 		},
 	});
