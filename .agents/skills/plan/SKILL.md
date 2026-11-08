@@ -42,6 +42,12 @@ your findings into a plan file as you go.
    - If no ticket ID is inferable, omit it: `<DATE>_<short-name>.md`
    - Example: `2026_04_07_PT-50123_add-retry-on-timeout.md`
 
+5. Give the user a markdown link that opens the plan in Obsidian (the vault
+   `org` is rooted at `~/jcloud/org`; URL-encode `/` in the file path as `%2F`):
+   ```
+   [<file>.md](obsidian://open?vault=org&file=_scratch%2F<project>%2Fplans%2F<file>.md)
+   ```
+
 ## The Loop
 
 Repeat this cycle until the plan is complete:
@@ -102,9 +108,12 @@ What this change intentionally does NOT cover. Bounds the scope.
 ## Steps
 
 ### Step 1: <Title>
-**Files:** [path/to/file.kt:42](file:///abs/path/to/file.kt) — what changes here
-What to do, referencing existing functions/utilities to reuse (link them the
-same way so they can be read alongside the plan).
+**Changes:** `Foo#bar` — one line on what it does today.
+<coderef output>
+
+**Target:** what it should do after the change (signature, behaviour, table of
+old → new values). Reference existing functions/utilities to reuse as
+permalinks.
 **Verify:** Exact command to run + expected result, phrased as observable
 behavior. e.g. `./mvnw test -Dtest="FooTest"` -> passes; or "GET /orders/123
 returns 200 with status CONFIRMED". Not "the code compiles". For cleanup or
@@ -129,14 +138,17 @@ exact commands to run and expected results.
   target-state tables and function signatures (e.g. field → old value → new
   value) count as **what** and are encouraged when they aid scanning; full
   method bodies are **how** and do not belong in the plan
-- Emit every file reference as a markdown link with a `file://` URL and line
-  number (e.g. [Foo.kt:88](file:///.../Foo.kt)) so the reader can open the
-  code while reading the plan
-- Reference existing functions and utilities to reuse, linked the same way
+- Reference code as described in **Referencing Code** below
 - Keep the whole plan under ~200 lines by including only vital information.
   If it would exceed that, warn the user, and either split by
   file-ownership/interface boundary or cut detail — your call, but flag it
 - Each step should be independently verifiable where possible
+
+## Referencing Code
+
+Embed (plain `coderef`) only code that changes; reference reused or mentioned
+code with `coderef --link-only`. Put a one-line summary of today's behaviour
+next to each embed.
 
 ## When to Converge
 
@@ -151,8 +163,8 @@ annotations to the plan. If annotations exist, address each one by one: state
 your understanding, discuss the issue, propose a resolution, and update the
 plan file. Repeat until no annotations remain.
 
-When ready, present a brief summary of the plan and ask the user for final
-approval. Do not ask for approval via a question buried in other text —
+When ready, present a brief summary of the plan, repeat the `obsidian://`
+link, and ask the user for final approval. Do not ask for approval via a question buried in other text —
 make it a clear, explicit request.
 
 ## Ending Your Turn
