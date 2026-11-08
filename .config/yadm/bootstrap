@@ -476,6 +476,28 @@ setup_mise() {
 }
 
 # ---------------------------------------------------------------------------
+# Section 14: Install coderef CLI (code references for agent-written docs)
+# ---------------------------------------------------------------------------
+setup_coderef() {
+    header "Installing coderef..."
+
+    local repo="$HOME/dev/coderef"
+
+    if [[ ! -d "$repo" ]] && ! git clone git@github.com-personal:luhmann/coderef.git "$repo"; then
+        warn "Could not clone luhmann/coderef. Needs the github.com-personal host in ~/.ssh/config."
+        return 0
+    fi
+
+    if ! command -v bun &>/dev/null; then
+        warn "bun not found. Run section 12 (mise) first."
+        return 0
+    fi
+
+    "$repo/install.sh" >/dev/null
+    ok "coderef installed to ~/.local/bin/coderef."
+}
+
+# ---------------------------------------------------------------------------
 # Section 13: Enable Remote Login (SSH), File Sharing (SMB), Remote Management (ARD)
 # ---------------------------------------------------------------------------
 setup_sharing() {
@@ -549,6 +571,7 @@ if [[ "$RUN_ALL" == true ]]; then
     setup_spotlight
     setup_macos_defaults
     setup_mise
+    setup_coderef
     echo ""
     echo "${GREEN}${BOLD}Done!${RESET}"
     exit 0
@@ -578,6 +601,7 @@ while true; do
     echo " 11) Apply macOS defaults"
     echo " 12) Install tool versions (mise)"
     echo " 13) Enable Remote Login + File Sharing + Remote Management"
+    echo " 14) Install coderef CLI"
     echo "  a) Run all (excludes 13)"
     echo "  q) Quit"
     echo ""
@@ -596,6 +620,7 @@ while true; do
         11) setup_macos_defaults ;;
         12) setup_mise ;;
         13) setup_sharing ;;
+        14) setup_coderef ;;
         a)
             setup_ssh
             setup_xcode_cli
@@ -609,6 +634,7 @@ while true; do
             setup_spotlight
             setup_macos_defaults
             setup_mise
+            setup_coderef
             echo ""
             echo "${GREEN}${BOLD}Done!${RESET}"
             ;;
