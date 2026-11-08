@@ -109,6 +109,19 @@
     "dock": "right",
     "working_directory": "current_project_directory",
   },
+  "languages": {
+    "Kotlin": {
+      "language_servers": ["kotlin-lsp", "!kotlin-language-server", "..."],
+    },
+  },
+  "lsp": {
+    "kotlin-lsp": {
+      "binary": {
+        "path": "/opt/homebrew/bin/kotlin-lsp",
+        "arguments": ["--stdio"],
+      },
+    },
+  },
   "seed_search_query_from_cursor": "always",
   "auto_install_extensions": {
     "tokyo-night": true,
