@@ -77,8 +77,9 @@ accessibility_verbosity = "concise"
 show_global_search = true
 show_project_explorer = true
 show_code_review_button = true
-open_code_panels_file_editor = "warp"
-open_file_editor = "warp"
+open_code_panels_file_editor = { external_editor = "zed" }
+open_file_editor = { external_editor = "zed" }
+open_file_layout = "split_pane"
 
 [code.indexing]
 agent_mode_codebase_context_auto_indexing = true
@@ -105,6 +106,7 @@ quit_on_last_window_closed = true
 
 [terminal]
 copy_on_select = false
+osc52_clipboard_access = "write_only"
 
 [terminal.input]
 input_box_type_setting = "universal"
