@@ -107,10 +107,12 @@ export default function (pi: ExtensionAPI) {
 		const full = event.messages;
 		if (cut && keepIndex(full, cut) < 0) reset(ctx);
 		const current = cut ? applyCut(full, cut) : full;
-		const tokens = Math.max(ctx.getContextUsage()?.tokens ?? 0, sumTokens(current));
+		const estimated = sumTokens(current);
+		const tokens = Math.max(ctx.getContextUsage()?.tokens ?? 0, estimated);
 
 		if (tokens > threshold) {
-			const excess = tokens - cfg.trimToTokens;
+			const usagePerEstimatedToken = estimated > 0 ? tokens / estimated : 1;
+			const excess = (tokens - cfg.trimToTokens) / usagePerEstimatedToken;
 			const next = newCut(full, cut?.evictedTurns ?? 0, excess, ctx.sessionManager.getSessionId());
 			if (next) {
 				cut = next;
