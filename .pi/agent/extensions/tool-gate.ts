@@ -24,7 +24,6 @@ const GATES: Gate[] = [
 		lockedPattern: /^agent_browser/,
 		group: "browser",
 	},
-	{ name: "web_search", tools: ["web_search", "fetch_content", "get_search_content", "source_check"] },
 	{ name: "heartbeat", tools: ["heartbeat"] },
 ];
 
