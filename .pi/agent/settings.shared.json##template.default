@@ -52,12 +52,11 @@
   "defaultTools": [
     "+codemode"
   ],
-  "defaultProvider": "jfd",
-  "defaultModel": "opus",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-5-5",
   "defaultThinkingLevel": "medium",
   "enabledModels": [
     "openai-codex/gpt-5.6-terra",
-    "anthropic/claude-fable-5-1",
     "anthropic/claude-opus-5-5",
     "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6-sol",
@@ -67,6 +66,7 @@
     "github-copilot/claude-opus-5.5",
     "openai/gpt-6-astra",
     "anthropic/claude-haiku-5-5",
-    "anthropic/claude-sonnet-5-5"
+    "anthropic/claude-sonnet-5-5",
+    "anthropic/claude-fable-5-2"
   ]
 }
