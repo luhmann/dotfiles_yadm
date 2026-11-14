@@ -107,6 +107,13 @@
   (home-literal "/.config/nobl9")
   (home-subpath "/.config/nobl9"))
 
+;;; ~/.config/sentry — r/w for the Sentry CLI
+;;; Auth and cache live in a SQLite cli.db; SQLite needs directory write
+;;; access for its journal files.
+(allow file-read* file-write*
+  (home-literal "/.config/sentry")
+  (home-subpath "/.config/sentry"))
+
 ;;; superset-query — session state and CSRF token
 (allow file-read* file-write*
   (home-literal "/.superset-cookies")
