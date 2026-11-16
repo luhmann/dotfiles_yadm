@@ -1,29 +1,58 @@
+/**
+ * Context paging: keeps a long session inside a token budget without summarizing anything.
+ *
+ * Before every model request pi hands each extension the full history and sends whatever comes back.
+ * This extension returns a view of that history. Once the history is larger than the soft limit, the
+ * oldest turns are left out of the view and a short notice takes their place. The stored session is
+ * never changed, so everything that left the view can still be found with `mem`.
+ *
+ * The mechanism:
+ * - The cut. One cut marks the first turn that is still sent. It moves only on the first request after
+ *   a prompt, or after /page, and never inside a tool loop. Every move invalidates the provider's
+ *   prompt cache, so a move is large: from above the soft limit down to the trim target.
+ * - Whole turns. A turn is a prompt and everything up to the next prompt. Only whole turns are paged
+ *   out, so a tool call is never separated from its result, and the latest turn always stays.
+ * - Measuring. The size of the view is the usage the provider last reported plus an estimate of what
+ *   came after it, and never less than pi's estimate of the whole view. Usage from a failed or aborted
+ *   response, or from before the current cut, describes a different view and is ignored. For the same
+ *   reason `ctx.getContextUsage()` is not used: after a retry it reports the size of the full history.
+ * - The notice. It says which turns left, names the scratch files written in them, points to the
+ *   session in `mem`, and lists the first and the latest prompts that were paged out.
+ * - Compaction. Pi's own threshold compaction is cancelled while paging is on. Any other compaction
+ *   still runs, and it drops the cut because it rewrites the history.
+ * - Lifetime. The cut is held in memory only. After a restart or reload the first prompt over the soft
+ *   limit pages out again, starting from the first turn.
+ *
+ * Settings: `contextPaging` in settings.json, see DEFAULTS. Commands: /paging on | off | status, /page.
+ * Tests: `bun test ~/.pi/agent/tests`.
+ */
 import { homedir } from "node:os";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type {
+	BeforeAgentStartEvent,
+	ContextEvent,
+	ContextEventResult,
+	ExtensionAPI,
+	ExtensionContext,
+	SessionBeforeCompactEvent,
+	SessionBeforeCompactResult,
+} from "@earendil-works/pi-coding-agent";
 import { calculateContextTokens, estimateTokens } from "@earendil-works/pi-coding-agent";
+
+// ── Settings and limits ──────────────────────────────────────────────────────────────────────────
 
 type Config = { enabled: boolean; maxSoftTokens: number; maxTrimToTokens: number };
 type Limits = { soft: number; trimTo: number };
-type Cut = { keepFrom: number; evictedTurns: number; notice: AgentMessage; madeAt: number };
 
 // Overridable via `contextPaging` in settings.json.
 // The two token values are ceilings: how much history is worth carrying, however large the model's window is.
 const DEFAULTS: Config = {
 	enabled: true,
-	// Ceiling for the soft limit. A new prompt pages out old turns once the window is larger than the soft limit.
+	// Ceiling for the soft limit. A new prompt pages out old turns once the view is larger than the soft limit.
 	maxSoftTokens: 180_000,
-	// Ceiling for the trim target, the window size a page aims for. Whole turns are dropped by estimate, so the result is approximate.
+	// Ceiling for the trim target, the size a page aims for. Whole turns are dropped by estimate, so the result is approximate.
 	maxTrimToTokens: 100_000,
 };
-// How many of the latest paged-out prompts the notice lists, besides the very first one.
-const RECENT_PROMPTS = 4;
-// Each prompt listed in the notice is clipped to this many characters.
-const PROMPT_CHARS = 500;
-// How many of the latest scratch files written in paged-out turns the notice lists.
-const RECENT_NOTES = 6;
-// A written file counts as a scratch file when its path contains this segment.
-const SCRATCH_SEGMENT = "/_scratch/";
 // On small models the ceilings would leave a run too little room to grow, so each limit is also capped at a share of the context window.
 const SOFT_WINDOW_SHARE = 0.5;
 const TRIM_WINDOW_SHARE = 0.3;
@@ -34,6 +63,7 @@ const readConfig = (pi: ExtensionAPI): Config => ({
 });
 
 const share = (window: number | undefined, part: number) => (window ? Math.floor(window * part) : Infinity);
+
 /**
  * Resolves the limits that apply for a given context window.
  * Each limit is the smaller of its ceiling and its share of the window.
@@ -56,9 +86,71 @@ const limitsFor = (cfg: Config, window: number | undefined): Limits => ({
 	trimTo: Math.min(cfg.maxTrimToTokens, share(window, TRIM_WINDOW_SHARE)),
 });
 
-const turns = (n: number) => `paged ${n} ${n === 1 ? "turn" : "turns"}`;
+// ── Messages ─────────────────────────────────────────────────────────────────────────────────────
+
+type UserMessage = Extract<AgentMessage, { role: "user" }>;
+
+const isPrompt = (m: AgentMessage): m is UserMessage => m.role === "user";
 const sumTokens = (ms: AgentMessage[]) => ms.reduce((sum, m) => sum + estimateTokens(m), 0);
-const userIndexes = (ms: AgentMessage[]) => ms.flatMap((m, i) => (m.role === "user" ? [i] : []));
+/** The index of each prompt. Turn n, counted from 1, starts at `turnStarts(ms)[n - 1]`. */
+const turnStarts = (ms: AgentMessage[]) => ms.flatMap((m, i) => (isPrompt(m) ? [i] : []));
+
+// ── The cut ──────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Where the view of the history starts.
+ *
+ * - `keepFrom`: timestamp of the first prompt that is still sent
+ * - `turnsPagedOut`: how many turns, counted from the first, are left out
+ * - `notice`: the message that takes their place
+ * - `madeAt`: when the cut was made; usage reported earlier describes a larger view
+ */
+type Cut = { keepFrom: number; turnsPagedOut: number; notice: AgentMessage; madeAt: number };
+
+const firstKeptIndex = (ms: AgentMessage[], cut: Cut) =>
+	ms.findIndex((m) => isPrompt(m) && m.timestamp === cut.keepFrom);
+
+/** A cut is stale when its first kept prompt is not in the history, as after a switch to another branch. */
+const isStale = (ms: AgentMessage[], cut: Cut) => firstKeptIndex(ms, cut) < 0;
+
+/** The view: whatever precedes the first prompt, the notice, then everything from the first kept prompt on. */
+function applyCut(ms: AgentMessage[], cut: Cut): AgentMessage[] {
+	return [...ms.slice(0, ms.findIndex(isPrompt)), cut.notice, ...ms.slice(firstKeptIndex(ms, cut))];
+}
+
+/**
+ * How many turns to page out in total, so that at least `excess` estimated tokens leave beyond the
+ * turns that are paged out already. The latest turn always stays, even if that is not enough.
+ *
+ * @returns undefined when only the latest turn is left
+ */
+function turnsToPageOut(ms: AgentMessage[], starts: number[], alreadyOut: number, excess: number): number | undefined {
+	const latest = starts.length - 1;
+	let dropped = 0;
+	for (let turns = alreadyOut + 1; turns <= latest; turns++) {
+		dropped += sumTokens(ms.slice(starts[turns - 1], starts[turns]));
+		if (dropped >= excess) return turns;
+	}
+	return alreadyOut < latest ? latest : undefined;
+}
+
+/** The cut that follows a cut of `alreadyOut` turns, or undefined when no further turn can be paged out. */
+function newCut(ms: AgentMessage[], alreadyOut: number, excess: number, sessionId: string): Cut | undefined {
+	const starts = turnStarts(ms);
+	const turns = turnsToPageOut(ms, starts, alreadyOut, excess);
+	if (turns === undefined) return undefined;
+	return {
+		keepFrom: ms[starts[turns]].timestamp,
+		turnsPagedOut: turns,
+		notice: buildNotice(ms.slice(starts[0], starts[turns]), sessionId),
+		madeAt: Date.now(),
+	};
+}
+
+// ── Measuring ────────────────────────────────────────────────────────────────────────────────────
+
+/** Size of the view: `tokens` as the provider counts, `estimated` as pi's estimator counts. */
+type Load = { tokens: number; estimated: number };
 
 const reportsUsageSince = (since: number) => (m: AgentMessage) =>
 	m.role === "assistant" &&
@@ -67,14 +159,37 @@ const reportsUsageSince = (since: number) => (m: AgentMessage) =>
 	m.stopReason !== "aborted" &&
 	calculateContextTokens(m.usage) > 0;
 
+/** The usage of the latest successful response since `since`, plus an estimate of what came after it. 0 if there is none. */
 function usageSince(ms: AgentMessage[], since: number): number {
 	const i = ms.findLastIndex(reportsUsageSince(since));
 	const m = ms[i];
 	return m?.role === "assistant" ? calculateContextTokens(m.usage) + sumTokens(ms.slice(i + 1)) : 0;
 }
 
-const promptText = (m: AgentMessage) => {
-	if (m.role !== "user") return "";
+/** How full the window is: the usage the provider reported, never less than the estimate. */
+function measure(ms: AgentMessage[], cut: Cut | undefined): Load {
+	const estimated = sumTokens(cut ? applyCut(ms, cut) : ms);
+	return { estimated, tokens: Math.max(usageSince(ms, cut?.madeAt ?? 0), estimated) };
+}
+
+/** What has to go to reach `trimTo`, converted to estimated tokens, the unit turns are counted in. */
+const excessOver = (trimTo: number, { tokens, estimated }: Load) =>
+	(tokens - trimTo) * (estimated > 0 ? estimated / tokens : 1);
+
+// ── The notice ───────────────────────────────────────────────────────────────────────────────────
+
+// How many of the latest paged-out prompts the notice lists, besides the very first one.
+const RECENT_PROMPTS = 4;
+// Each prompt listed in the notice is clipped to this many characters.
+const PROMPT_CHARS = 500;
+// How many of the latest scratch files written in paged-out turns the notice lists.
+const RECENT_NOTES = 6;
+// A written file counts as a scratch file when its path contains this segment.
+const SCRATCH_SEGMENT = "/_scratch/";
+const HOME = homedir();
+
+/** A prompt on one line, clipped. */
+const promptText = (m: UserMessage) => {
 	const text =
 		typeof m.content === "string"
 			? m.content
@@ -83,6 +198,7 @@ const promptText = (m: AgentMessage) => {
 	return flat.length > PROMPT_CHARS ? `${flat.slice(0, PROMPT_CHARS)}...` : flat;
 };
 
+/** The paths a response wrote with the `write` and `edit` tools. Files written through `bash` are not seen. */
 const writtenPaths = (m: AgentMessage): string[] =>
 	m.role === "assistant"
 		? m.content.flatMap((b) =>
@@ -92,16 +208,16 @@ const writtenPaths = (m: AgentMessage): string[] =>
 			)
 		: [];
 
-const fromHome = (path: string) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path);
+const fromHome = (path: string) => (path.startsWith(`${HOME}/`) ? `~${path.slice(HOME.length)}` : path);
 
-// Each scratch file the messages wrote, once, ordered by its latest write.
+/** The scratch files the messages wrote: each once, ordered by its latest write, at most the latest RECENT_NOTES. */
 const scratchNotes = (ms: AgentMessage[]) =>
 	[...new Set(ms.flatMap(writtenPaths).map(fromHome).filter((p) => p.includes(SCRATCH_SEGMENT)).reverse())]
 		.slice(0, RECENT_NOTES)
 		.reverse();
 
-function notesHint(evicted: AgentMessage[]): string[] {
-	const notes = scratchNotes(evicted);
+function notesHint(pagedOut: AgentMessage[]): string[] {
+	const notes = scratchNotes(pagedOut);
 	return notes.length
 		? [
 				"Scratch files written in those turns; read them first if a decision or constraint seems missing:",
@@ -110,133 +226,137 @@ function notesHint(evicted: AgentMessage[]): string[] {
 		: ["If a decision or constraint seems missing, check the scratch plan/research files first."];
 }
 
-function buildNotice(evicted: AgentMessage[], turns: number, sessionId: string): AgentMessage {
-	const prompts = evicted.filter((m) => m.role === "user");
-	const shown = [...new Set([prompts[0], ...prompts.slice(-RECENT_PROMPTS)])].filter(Boolean);
+/**
+ * The message that takes the place of the paged-out turns.
+ * It is not part of the stored session and carries timestamp 0, which no stored message has.
+ *
+ * @param pagedOut the messages of the paged-out turns, starting with the first prompt
+ */
+function buildNotice(pagedOut: AgentMessage[], sessionId: string): AgentMessage {
+	const prompts = pagedOut.filter(isPrompt);
+	const listed = [...new Set([prompts[0], ...prompts.slice(-RECENT_PROMPTS)])];
 	const text = [
-		`[context paging] Turns 1-${turns} left the context window. Nothing was summarized.`,
-		...notesHint(evicted),
+		`[context paging] Turns 1-${prompts.length} left the context window. Nothing was summarized.`,
+		...notesHint(pagedOut),
 		`Full history: session ${sessionId}; \`mem search --session ${sessionId} <terms> --json\` if explicitly asked to look back.`,
 		"",
 		"Earlier user requests (clipped):",
-		...shown.map((m) => `- turn ${prompts.indexOf(m) + 1}: ${promptText(m)}`),
+		...listed.map((m) => `- turn ${prompts.indexOf(m) + 1}: ${promptText(m)}`),
 	].join("\n");
 	return { role: "user", content: text, timestamp: 0 };
 }
 
-function newCut(ms: AgentMessage[], fromTurn: number, excess: number, sessionId: string): Cut | undefined {
-	const starts = userIndexes(ms);
-	let dropped = 0;
-	for (let t = fromTurn + 1; t < starts.length; t++) {
-		dropped += sumTokens(ms.slice(starts[t - 1], starts[t]));
-		if (dropped >= excess || t === starts.length - 1) {
-			const evicted = ms.slice(starts[0], starts[t]);
-			return { keepFrom: ms[starts[t]].timestamp, evictedTurns: t, notice: buildNotice(evicted, t, sessionId), madeAt: Date.now() };
-		}
-	}
-	return undefined;
-}
+// ── The extension ────────────────────────────────────────────────────────────────────────────────
 
-const keepIndex = (ms: AgentMessage[], cut: Cut) =>
-	ms.findIndex((m) => m.role === "user" && m.timestamp === cut.keepFrom);
+const paged = (turns: number) => `paged ${turns} ${turns === 1 ? "turn" : "turns"}`;
 
-function applyCut(ms: AgentMessage[], cut: Cut): AgentMessage[] {
-	const firstUser = ms.findIndex((m) => m.role === "user");
-	return [...ms.slice(0, firstUser), cut.notice, ...ms.slice(keepIndex(ms, cut))];
-}
-
-export default function (pi: ExtensionAPI) {
+export default function contextPaging(pi: ExtensionAPI) {
+	// State. It is held in memory only.
 	let cfg = DEFAULTS;
 	let enabled = cfg.enabled;
 	let cut: Cut | undefined;
+	// The user sent a prompt and no request has gone out for it yet.
 	let userTurnPending = false;
+	// /page was run and no request has gone out since.
 	let forceCut = false;
 
+	// Reading the state.
+	const limits = (ctx: ExtensionContext) =>
+		limitsFor(cfg, ctx.getContextUsage()?.contextWindow ?? ctx.model?.contextWindow);
 	const statusText = () => {
 		if (!enabled) return "paging off";
-		return cut ? turns(cut.evictedTurns) : "paging on";
+		return cut ? paged(cut.turnsPagedOut) : "paging on";
 	};
 	const showStatus = (ctx: ExtensionContext) => {
 		if (ctx.hasUI) ctx.ui.setStatus("paging", statusText());
 	};
-	const reset = (ctx: ExtensionContext) => {
+	const report = (ctx: ExtensionContext) =>
+		`paging ${enabled ? "on" : "off"}, ${cut ? paged(cut.turnsPagedOut) : "no cut"}, usage ${ctx.getContextUsage()?.tokens ?? "unknown"} tokens`;
+
+	// Changing the state.
+	const forgetCut = (ctx: ExtensionContext) => {
 		cut = undefined;
 		showStatus(ctx);
 	};
-	const limits = (ctx: ExtensionContext) =>
-		limitsFor(cfg, ctx.getContextUsage()?.contextWindow ?? ctx.model?.contextWindow);
+	const adopt = (next: Cut, ctx: ExtensionContext) => {
+		const before = cut?.turnsPagedOut ?? 0;
+		cut = next;
+		showStatus(ctx);
+		ctx.ui.notify(`context paging: ${before} -> ${next.turnsPagedOut} turns`, "info");
+	};
+	const setEnabled = (on: boolean, ctx: ExtensionContext) => {
+		enabled = on;
+		forceCut = false;
+		forgetCut(ctx);
+	};
+	const requestCut = () => {
+		forceCut = true;
+	};
+	/**
+	 * The size above which this request pages out. Only the first request after a prompt, or one
+	 * after /page, may do so; any other request gets Infinity. Reading the triggers clears them.
+	 */
+	const takeThreshold = (soft: number) => {
+		const threshold = forceCut ? 0 : userTurnPending ? soft : Infinity;
+		forceCut = false;
+		userTurnPending = false;
+		return threshold;
+	};
 
-	pi.on("session_start", (_event, ctx) => {
+	// Handlers.
+	const loadSettings = (_event: unknown, ctx: ExtensionContext) => {
 		cfg = readConfig(pi);
 		enabled = cfg.enabled;
 		showStatus(ctx);
-	});
-	pi.on("before_agent_start", (event) => {
+	};
+	const notePrompt = (event: BeforeAgentStartEvent) => {
 		userTurnPending = event.messageType === "user";
-	});
-	pi.on("session_compact", (_event, ctx) => reset(ctx));
-	pi.on("session_tree", (_event, ctx) => reset(ctx));
+	};
+	const onHistoryRewritten = (_event: unknown, ctx: ExtensionContext) => forgetCut(ctx);
+	const cancelThresholdCompaction = (event: SessionBeforeCompactEvent): SessionBeforeCompactResult | undefined =>
+		enabled && event.reason === "threshold" ? { cancel: true } : undefined;
 
-	pi.on("context", (event, ctx) => {
-		if (!enabled) return;
+	/** Runs before every request: moves the cut if this request may and the view is too large, then returns the view. */
+	const pageOut = (event: ContextEvent, ctx: ExtensionContext): ContextEventResult | undefined => {
+		if (!enabled) return undefined;
 		const { soft, trimTo } = limits(ctx);
-		const mayCut = forceCut || userTurnPending;
-		const threshold = forceCut ? 0 : soft;
-		forceCut = false;
-		userTurnPending = false;
+		const threshold = takeThreshold(soft);
+		const history = event.messages;
+		if (cut && isStale(history, cut)) forgetCut(ctx);
 
-		const full = event.messages;
-		if (cut && keepIndex(full, cut) < 0) reset(ctx);
-		const current = cut ? applyCut(full, cut) : full;
-		const estimated = sumTokens(current);
-		const tokens = Math.max(usageSince(full, cut?.madeAt ?? 0), estimated);
+		const load = measure(history, cut);
+		const next =
+			load.tokens > threshold
+				? newCut(history, cut?.turnsPagedOut ?? 0, excessOver(trimTo, load), ctx.sessionManager.getSessionId())
+				: undefined;
+		if (next) adopt(next, ctx);
+		return cut ? { messages: applyCut(history, cut) } : undefined;
+	};
 
-		if (mayCut && tokens > threshold) {
-			const usagePerEstimatedToken = estimated > 0 ? tokens / estimated : 1;
-			const excess = (tokens - trimTo) / usagePerEstimatedToken;
-			const previousTurns = cut?.evictedTurns ?? 0;
-			const next = newCut(full, previousTurns, excess, ctx.sessionManager.getSessionId());
-			if (next) {
-				cut = next;
-				showStatus(ctx);
-				ctx.ui.notify(`context paging: ${previousTurns} -> ${next.evictedTurns} turns`, "info");
-				return { messages: applyCut(full, next) };
-			}
+	const pagingCommand = async (args: string, ctx: ExtensionContext) => {
+		const action = args.trim() || "status";
+		if (!["on", "off", "status"].includes(action)) {
+			ctx.ui.notify(`Unknown argument "${action}". Use on | off | status`, "error");
+			return;
 		}
-		return cut ? { messages: current } : undefined;
-	});
+		if (action !== "status") setEnabled(action === "on", ctx);
+		ctx.ui.notify(report(ctx), "info");
+	};
+	const pageCommand = async (_args: string, ctx: ExtensionContext) => {
+		if (!enabled) {
+			ctx.ui.notify("Context paging is off. Run /paging on first", "error");
+			return;
+		}
+		requestCut();
+		ctx.ui.notify("Next request pages out old turns", "info");
+	};
 
-	pi.on("session_before_compact", (event) =>
-		enabled && event.reason === "threshold" ? { cancel: true } : undefined,
-	);
-
-	pi.registerCommand("paging", {
-		description: "Context paging: on | off | status",
-		handler: async (args, ctx) => {
-			const action = args.trim() || "status";
-			if (action === "on" || action === "off") {
-				enabled = action === "on";
-				forceCut = false;
-				reset(ctx);
-			} else if (action !== "status") {
-				ctx.ui.notify(`Unknown argument "${action}". Use on | off | status`, "error");
-				return;
-			}
-			const tokens = ctx.getContextUsage()?.tokens;
-			const state = cut ? turns(cut.evictedTurns) : "no cut";
-			ctx.ui.notify(`paging ${enabled ? "on" : "off"}, ${state}, usage ${tokens ?? "unknown"} tokens`, "info");
-		},
-	});
-
-	pi.registerCommand("page", {
-		description: "Page out old turns on the next request",
-		handler: async (_args, ctx) => {
-			if (!enabled) {
-				ctx.ui.notify("Context paging is off. Run /paging on first", "error");
-				return;
-			}
-			forceCut = true;
-			ctx.ui.notify("Next request pages out old turns", "info");
-		},
-	});
+	pi.on("session_start", loadSettings);
+	pi.on("before_agent_start", notePrompt);
+	pi.on("context", pageOut);
+	pi.on("session_compact", onHistoryRewritten);
+	pi.on("session_tree", onHistoryRewritten);
+	pi.on("session_before_compact", cancelThresholdCompaction);
+	pi.registerCommand("paging", { description: "Context paging: on | off | status", handler: pagingCommand });
+	pi.registerCommand("page", { description: "Page out old turns on the next request", handler: pageCommand });
 }
