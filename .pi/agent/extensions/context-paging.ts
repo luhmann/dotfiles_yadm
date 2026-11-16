@@ -1,3 +1,4 @@
+import { homedir } from "node:os";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { calculateContextTokens, estimateTokens } from "@earendil-works/pi-coding-agent";
@@ -19,6 +20,10 @@ const DEFAULTS: Config = {
 const RECENT_PROMPTS = 4;
 // Each prompt listed in the notice is clipped to this many characters.
 const PROMPT_CHARS = 500;
+// How many of the latest scratch files written in paged-out turns the notice lists.
+const RECENT_NOTES = 6;
+// A written file counts as a scratch file when its path contains this segment.
+const SCRATCH_SEGMENT = "/_scratch/";
 // On small models the ceilings would leave a run too little room to grow, so each limit is also capped at a share of the context window.
 const SOFT_WINDOW_SHARE = 0.5;
 const TRIM_WINDOW_SHARE = 0.3;
@@ -78,12 +83,39 @@ const promptText = (m: AgentMessage) => {
 	return flat.length > PROMPT_CHARS ? `${flat.slice(0, PROMPT_CHARS)}...` : flat;
 };
 
+const writtenPaths = (m: AgentMessage): string[] =>
+	m.role === "assistant"
+		? m.content.flatMap((b) =>
+				b.type === "toolCall" && (b.name === "write" || b.name === "edit") && typeof b.arguments.path === "string"
+					? [b.arguments.path]
+					: [],
+			)
+		: [];
+
+const fromHome = (path: string) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path);
+
+// Each scratch file the messages wrote, once, ordered by its latest write.
+const scratchNotes = (ms: AgentMessage[]) =>
+	[...new Set(ms.flatMap(writtenPaths).map(fromHome).filter((p) => p.includes(SCRATCH_SEGMENT)).reverse())]
+		.slice(0, RECENT_NOTES)
+		.reverse();
+
+function notesHint(evicted: AgentMessage[]): string[] {
+	const notes = scratchNotes(evicted);
+	return notes.length
+		? [
+				"Scratch files written in those turns; read them first if a decision or constraint seems missing:",
+				...notes.map((path) => `- ${path}`),
+			]
+		: ["If a decision or constraint seems missing, check the scratch plan/research files first."];
+}
+
 function buildNotice(evicted: AgentMessage[], turns: number, sessionId: string): AgentMessage {
 	const prompts = evicted.filter((m) => m.role === "user");
 	const shown = [...new Set([prompts[0], ...prompts.slice(-RECENT_PROMPTS)])].filter(Boolean);
 	const text = [
 		`[context paging] Turns 1-${turns} left the context window. Nothing was summarized.`,
-		"If a decision or constraint seems missing, check the scratch plan/research files first.",
+		...notesHint(evicted),
 		`Full history: session ${sessionId}; \`mem search --session ${sessionId} <terms> --json\` if explicitly asked to look back.`,
 		"",
 		"Earlier user requests (clipped):",
