@@ -248,7 +248,9 @@ function buildNotice(pagedOut: AgentMessage[], sessionId: string): AgentMessage 
 
 // ── The extension ────────────────────────────────────────────────────────────────────────────────
 
-const paged = (turns: number) => `paged ${turns} ${turns === 1 ? "turn" : "turns"}`;
+const clock = (ms: number) => new Date(ms).toTimeString().slice(0, 5);
+const paged = ({ turnsPagedOut: turns, madeAt }: Cut) =>
+	`paged ${turns} ${turns === 1 ? "turn" : "turns"} at ${clock(madeAt)}`;
 
 export default function contextPaging(pi: ExtensionAPI) {
 	// State. It is held in memory only.
@@ -265,13 +267,13 @@ export default function contextPaging(pi: ExtensionAPI) {
 		limitsFor(cfg, ctx.getContextUsage()?.contextWindow ?? ctx.model?.contextWindow);
 	const statusText = () => {
 		if (!enabled) return "paging off";
-		return cut ? paged(cut.turnsPagedOut) : "paging on";
+		return cut ? paged(cut) : "paging on";
 	};
 	const showStatus = (ctx: ExtensionContext) => {
 		if (ctx.hasUI) ctx.ui.setStatus("paging", statusText());
 	};
 	const report = (ctx: ExtensionContext) =>
-		`paging ${enabled ? "on" : "off"}, ${cut ? paged(cut.turnsPagedOut) : "no cut"}, usage ${ctx.getContextUsage()?.tokens ?? "unknown"} tokens`;
+		`paging ${enabled ? "on" : "off"}, ${cut ? paged(cut) : "no cut"}, usage ${ctx.getContextUsage()?.tokens ?? "unknown"} tokens`;
 
 	// Changing the state.
 	const forgetCut = (ctx: ExtensionContext) => {

@@ -7,6 +7,8 @@
 import { afterEach, describe, expect, mock, setSystemTime, test } from "bun:test";
 import { homedir } from "node:os";
 
+process.env.TZ = "UTC";
+
 mock.module("@earendil-works/pi-coding-agent", () => ({
 	estimateTokens: (message: { tokens?: number }) => message.tokens ?? 0,
 	calculateContextTokens: (usage: { tokens?: number }) => usage?.tokens ?? 0,
@@ -114,7 +116,17 @@ describe("when it pages", () => {
 
 		expect(labels(seen)).toEqual(["notice: turns 1-1", "prompt 2", "reply 2", "prompt 3"]);
 		expect(pi.notifications).toEqual(["context paging: 0 -> 1 turns"]);
-		expect(pi.status()).toBe("paged 1 turn");
+		expect(pi.status()).toBe("paged 1 turn at 00:00");
+	});
+
+	test("the status tells the time it last paged", () => {
+		const pi = startPi(SMALL);
+		const at1042 = Date.UTC(2026, 10, 17, 10, 42);
+		const history = [...turns(2), prompt(3)].map((m) => ({ ...m, timestamp: m.timestamp + at1042 }));
+
+		pi.prompt(history);
+
+		expect(pi.status()).toBe("paged 1 turn at 10:42");
 	});
 
 	test("a request inside a tool loop never pages, however large the history has grown", () => {
@@ -147,7 +159,7 @@ describe("where it cuts", () => {
 		const seen = pi.prompt(history);
 
 		expect(labels(seen)).toEqual(["notice: turns 1-3", "prompt 4", "reply 4", "prompt 5"]);
-		expect(pi.status()).toBe("paged 3 turns");
+		expect(pi.status()).toBe("paged 3 turns at 00:00");
 	});
 
 	test("the latest turn is kept even when it alone is over the trim target", () => {
@@ -367,7 +379,7 @@ describe("commands and resets", () => {
 
 		pi.command("paging");
 
-		expect(pi.notifications.at(-1)).toBe("paging on, paged 1 turn, usage unknown tokens");
+		expect(pi.notifications.at(-1)).toBe("paging on, paged 1 turn at 00:00, usage unknown tokens");
 	});
 
 	test("/paging reports the context usage pi knows, and that nothing is paged out", () => {
