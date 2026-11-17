@@ -20,8 +20,8 @@
  *   session in `mem`, and lists the first and the latest prompts that were paged out.
  * - Compaction. Pi's own threshold compaction is cancelled while paging is on. Any other compaction
  *   still runs, and it drops the cut because it rewrites the history.
- * - Lifetime. The cut is held in memory only. After a restart or reload the first prompt over the soft
- *   limit pages out again, starting from the first turn.
+ * - Lifetime. Every change of the cut is saved in the session and restored on session start, so a
+ *   restart, reload or /resume continues with the same view.
  *
  * Settings: `contextPaging` in settings.json, see DEFAULTS. Commands: /paging on | off | status, /page.
  * Tests: `bun test ~/.pi/agent/tests`.
@@ -32,10 +32,12 @@ import type {
 	BeforeAgentStartEvent,
 	ContextEvent,
 	ContextEventResult,
+	CustomEntry,
 	ExtensionAPI,
 	ExtensionContext,
 	SessionBeforeCompactEvent,
 	SessionBeforeCompactResult,
+	SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 import { calculateContextTokens, estimateTokens } from "@earendil-works/pi-coding-agent";
 
@@ -109,6 +111,15 @@ type Cut = { keepFrom: number; turnsPagedOut: number; notice: AgentMessage; made
 
 const firstKeptIndex = (ms: AgentMessage[], cut: Cut) =>
 	ms.findIndex((m) => isPrompt(m) && m.timestamp === cut.keepFrom);
+
+const ENTRY_TYPE = "context-paging";
+type SavedCut = { cut: Cut | null };
+
+const isSavedCut = (entry: SessionEntry): entry is CustomEntry<SavedCut> =>
+	entry.type === "custom" && entry.customType === ENTRY_TYPE;
+
+/** The cut saved last on the current branch; undefined when there is none or paging dropped it. */
+const savedCut = (ctx: ExtensionContext) => ctx.sessionManager.getBranch().findLast(isSavedCut)?.data?.cut ?? undefined;
 
 /** A cut is stale when its first kept prompt is not in the history, as after a switch to another branch. */
 const isStale = (ms: AgentMessage[], cut: Cut) => firstKeptIndex(ms, cut) < 0;
@@ -253,7 +264,7 @@ const paged = ({ turnsPagedOut: turns, madeAt }: Cut) =>
 	`paged ${turns} ${turns === 1 ? "turn" : "turns"} at ${clock(madeAt)}`;
 
 export default function contextPaging(pi: ExtensionAPI) {
-	// State. It is held in memory only.
+	// State. The cut is also saved in the session, see savedCut.
 	let cfg = DEFAULTS;
 	let enabled = cfg.enabled;
 	let cut: Cut | undefined;
@@ -277,12 +288,14 @@ export default function contextPaging(pi: ExtensionAPI) {
 
 	// Changing the state.
 	const forgetCut = (ctx: ExtensionContext) => {
+		if (cut) pi.appendEntry<SavedCut>(ENTRY_TYPE, { cut: null });
 		cut = undefined;
 		showStatus(ctx);
 	};
 	const adopt = (next: Cut, ctx: ExtensionContext) => {
 		const before = cut?.turnsPagedOut ?? 0;
 		cut = next;
+		pi.appendEntry<SavedCut>(ENTRY_TYPE, { cut: next });
 		showStatus(ctx);
 		ctx.ui.notify(`context paging: ${before} -> ${next.turnsPagedOut} turns`, "info");
 	};
@@ -309,6 +322,7 @@ export default function contextPaging(pi: ExtensionAPI) {
 	const loadSettings = (_event: unknown, ctx: ExtensionContext) => {
 		cfg = readConfig(pi);
 		enabled = cfg.enabled;
+		cut = savedCut(ctx);
 		showStatus(ctx);
 	};
 	const notePrompt = (event: BeforeAgentStartEvent) => {

@@ -17,7 +17,7 @@ const { default: contextPaging } = await import("../extensions/context-paging.ts
 
 type Message = { role: string; content: unknown; timestamp: number; tokens: number; [key: string]: unknown };
 type Settings = { enabled?: boolean; maxSoftTokens?: number; maxTrimToTokens?: number };
-type Pi = { window?: number; modelWindow?: number; piUsageTokens?: number };
+type Pi = { window?: number; modelWindow?: number; piUsageTokens?: number; branch?: unknown[] };
 
 const SMALL: Settings = { maxSoftTokens: 100, maxTrimToTokens: 60 };
 const SCRATCH = "~/jcloud/org/_scratch/dev";
@@ -50,7 +50,8 @@ const label = (m: Message) => {
 const labels = (ms: Message[]) => ms.map(label);
 const noticeLines = (ms: Message[]) => String(ms.find(isNotice)?.content).split("\n");
 
-function startPi(settings: Settings = SMALL, { window, modelWindow, piUsageTokens }: Pi = {}) {
+// Passing the `branch` of an earlier pi continues that session, as after a restart.
+function startPi(settings: Settings = SMALL, { window, modelWindow, piUsageTokens, branch = [] }: Pi = {}) {
 	const handlers: Record<string, (event: unknown, ctx: unknown) => unknown> = {};
 	const commands: Record<string, (args: string, ctx: unknown) => unknown> = {};
 	const notifications: string[] = [];
@@ -60,6 +61,7 @@ function startPi(settings: Settings = SMALL, { window, modelWindow, piUsageToken
 		getSettings: () => ({ contextPaging: settings }),
 		registerCommand: (name: string, command: { handler: (args: string, ctx: unknown) => unknown }) =>
 			(commands[name] = command.handler),
+		appendEntry: (customType: string, data: unknown) => branch.push({ type: "custom", customType, data }),
 	} as never);
 	const ctx = {
 		hasUI: true,
@@ -70,7 +72,7 @@ function startPi(settings: Settings = SMALL, { window, modelWindow, piUsageToken
 		getContextUsage: () =>
 			window || piUsageTokens ? { contextWindow: window, tokens: piUsageTokens } : undefined,
 		model: modelWindow ? { contextWindow: modelWindow } : undefined,
-		sessionManager: { getSessionId: () => "session-1" },
+		sessionManager: { getSessionId: () => "session-1", getBranch: () => branch },
 	};
 	// What the model is sent for this history. The request happens right after the last message.
 	const request = (history: Message[]): Message[] => {
@@ -91,6 +93,7 @@ function startPi(settings: Settings = SMALL, { window, modelWindow, piUsageToken
 		emit: (name: string, event: unknown = {}) => handlers[name](event, ctx),
 		notifications,
 		status: () => statuses.at(-1),
+		branch,
 	};
 }
 
@@ -428,6 +431,31 @@ describe("commands and resets", () => {
 
 		expect(labels(pi.request(history))).toEqual(labels(history));
 		expect(pi.status()).toBe("paging on");
+	});
+
+	test("after a restart the view keeps the cut it had before", () => {
+		const before = startPi(SMALL);
+		const history = [...turns(2), prompt(3)];
+		const view = before.prompt(history);
+
+		const restarted = startPi(SMALL, { branch: before.branch });
+
+		expect(labels(restarted.request(history))).toEqual(labels(view));
+		expect(labels(view)).toEqual(["notice: turns 1-1", "prompt 2", "reply 2", "prompt 3"]);
+	});
+
+	test.each([
+		{ drop: "compaction", act: (pi: ReturnType<typeof startPi>) => pi.emit("session_compact") },
+		{ drop: "/paging off", act: (pi: ReturnType<typeof startPi>) => pi.command("paging", "off") },
+	])("a cut dropped by $drop stays dropped after a restart", ({ act }) => {
+		const before = startPi(SMALL);
+		const history = [...turns(2), prompt(3)];
+		before.prompt(history);
+		act(before);
+
+		const restarted = startPi(SMALL, { branch: before.branch });
+
+		expect(labels(restarted.request(history))).toEqual(labels(history));
 	});
 
 	test("a cut whose first kept prompt is no longer in the history is dropped", () => {
