@@ -5,7 +5,7 @@
   "meta": {
     "name": "pi-dev",
     "version": "",
-    "description": null,
+    "description": "Pi sandboxed with zLLM credential injection and proxy-injected GitHub access",
     "author": null
   },
   "security": {
@@ -13,11 +13,17 @@
     "process_info_mode": null,
     "ipc_mode": null,
     "capability_elevation": null,
+    "approval_backends": {},
+    "approval_defaults": null,
     "wsl2_proxy_policy": null
   },
   "groups": {
     "include": [
-      "mise_manager"
+      "mise_manager",
+      "java_runtime",
+      "go_runtime",
+      "go_runtime_macos",
+      "bun_runtime"
     ],
     "exclude": []
   },
@@ -33,61 +39,97 @@
       "$HOME/.local/share/mem",
       "$HOME/.dash0",
       "$HOME/.config/nobl9",
+      "$HOME/.config/sentry",
       "$HOME/Library/Application Support/zalando-token-cli",
       "$HOME/Library/Application Support/zalando-kubectl",
+      "$HOME/Library/Application Support/zalando-aws-cli",
+      "$HOME/Library/Application Support/kotlin",
       "$HOME/.kube",
       "$HOME/.okta_cache",
       "$HOME/.workspace-mcp",
       "$HOME/.claude",
       "$HOME/.agents",
-      "$HOME/.m2",
       "$HOME/.local/state/mise",
-      "~/Library/Application Support",
-      "~/Library/Application Support/zalando-aws-cli"
+      "$HOME/.local/share/uv/tools",
+      "$HOME/.m2/repository",
+      "$HOME/.m2/wrapper",
+      "$HOME/.m2/build-cache",
+      "$HOME/.gradle/caches",
+      "$HOME/.gradle/wrapper",
+      "$HOME/.gradle/daemon",
+      "$HOME/.gradle/native",
+      "$HOME/.gradle/.tmp",
+      "$HOME/.gradle/workers",
+      "$HOME/.gradle/kotlin-profile",
+      "$HOME/.gradle/jdks",
+      "$HOME/.gradle/notifications",
+      "$HOME/.npm",
+      "~/.gradle"
     ],
     "read": [
       "$HOME/.config",
       "$HOME/.orbstack",
       "$HOME/.docker",
-      "$HOME/.aws"
+      "$HOME/.aws",
+      "$HOME/go",
+      "$HOME/Library/Application Support/CleanShot/media",
+      "$HOME/.local/pipx",
+      "$HOME/Library/Application Support/com.superlogical.rex/RexServer",
+      "~/.hunk"
     ],
-    "write": [],
+    "write": [
+      "~/.hunk/hunk-mcp"
+    ],
     "allow_file": [
-      "~/AGENTS.MD",
-      "~/AGENTS.md",
-      "~/.databrickscfg",
-      "~/.orbstack/run/docker.sock"
+      "$HOME/AGENTS.MD",
+      "$HOME/AGENTS.md",
+      "$HOME/.databrickscfg",
+      "$HOME/.orbstack/run/docker.sock",
+      "~/Library/Application Support/nakadictl/config.toml",
+      "~/.aliases"
     ],
     "read_file": [
       "$HOME/.testcontainers.properties",
       "$HOME/.kagi.toml",
       "$HOME/.zmon-cli.yaml",
       "$HOME/.gitignore",
-      "$HOME/.gitattributes"
+      "$HOME/.gitattributes",
+      "$HOME/.m2/settings.xml",
+      "$HOME/.m2/settings-security.xml",
+      "$HOME/.gradle/gradle.properties",
+      "$HOME/.gradle/gradle.encrypted.properties",
+      "$HOME/.npmrc"
     ],
     "write_file": [],
     "unix_socket": [
       "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
       "$HOME/.orbstack/run/docker.sock",
-      "/var/run/docker.sock"
+      "/var/run/docker.sock",
+      "$HOME/Library/Application Support/rex/server.sock"
     ],
     "unix_socket_bind": [],
     "unix_socket_dir": [],
     "unix_socket_dir_bind": [
-      "/private/var/folders/zf/n2t15scs76dfydpdtrpvtczh0000gp/T",
+      "$TMPDIR",
       "/private/tmp"
     ],
     "unix_socket_subtree": [],
     "unix_socket_subtree_bind": [],
-    "deny": [],
+    "deny": [
+      "$HOME/.config/fnox"
+    ],
     "bypass_protection": [
-      "$HOME/.docker"
+      "$HOME/.docker",
+      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
+      "$HOME/.kube",
+      "$HOME/.npmrc"
     ],
     "suppress_save_prompt": []
   },
   "network": {
     "block": false,
     "allow_http2": false,
+    "network_profile": "developer",
     "allow_domain": [
       "pi.dev",
       "jira.zalando.net",
@@ -114,6 +156,9 @@
       "*.scalyr.com",
       "*.dataset.com",
       "*.nobl9.com",
+      "endoflife.date",
+      "sentry.io",
+      "*.sentry.io",
       "*.dash0.com",
       "*.zalando.net",
       "*.zalan.do",
@@ -121,35 +166,294 @@
       "sandbox.identity.zalando.com",
       "*.auth.zalando.com",
       "chatgpt.com",
-      "auth.openai.com"
+      "auth.openai.com",
+      "zllm.data.zalan.do",
+      {
+        "domain": "github.com",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/*/*/info/refs"
+          },
+          {
+            "method": "POST",
+            "path": "/*/*/git-upload-pack"
+          },
+          {
+            "method": "POST",
+            "path": "/zalando-partner/*/git-receive-pack"
+          },
+          {
+            "method": "POST",
+            "path": "/zalando-build/*/git-receive-pack"
+          },
+          {
+            "method": "POST",
+            "path": "/zalando-zcp/*/git-receive-pack"
+          },
+          {
+            "method": "POST",
+            "path": "/zalando-engineering-community/*/git-receive-pack"
+          }
+        ]
+      },
+      "api.linear.app",
+      {
+        "domain": "chat.googleapis.com",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/v1/spaces/*/messages"
+          }
+        ]
+      },
+      "api.business.githubcopilot.com",
+      "corporate.identity.zalando.com"
     ],
     "deny_domain": [],
+    "credentials": [
+      "zllm",
+      "github",
+      "github_git",
+      "brave",
+      "exa",
+      "jira",
+      "linear"
+    ],
     "open_port": [],
     "open_port_range": [],
     "listen_port": [],
     "listen_port_range": [],
     "connect_port": [],
     "no_proxy": [],
-    "custom_credentials": {},
+    "custom_credentials": {
+      "zllm": {
+        "upstream": "https://zllm.data.zalan.do",
+        "credential_key": "cmd://zllm",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "ZLLM_TOKEN",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "github": {
+        "upstream": "https://api.github.com",
+        "credential_key": "cmd://gh_api",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "token {}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "GH_TOKEN",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "exa": {
+        "upstream": "https://api.exa.ai",
+        "credential_key": "env://EXA_API_KEY",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "x-api-key",
+        "credential_format": "{}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "EXA_API_KEY",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "github_git": {
+        "upstream": "https://github.com",
+        "credential_key": "cmd://gh_git",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "basic_auth",
+        "inject_header": "Authorization",
+        "credential_format": null,
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "GITHUB_GIT_TOKEN",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "jira": {
+        "upstream": "https://jira.zalando.net",
+        "credential_key": "env://JIRA_API_TOKEN",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "JIRA_API_TOKEN",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "brave": {
+        "upstream": "https://api.search.brave.com",
+        "credential_key": "env://BRAVE_API_KEY",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "X-Subscription-Token",
+        "credential_format": "{}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "BRAVE_API_KEY",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      },
+      "linear": {
+        "upstream": "https://api.linear.app",
+        "credential_key": "cmd://linear",
+        "redeem_phantoms": [],
+        "auth": null,
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "{}",
+        "path_pattern": null,
+        "path_replacement": null,
+        "query_param_name": null,
+        "proxy": null,
+        "env_var": "LINEAR_API_KEY",
+        "endpoint_rules": [],
+        "endpoint_policy": null,
+        "tls_ca": null,
+        "tls_client_cert": null,
+        "tls_client_key": null,
+        "aws_auth": null,
+        "spiffe": null,
+        "rate_limit": null
+      }
+    },
     "tls_intercept": null,
     "upstream_proxy": null,
-    "upstream_bypass": []
+    "upstream_bypass": [],
+    "approval_backends": {
+      "prompt": {
+        "type": "terminal",
+        "url": null,
+        "auth": null,
+        "timeout_secs": 120,
+        "mode": null,
+        "backends": []
+      }
+    },
+    "approval_defaults": {
+      "backend": "prompt",
+      "timeout_secs": null
+    }
   },
   "diagnostics": {
-    "suppress_system_services": []
+    "suppress_system_services": [],
+    "redaction": {
+      "extra_env_vars": []
+    },
+    "network_denial_audit": {}
   },
   "linux": {
-    "af_unix_mediation": null,
+    "af_unix_mediation": "pathname",
     "sandbox_policy": null
   },
-  "env_credentials": {
-    "op://Automation/kagi-session-token/credential": "KAGI_SESSION_TOKEN",
-    "op://Automation/brave-api-key/credential": "BRAVE_API_KEY",
-    "op://Automation/exa-api-key/credential": "EXA_API_KEY",
-    "op://Automation/jira-api-token/credential": "JIRA_API_TOKEN",
-    "op://Automation/scalyr-api-token/password": "scalyr_readlog_token"
-  },
+  "env_credentials": {},
   "environment": {
+    "allow_vars": [
+      "PATH",
+      "HOME",
+      "USER",
+      "LOGNAME",
+      "SHELL",
+      "PWD",
+      "SHLVL",
+      "TMPDIR",
+      "LANG",
+      "LC_*",
+      "__CF_USER_TEXT_ENCODING",
+      "TERM",
+      "TERM_PROGRAM",
+      "TERM_PROGRAM_VERSION",
+      "COLORTERM",
+      "NO_COLOR",
+      "FORCE_COLOR",
+      "EDITOR",
+      "VISUAL",
+      "XDG_*",
+      "SSH_AUTH_SOCK",
+      "HOMEBREW_*",
+      "MISE_*",
+      "__MISE_*",
+      "JAVA_HOME",
+      "GOROOT",
+      "GOBIN",
+      "GOPATH",
+      "CARGO_HOME",
+      "RUSTUP_HOME",
+      "RUSTUP_TOOLCHAIN",
+      "DOCKER_HOST",
+      "TESTCONTAINERS_*",
+      "REX_*",
+      "scalyr_server",
+      "scalyr_readlog_token",
+      "KAGI_SESSION_TOKEN",
+      "PR_REVIEW_WEBHOOK_URL",
+      "CLUSTER_ACCESS_WEBHOOK_URL"
+    ],
     "deny_vars": [
       "OPENAI_API_KEY",
       "ANTHROPIC_API_KEY",
@@ -158,15 +462,86 @@
       "PERPLEXITY_API_KEY",
       "JIRA_API_TOKEN",
       "BRAVE_API_KEY",
-      "EXA_API_KEY",
-      "KAGI_SESSION_TOKEN",
-      "scalyr_readlog_token"
+      "EXA_API_KEY"
     ],
+    "case_insensitive_vars": false,
     "set_vars": {
-      "GIT_CONFIG_GLOBAL": "$HOME/.config/git/nono-sandbox.gitconfig"
+      "JITI_FS_CACHE": "false",
+      "JAVA_TOOL_OPTIONS": "-Djava.net.preferIPv4Stack=true",
+      "GIT_CONFIG_SYSTEM": "/dev/null",
+      "GIT_CONFIG_VALUE_0": "",
+      "GIT_CONFIG_COUNT": "3",
+      "GIT_CONFIG_KEY_1": "credential.https://github.com.helper",
+      "GIT_CONFIG_KEY_2": "credential.interactive",
+      "GIT_CONFIG_VALUE_1": "!f() { if [ \"$1\" = get ]; then printf \"username=x-access-token\\npassword=%s\\n\" \"$GITHUB_GIT_TOKEN\"; fi; }; f",
+      "GIT_TERMINAL_PROMPT": "0",
+      "GIT_CONFIG_GLOBAL": "$HOME/.config/git/nono-sandbox.gitconfig",
+      "GIT_CONFIG_VALUE_2": "never",
+      "GIT_CONFIG_KEY_0": "credential.helper"
     }
   },
-  "credential_capture": {},
+  "credential_capture": {
+    "gh_api": {
+      "command": [
+        "gh",
+        "auth",
+        "token"
+      ],
+      "provider": null,
+      "timeout_secs": 5,
+      "ttl_secs": null,
+      "cache_ttl_secs": 900,
+      "cache_path_regex": null,
+      "stdin": "null",
+      "output": "text",
+      "interaction": null
+    },
+    "zllm": {
+      "command": [
+        "/bin/sh",
+        "-c",
+        "/Users/fldietrich/.local/share/mise/installs/python/3.14.5/bin/ztoken token -n zllm &"
+      ],
+      "provider": null,
+      "timeout_secs": 10,
+      "ttl_secs": null,
+      "cache_ttl_secs": 300,
+      "cache_path_regex": null,
+      "stdin": "null",
+      "output": "text",
+      "interaction": null
+    },
+    "gh_git": {
+      "command": [
+        "/bin/sh",
+        "-c",
+        "printf 'x-access-token:'; exec gh auth token"
+      ],
+      "provider": null,
+      "timeout_secs": 5,
+      "ttl_secs": null,
+      "cache_ttl_secs": 900,
+      "cache_path_regex": null,
+      "stdin": "null",
+      "output": "text",
+      "interaction": null
+    },
+    "linear": {
+      "command": [
+        "linear",
+        "auth",
+        "token"
+      ],
+      "provider": null,
+      "timeout_secs": 5,
+      "ttl_secs": null,
+      "cache_ttl_secs": 900,
+      "cache_path_regex": null,
+      "stdin": "null",
+      "output": "text",
+      "interaction": null
+    }
+  },
   "credential_providers": {},
   "credential_routes": [],
   "workdir": {
@@ -178,9 +553,25 @@
     "exclude_patterns": [],
     "exclude_globs": []
   },
-  "interactive": false,
+  "open_urls": {
+    "allow_origins": [
+      "https://identity.zalando.com",
+      "https://corporate.identity.zalando.com"
+    ],
+    "allow_localhost": false
+  },
   "skipdirs": [],
   "packs": [],
   "command_args": [],
-  "unsafe_macos_seatbelt_rules": []
+  "unsafe_macos_seatbelt_rules": [
+    "(allow network-bind (local udp \"*:*\"))",
+    "(allow network-inbound (local udp \"*:*\"))",
+    "(allow network-outbound (remote udp \"localhost:*\"))",
+    "(allow network-bind (local tcp \"localhost:*\"))",
+    "(allow network-inbound (local tcp \"localhost:*\"))",
+    "(allow network-outbound (remote tcp \"localhost:*\"))",
+    "(deny process-info-pidinfo)",
+    "(allow process-info-pidinfo (target same-sandbox))",
+    "(deny sysctl-read (sysctl-name-regex #\"procargs\")) ; With the two rules above: block argv/env reads of processes outside the sandbox (kern.procargs2 leaks supervisor secrets). Workaround for nolabs-ai/nono#1821, same as agent-safehouse v0.12. Remove once fixed upstream."
+  ]
 }

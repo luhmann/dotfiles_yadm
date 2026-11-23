@@ -32,3 +32,7 @@
 [url "https://github.com/"]
 	insteadOf = git@github.com:
 	insteadOf = git@github.com-personal:
+# Zalando identity and signing key for repos under ~/dev/z, mirroring ~/.gitconfig.
+# ~/dev/jf is left out: its config rewrites remotes to an SSH alias that cannot work here.
+[includeIf "gitdir:~/dev/z/"]
+	path = ~/dev/z/.gitconfig
