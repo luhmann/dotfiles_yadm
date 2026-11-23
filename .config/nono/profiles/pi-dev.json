@@ -1,6 +1,7 @@
 {
   "extends": [
-    "nolabs-ai/pi"
+    "nolabs-ai/pi",
+    "pi-dev-signing"
   ],
   "meta": {
     "name": "pi-dev",
@@ -102,7 +103,6 @@
     ],
     "write_file": [],
     "unix_socket": [
-      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
       "$HOME/.orbstack/run/docker.sock",
       "/var/run/docker.sock",
       "$HOME/Library/Application Support/rex/server.sock"
@@ -120,7 +120,6 @@
     ],
     "bypass_protection": [
       "$HOME/.docker",
-      "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock",
       "$HOME/.kube",
       "$HOME/.npmrc"
     ],

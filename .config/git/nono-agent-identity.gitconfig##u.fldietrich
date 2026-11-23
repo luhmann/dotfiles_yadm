@@ -1,0 +1,10 @@
+# Agent identity for nono-sandboxed agents on the work Mac. Included last by
+# nono-sandbox.gitconfig, so it overrides the ~/dev/z identity as well.
+# Key lives in 1Password (vault agents), served by ~/.local/state/agent-ssh/agent.sock
+# (loaded with agent-keys-load).
+[user]
+	name = Florian Dietrich (agent)
+	email = florian.dietrich.external@zalando.de
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAc11BBNEnQBwbjayL7qgzGfePr3EKEBy20WbiOsCkiY
+[gpg "ssh"]
+	program = /usr/bin/ssh-keygen

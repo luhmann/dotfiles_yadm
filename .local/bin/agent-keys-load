@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Load this machine's agent SSH keys from 1Password (vault "agents") into the
+# dedicated agent socket used by sandboxed agents. Run once after each reboot.
+set -euo pipefail
+
+label="${1:-work-mac}"
+items=("agent-auth-$label" "agent-sign-$label")
+sock_dir="$HOME/.local/state/agent-ssh"
+export SSH_AUTH_SOCK="$sock_dir/agent.sock"
+
+fail() { echo "agent-keys-load: $*" >&2; exit 1; }
+
+agent_alive() {
+  local rc=0
+  ssh-add -l >/dev/null 2>&1 || rc=$?
+  [[ $rc -ne 2 ]]
+}
+
+start_agent() {
+  mkdir -m 700 -p "$sock_dir"
+  rm -f "$SSH_AUTH_SOCK"
+  /usr/bin/ssh-agent -a "$SSH_AUTH_SOCK" >/dev/null
+  echo "started ssh-agent on $SSH_AUTH_SOCK"
+}
+
+public_key() {
+  op read "op://agents/$1/public key" | cut -d' ' -f1,2 ||
+    fail "cannot read public key of 1Password item agents/$1"
+}
+
+is_loaded() { ssh-add -L 2>/dev/null | cut -d' ' -f1,2 | grep -qxF "$1"; }
+
+load_key() {
+  local item="$1" pub="$2"
+  if is_loaded "$pub"; then
+    echo "$item: already loaded"
+    return
+  fi
+  op read "op://agents/$item/private key?ssh-format=openssh" | ssh-add -q - ||
+    fail "cannot load private key of agents/$item"
+  echo "$item: loaded"
+}
+
+agent_alive || start_agent
+
+pubs=()
+for item in "${items[@]}"; do
+  pubs+=("$(public_key "$item")")
+done
+
+for i in "${!items[@]}"; do
+  load_key "${items[$i]}" "${pubs[$i]}"
+done
+
+for i in "${!items[@]}"; do
+  is_loaded "${pubs[$i]}" || fail "${items[$i]} missing from agent after load"
+done

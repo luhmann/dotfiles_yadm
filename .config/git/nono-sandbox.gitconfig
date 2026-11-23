@@ -1,8 +1,8 @@
 # Global gitconfig for nono-sandboxed agents (GIT_CONFIG_GLOBAL).
 # Replaces ~/.gitconfig inside the sandbox: SSH transport is impossible there
 # (nono's network proxy is HTTP(S)-only), so remotes are rewritten to HTTPS
-# and auth flows through gh + GH_TOKEN. Signing still uses the 1Password
-# agent socket, which is a local grant, not network.
+# and auth flows through gh + GH_TOKEN. Signing uses an agent socket, which is
+# a local grant, not network. Per-user identity overrides come last (include).
 [core]
 	# Not inherited from ~/.gitconfig, which this file replaces: without it
 	# git falls back to the XDG default ~/.config/git/ignore, leaving
@@ -36,3 +36,8 @@
 # ~/dev/jf is left out: its config rewrites remotes to an SSH alias that cannot work here.
 [includeIf "gitdir:~/dev/z/"]
 	path = ~/dev/z/.gitconfig
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
+# Machine-specific agent identity (yadm alternate). Missing file = no override.
+[include]
+	path = ~/.config/git/nono-agent-identity.gitconfig

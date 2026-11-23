@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "name": "pi-dev-signing",
+    "version": "0.1.0",
+    "description": "Commit signing for pi-dev on the remote Mac: 1Password SSH agent socket (until it gets dedicated agent keys)."
+  },
+  "filesystem": {
+    "unix_socket": ["$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"],
+    "bypass_protection": ["$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"]
+  }
+}

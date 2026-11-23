@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "name": "pi-dev-signing",
+    "version": "0.1.0",
+    "description": "Commit signing for pi-dev on the work Mac: dedicated agent socket only (keys loaded by agent-keys-load), no access to the 1Password SSH agent."
+  },
+  "filesystem": {
+    "unix_socket": ["$HOME/.local/state/agent-ssh/agent.sock"]
+  },
+  "environment": {
+    "set_vars": { "SSH_AUTH_SOCK": "$HOME/.local/state/agent-ssh/agent.sock" }
+  }
+}
