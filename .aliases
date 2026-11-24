@@ -221,7 +221,7 @@ alias spf='TERM_PROGRAM= WARP_SESSION_ID= WARP_TERMINAL_SESSION_UUID= sp'
 alias np='nono run --allow-cwd --profile pi-dev -- pi'
 # verbose variant for the profile build-up phase: shows every ALLOW/DENY
 alias npv='nono run -vv --allow-cwd --profile pi-dev -- pi'
-alias npj='SSH_AUTH_SOCK=$HOME/.local/state/agent-ssh/agent.sock ssh-add -l >/dev/null 2>&1 || agent-keys-load; colima status pi-docker >/dev/null 2>&1 || colima start pi-docker; PATH="$HOME/.config/nono/bin/shims:$PATH" nono run --allow-cwd --profile pi-jvm -- pi'
+alias npj='SSH_AUTH_SOCK=$HOME/.local/state/agent-ssh/agent.sock ssh-add -l >/dev/null 2>&1 || agent-keys-load; colima status pi-docker >/dev/null 2>&1 || colima start pi-docker; PATH="$HOME/.config/nono/bin/shims:$PATH" nono run --no-diagnostics --allow-cwd --profile pi-jvm -- pi'
 
 # Claude Code autonomous mode (sandboxed)
 zc() {
