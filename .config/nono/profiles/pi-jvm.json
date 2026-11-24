@@ -13,8 +13,6 @@
     "include": [
       "mise_manager",
       "java_runtime",
-      "go_runtime",
-      "go_runtime_macos",
       "bun_runtime"
     ],
     "exclude": [
