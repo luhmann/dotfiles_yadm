@@ -1,0 +1,5 @@
+#!/bin/sh
+# nono pi-jvm after-hook (host): stop this session's token renewer and remove its tokens.
+dir="$HOME/.local/state/nono-tokens/$NONO_SESSION_ID"
+[ -f "$dir/renewer.pid" ] && kill "$(cat "$dir/renewer.pid")" 2>/dev/null
+rm -rf "$dir"

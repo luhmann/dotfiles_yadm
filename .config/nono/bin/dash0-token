@@ -1,0 +1,10 @@
+#!/bin/sh
+# nono credential command (runs on the host): prints a current dash0 access token from the host CLI login.
+# A cheap API call lets the dash0 CLI refresh the OAuth token first; the sandbox never sees ~/.dash0.
+set -eu
+cfg="$HOME/.dash0"
+/opt/homebrew/bin/dash0 --agent-mode -X datasets list >/dev/null 2>&1 || true
+profile=$(cat "$cfg/activeProfile")
+token=$(jq -r --arg p "$profile" '.profiles[] | select(.name == $p) | .configuration.authToken // empty' "$cfg/profiles.json")
+[ -n "$token" ] || { echo "dash0-token: no auth token in profile '$profile'; run 'dash0 login' on the host" >&2; exit 1; }
+printf '%s\n' "$token"

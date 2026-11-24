@@ -1,0 +1,92 @@
+#!/bin/bash
+# Host-side token broker for nono pi-jvm sessions (see pi-jvm-session-before).
+#   nono-token-renewer fetch <dir>                    mint missing/expiring tokens into <dir> once
+#   nono-token-renewer run <dir> <nono-pid> <deadline> renew until nono exits or the epoch deadline passes
+# The sandbox reads <dir> via the ztoken/greyhound stand-ins; it never sees the long-lived secrets.
+set -uo pipefail
+
+ZTOKEN_BIN="$HOME/.local/share/mise/installs/python/3.14.5/bin/ztoken"
+GREYHOUND_DIR="$HOME/.local/share/greyhound"
+REFRESH_BEFORE_SECS="${NONO_TOKEN_REFRESH_BEFORE_SECS:-1800}"
+INTERVAL_SECS="${NONO_TOKEN_INTERVAL_SECS:-300}"
+
+log() { echo "$(date '+%F %T') $*" >&2; }
+
+jwt_exp() {
+  python3 -c 'import base64,json,sys;p=sys.argv[1].split(".")[1];p+="="*(-len(p)%4);print(json.loads(base64.urlsafe_b64decode(p))["exp"])' "$1"
+}
+
+expiring() {
+  local exp
+  exp=$(cat "$1" 2>/dev/null) || return 0
+  [ $((exp - $(date +%s))) -lt "$REFRESH_BEFORE_SECS" ]
+}
+
+write_atomic() {
+  local target="$1" tmp
+  tmp=$(mktemp "$target.XXXXXX") && cat > "$tmp" && chmod 600 "$tmp" && mv "$tmp" "$target"
+}
+
+fetch_ztoken() {
+  local dir="$1" token
+  expiring "$dir/ztoken.exp" || return 0
+  token=$(/opt/homebrew/bin/timeout 20 "$ZTOKEN_BIN" token -r) || { log "ztoken failed (run ztoken on the host)"; return 1; }
+  printf '%s\n' "$token" | write_atomic "$dir/ztoken"
+  jwt_exp "$token" | write_atomic "$dir/ztoken.exp"
+  log "ztoken renewed"
+}
+
+greyhound_token() {
+  local now=$(date +%s)
+  GREYHOUND_NONINTERACTIVE=1 /opt/homebrew/bin/timeout 20 "$GREYHOUND_DIR/greyhound.sh" -s |
+    jq -e --argjson now "$now" '. + {expires_at: ($now + .expires_in)} | del(.expires_in)'
+}
+
+fetch_greyhound() {
+  local dir="$1" json exp
+  expiring "$dir/greyhound.exp" || return 0
+  json=$(greyhound_token) || { log "greyhound failed (credentials rotated? run: greyhound -s on the host)"; return 1; }
+  exp=$(jq -r .expires_at <<<"$json")
+  if [ $((exp - $(date +%s))) -lt "$REFRESH_BEFORE_SECS" ]; then
+    mv "$GREYHOUND_DIR/.service-token.json" "$GREYHOUND_DIR/.service-token.json.old" 2>/dev/null
+    json=$(greyhound_token) || { log "greyhound refresh failed"; return 1; }
+    exp=$(jq -r .expires_at <<<"$json")
+  fi
+  write_atomic "$dir/greyhound.json" <<<"$json"
+  echo "$exp" | write_atomic "$dir/greyhound.exp"
+  log "greyhound renewed"
+}
+
+fetch_all() {
+  local rc=0
+  fetch_ztoken "$1" || rc=1
+  fetch_greyhound "$1" || rc=1
+  return $rc
+}
+
+stop() {
+  local dir="$1" reason="$2"
+  rm -f "$dir/ztoken" "$dir/ztoken.exp" "$dir/greyhound.json" "$dir/greyhound.exp" "$dir/renewer.pid"
+  echo "$reason" | write_atomic "$dir/stopped"
+  log "stopped: $reason"
+  exit 0
+}
+
+run() {
+  local dir="$1" pid="$2" deadline="$3"
+  echo $$ > "$dir/renewer.pid"
+  trap 'stop "$dir" "session ended"' TERM INT
+  while :; do
+    kill -0 "$pid" 2>/dev/null || stop "$dir" "session ended"
+    [ "$(date +%s)" -lt "$deadline" ] || stop "$dir" "10 h session token limit reached"
+    fetch_all "$dir"
+    sleep "$INTERVAL_SECS" &
+    wait $!
+  done
+}
+
+case "${1:-}" in
+  fetch) fetch_all "$2" ;;
+  run) run "$2" "$3" "$4" ;;
+  *) echo "usage: $0 fetch <dir> | run <dir> <nono-pid> <deadline-epoch>" >&2; exit 2 ;;
+esac

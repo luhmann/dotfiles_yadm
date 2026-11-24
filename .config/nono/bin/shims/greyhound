@@ -1,0 +1,12 @@
+#!/bin/sh
+# Sandbox stand-in for greyhound: 'greyhound -s' prints the session service token minted on the host
+# (pi-jvm-session-before), in the same JSON shape as greyhound.sh -s. Credentials stay on the host.
+[ "${1:-}" = "-s" ] || { echo "greyhound (nono sandbox): only 'greyhound -s' is supported" >&2; exit 2; }
+f="${NONO_TOKEN_DIR:-}/greyhound.json"
+now=$(date +%s)
+if [ ! -s "$f" ] || [ "$(cat "${NONO_TOKEN_DIR:-}/greyhound.exp" 2>/dev/null || echo 0)" -le "$now" ]; then
+  why=$(cat "${NONO_TOKEN_DIR:-}/stopped" 2>/dev/null || echo "token fetch failed on the host")
+  echo "greyhound (nono sandbox): no valid token ($why); run greyhound -s on the host and restart npj" >&2
+  exit 1
+fi
+jq --argjson now "$now" '. + {expires_in: (.expires_at - $now)} | del(.expires_at)' "$f"

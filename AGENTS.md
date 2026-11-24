@@ -37,7 +37,7 @@
 ## Tools
 - When creating Linear tickets, verify the team's workflow states with `linear team states <TEAM>` and explicitly pass `--state Todo` (using the team's exact spelling) to bypass Triage unless another state is requested.
 - for researching you have the `search`- and `websearch`-skills available, additionally if they do not yield enough material you can invoke `kagi search --help` for instructions to leverage a full search engine.
-- you are usually sandboxed via `agent-safehouse`, if you encounter permissions problems check ~/.config/agent-safehouse and `~/.aliases` to see the setup
+- You usually run sandboxed: nono if `NONO_CAP_FILE` is set, else agent-safehouse. EPERM or proxy 403/`000` means a sandbox boundary — report it, don't work around it. Under nono, env vars are whitelisted and API tokens are proxy placeholders. Config: `~/.config/nono/profiles/pi-dev.json`, `~/.config/agent-safehouse/`, `~/.aliases`.
 - `mem --help` searches past agent sessions (Claude Code, Pi, Codex, OpenCode) — use `mem search --json "<query>"` to find prior conversations, `mem view <session-id>` to read them.
 - Never poll a spawned subagent (`sleep` loops, repeated status checks) — it messages you when done; just end your turn. And don't build while a child builds in the same checkout: you'll collide over `target/`.
 - Google Workspace (Chat, Gmail, Drive, Calendar, Docs) is configured as an MCP server: use the `mcp__google_workspace__google_mcp_*` tools (discover via codemode `searchTools`). Do not use `workspace-cli` — its remote host no longer resolves. Never start a local `workspace-mcp` server — it has no OAuth client secrets and will send you down a dead-end interactive consent flow. Do not pass `user_google_email`; the account comes from the MCP auth.
@@ -53,7 +53,7 @@
 - Use `rg -F` for literal strings containing `.`, `(`, `{`, `[`, `*` (e.g. `rg -F "User.findOne({id})"`); use regex mode only when you actually want a pattern.
 - Prefer native `rg` flags over pipes: `-t kotlin`/`-t java`/`--glob` to filter, `-l` files-only, `-c` counts, `-C 2 -n` for context+line numbers. Avoid `rg | grep | awk` chains.
 - awk here is macOS BSD awk (no `gawk`); avoid GNU-only features (`gensub`, `--version`). Prefer structured queries (`jq`, `yq`, `xmlstarlet`) over hand-rolled awk range-matching for specific JSON/YAML nodes.
-- `ps` and `top` fail with "Operation not permitted" inside agent-safehouse. They are setuid root, and macOS blocks setuid exec from any Seatbelt sandbox — no policy change can fix it, so don't try to debug it. Use `pgrep -l -f <pat>` for lookup, `lsof -nP -c <name>` for sockets/files, and `kill`/`pkill` for signalling (these need `--enable=process-control` to reach host processes; without it `pgrep` reports "sysmond service not found").
+- `ps`/`top` always fail in Seatbelt sandboxes (setuid binaries) — don't debug it. Use `pgrep -l -f`, `lsof -nP -c`, `kill`/`pkill`; host processes are only visible with safehouse `--enable=process-control`.
 
 ## Wiki
 - A curated personal wiki lives at `~/jcloud/org/wiki/` — domain (Zalando purchasing/orders) + engineering knowledge that compounds across sessions.

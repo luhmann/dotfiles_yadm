@@ -1,0 +1,14 @@
+#!/bin/sh
+# Sandbox stand-in for ztoken: prints the session token minted on the host (pi-jvm-session-before).
+# The real ztoken can't work here (no access to zalando-token-cli, by design).
+case "${1:-token}" in
+  token) ;;
+  *) echo "ztoken (nono sandbox): only 'ztoken [token]' is supported" >&2; exit 2 ;;
+esac
+f="${NONO_TOKEN_DIR:-}/ztoken"
+if [ ! -s "$f" ] || [ "$(cat "$f.exp" 2>/dev/null || echo 0)" -le "$(date +%s)" ]; then
+  why=$(cat "${NONO_TOKEN_DIR:-}/stopped" 2>/dev/null || echo "token fetch failed on the host")
+  echo "ztoken (nono sandbox): no valid token ($why); run ztoken on the host and restart npj" >&2
+  exit 1
+fi
+cat "$f"

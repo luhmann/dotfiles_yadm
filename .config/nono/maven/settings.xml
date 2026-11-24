@@ -1,0 +1,22 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+  <mirrors>
+    <mirror>
+      <id>maven</id>
+      <url>${env.ZALANDO_MAVEN_BASE_URL}/repository/public</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+  <servers>
+    <server>
+      <id>maven</id>
+      <configuration>
+        <httpHeaders>
+          <property>
+            <name>X-Nono-Token</name>
+            <value>${env.ZALANDO_MAVEN_TOKEN}</value>
+          </property>
+        </httpHeaders>
+      </configuration>
+    </server>
+  </servers>
+</settings>

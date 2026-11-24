@@ -1,11 +1,10 @@
 ## Service Tokens
 
 For Zalando API tests that need service/internal scopes, use the Greyhound
-helper checked out at `~/dev/z/frschulze-greyhound`:
+helper (`greyhound` is on PATH, also inside the nono sandbox):
 
 ```shell
-cd ~/dev/z/frschulze-greyhound
-TOKEN="$(./greyhound.sh -s | jq -r '.access_token')"
+TOKEN="$(greyhound -s | jq -r '.access_token')"
 ```
 
 Use this instead of regular user tokens when internal scopes are required.
@@ -38,6 +37,9 @@ local repository until forced).
 
 - A global `dash0` CLI is available for querying spans, metrics (PromQL),
   traces, logs, check rules, and dashboards. Use `dash0 --help`.
+- Inside the nono sandbox, dash0 is read-only (writes get 403) and
+  `dash0 metrics instant` fails. Run PromQL with
+  `dash0 -X api GET "/api/prometheus/api/v1/query?query=<url-encoded PromQL>"`.
 - Alert definitions, dashboards, and signal-to-metrics configs are managed
   as code in https://github.com/zalando-build/dash0-config, checked out at
   `~/dev/z/dash0-config` (organized by TOER org, e.g. `pt/`; legacy configs

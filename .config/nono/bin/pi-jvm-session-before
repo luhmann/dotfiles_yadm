@@ -1,0 +1,31 @@
+#!/bin/sh
+# nono pi-jvm before-hook (runs on the host, outside the sandbox).
+# Mints ztoken + Greyhound service token into a per-session dir the sandbox can only read, and starts
+# nono-token-renewer to keep them fresh for up to 10 h. The sandbox never sees the refresh token or the
+# Greyhound credentials; the ztoken/greyhound stand-ins read from NONO_TOKEN_DIR.
+# The token root is mode 0311 (enter, not list): a session can reach only the dir it was told about.
+set -eu
+root="$HOME/.local/state/nono-tokens"
+dir="$root/$NONO_SESSION_ID"
+renewer="$HOME/.config/nono/bin/nono-token-renewer"
+
+mkdir -p "$root"
+chmod 700 "$root"
+for d in "$root"/*/; do
+  [ -d "$d" ] || continue
+  alive=0
+  for f in renewer.pid nono.pid; do
+    pid=$(cat "$d/$f" 2>/dev/null || echo "")
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && alive=1
+  done
+  [ "$alive" = 1 ] && continue
+  [ -n "$(find "$d" -maxdepth 0 -mmin +5)" ] && rm -rf "$d"
+done
+mkdir -p -m 700 "$dir"
+echo "$PPID" > "$dir/nono.pid"
+chmod 311 "$root"
+
+printf 'NONO_TOKEN_DIR=%s\n' "$dir" > "$NONO_ENV_FILE"
+"$renewer" fetch "$dir" 2>>"$dir/renewer.log" || echo "pi-jvm-session-before: token fetch failed, see $dir/renewer.log" >&2
+/usr/bin/perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV or die "exec: $!"' \
+  "$renewer" run "$dir" "$PPID" $(( $(date +%s) + 36000 )) </dev/null >/dev/null 2>>"$dir/renewer.log" &
