@@ -1,1 +1,6 @@
-{}
+{
+  "credHelpers": {
+    "container-registry.zalando.net": "pierone",
+    "pierone.stups.zalan.do": "pierone"
+  }
+}

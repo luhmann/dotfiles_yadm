@@ -661,7 +661,8 @@
       "DASH0_CONFIG_DIR": "$TMPDIR/nono-dash0",
       "DATABRICKS_AUTH_TYPE": "pat",
       "DATABRICKS_CONFIG_FILE": "/dev/null",
-      "DATABRICKS_HOST": "https://zalando-e2.cloud.databricks.com"
+      "DATABRICKS_HOST": "https://zalando-e2.cloud.databricks.com",
+      "DOCKER_CERT_PATH": "$HOME/.config/nono/docker"
     }
   },
   "credential_capture": {
