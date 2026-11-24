@@ -1,8 +1,6 @@
 // pi-jvm: nono profile for running pi on Zalando JVM/Node projects (started via the `npj` alias).
 // Principle: real secrets stay on the host. The proxy injects them; the sandbox only sees phantom tokens,
 // short-lived session tokens (ztoken/Greyhound via the session hooks) or nothing.
-// Caution: accepting nono's "save profile" prompt ([g]/[s]) rewrites this file as plain JSON and drops all comments.
-// npj runs with --no-diagnostics so the prompt never appears; without it, always skip and add grants by hand.
 {
   // pi-dev-signing: dedicated ssh-agent socket for commit signing (yadm alternate per machine).
   // Not the 1Password agent, which would expose every SSH key incl. GitHub auth.
@@ -43,8 +41,7 @@
       "$HOME/Library/Application Support/zalando-kubectl"
     ],
     "read": [
-      // Read-only so tool configs work but an agent can't plant config that runs on the host. Secret stores
-      // below it are denied explicitly (see deny).
+      // Read-only so tool configs work but an agent can't plant config that runs on the host. Secret stores below it are denied explicitly (see deny).
       "$HOME/.config",
       "$HOME/Library/Preferences",
       // Read-only: writable would be a host escape (hooks, skills and settings run outside the sandbox).
@@ -315,6 +312,10 @@
         "endpoint_rules": [{ "method": "*", "path": "/repository/**" }]
       }
     },
+    // Runtime approval: a CONNECT to a host not on the allowlist pauses and asks in this terminal instead of
+    // failing. Hard denies (deny_domain, metadata/link-local) are never asked. No answer within 120 s = denied.
+    // approval_defaults picks which backend asks; "prompt" is just the name of the backend defined here.
+    // Independent of --no-diagnostics (that only silences the end-of-session save prompt).
     "approval_backends": { "prompt": { "type": "terminal", "timeout_secs": 120 } },
     "approval_defaults": { "backend": "prompt" }
   },
@@ -433,6 +434,9 @@
   // Run on the host ($NONO_CONFIG = ~/.config/nono, expanded by nono). "before" mints ztoken + Greyhound service
   // token into a per-session dir and starts a renewer for up to 10 h, so tools that call `ztoken`/`greyhound -s`
   // (not just HTTP clients the proxy can serve) work without the refresh token or Greyhound credentials.
+  // The hook passes the dir as NONO_TOKEN_DIR. Stand-ins in $NONO_CONFIG/bin/shims (on PATH via npj and BASH_ENV)
+  // replace the real CLIs: `ztoken`, `greyhound -s` and docker-credential-pierone (registry login) read the
+  // current token from there and fail with the renewer's reason once it has stopped.
   "session_hooks": {
     "before": { "script": "$NONO_CONFIG/bin/pi-jvm-session-before", "timeout_secs": 60 },
     "after": { "script": "$NONO_CONFIG/bin/pi-jvm-session-after", "timeout_secs": 10 }
