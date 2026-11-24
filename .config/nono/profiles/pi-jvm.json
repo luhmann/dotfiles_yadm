@@ -21,55 +21,48 @@
   },
   "filesystem": {
     "allow": [
-      "$HOME/jcloud",
       "$HOME/dev",
-      "$HOME/hosting",
+      "$HOME/jcloud",
       "$HOME/.local/share/mem",
-      "$HOME/.config/nobl9",
-      "$HOME/.config/sentry",
-      "$HOME/Library/Application Support/zalando-kubectl",
-      "$HOME/Library/Application Support/zalando-aws-cli",
-      "$HOME/.okta_cache",
-      "$HOME/.workspace-mcp",
-      "$HOME/.cache-nono",
-      "$HOME/Library/Caches",
-      "$HOME/Library/Logs",
       "$HOME/.m2/repository",
       "$HOME/.m2/wrapper",
       "$HOME/.m2/build-cache",
+      "$HOME/.gradle-nono",
       "$HOME/.npm",
-      "$HOME/.gradle-nono"
+      "$HOME/.cache-nono",
+      "$HOME/Library/Caches",
+      "$HOME/Library/Logs",
+      "$HOME/.config/nobl9",
+      "$HOME/.config/sentry",
+      "$HOME/Library/Application Support/zalando-kubectl"
     ],
     "read": [
       "$HOME/.config",
-      "$HOME/.kube",
-      "$HOME/.local/state/mise",
-      "$HOME/.local/share/uv/tools",
       "$HOME/Library/Preferences",
       "$HOME/.claude",
       "$HOME/.agents",
-      "$HOME/.local/state/nono-tokens",
-      "$HOME/go",
-      "$HOME/Library/Application Support/CleanShot/media",
+      "$HOME/.local/state/mise",
+      "$HOME/.local/share/uv/tools",
       "$HOME/.local/pipx",
+      "$HOME/.local/state/nono-tokens",
+      "$HOME/.kube",
+      "$HOME/.hunk",
       "$HOME/Library/Application Support/com.superlogical.rex/RexServer",
-      "~/.hunk"
+      "$HOME/Library/Application Support/CleanShot/media"
     ],
     "write": [
-      "~/.hunk/hunk-mcp"
+      "$HOME/.hunk/hunk-mcp"
     ],
     "allow_file": [
       "$HOME/.databrickscfg",
-      "~/Library/Application Support/nakadictl/config.toml"
+      "$HOME/Library/Application Support/nakadictl/config.toml"
     ],
     "read_file": [
       "$HOME/AGENTS.md",
+      "$HOME/.aliases",
       "$HOME/.editorconfig",
-      "~/.aliases",
-      "$HOME/.kagi.toml",
-      "$HOME/.zmon-cli.yaml",
       "$HOME/.gitignore",
-      "$HOME/.gitattributes"
+      "$HOME/.zmon-cli.yaml"
     ],
     "unix_socket": [
       "$HOME/.colima/pi-docker/docker.sock",
@@ -84,13 +77,7 @@
       "$HOME/.config/gdoc",
       "$HOME/.config/gws",
       "$HOME/.config/meridian",
-      "$HOME/.config/swamp",
-      "$HOME/.m2/settings*",
-      "$HOME/.gradle/gradle.encrypted.properties",
-      "$HOME/.gradle/gradle.properties",
-      "$HOME/.gradle/daemon",
-      "$HOME/.gradle/init.d",
-      "$HOME/.dash0"
+      "$HOME/.config/swamp"
     ],
     "bypass_protection": [
       "$HOME/.kube"
