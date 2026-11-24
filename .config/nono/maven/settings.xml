@@ -2,7 +2,7 @@
   <mirrors>
     <mirror>
       <id>maven</id>
-      <url>${env.ZALANDO_MAVEN_BASE_URL}/repository/public</url>
+      <url>${env.ZALANDO_NEXUS_BASE_URL}/repository/public</url>
       <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
@@ -13,7 +13,7 @@
         <httpHeaders>
           <property>
             <name>X-Nono-Token</name>
-            <value>${env.ZALANDO_MAVEN_TOKEN}</value>
+            <value>${env.ZALANDO_NEXUS_TOKEN}</value>
           </property>
         </httpHeaders>
       </configuration>

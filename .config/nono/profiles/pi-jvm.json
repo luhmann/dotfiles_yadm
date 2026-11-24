@@ -181,11 +181,9 @@
       "exa",
       "jira",
       "linear",
-      "zalando_maven",
-      "zalando_gradle",
-      "zalando_npm",
       "dash0",
-      "databricks"
+      "databricks",
+      "zalando_nexus"
     ],
     "custom_credentials": {
       "exa": {
@@ -470,24 +468,6 @@
           }
         ]
       },
-      "zalando_npm": {
-        "upstream": "https://maven.zalando.net",
-        "credential_key": "cmd://zalando_nexus",
-        "inject_mode": "header",
-        "inject_header": "Authorization",
-        "credential_format": "Bearer {}",
-        "env_var": "NPM_TOKEN",
-        "endpoint_rules": [
-          {
-            "method": "*",
-            "path": "/repository/npmjs/**"
-          },
-          {
-            "method": "*",
-            "path": "/repository/npm-internal/**"
-          }
-        ]
-      },
       "zllm": {
         "upstream": "https://zllm.data.zalan.do",
         "credential_key": "cmd://zllm",
@@ -495,19 +475,6 @@
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
         "env_var": "ZLLM_TOKEN"
-      },
-      "zalando_maven": {
-        "upstream": "https://maven.zalando.net",
-        "credential_key": "cmd://zalando_nexus",
-        "inject_mode": "header",
-        "inject_header": "Authorization",
-        "credential_format": "Bearer {}",
-        "proxy": {
-          "inject_mode": "header",
-          "inject_header": "X-Nono-Token",
-          "credential_format": "{}"
-        },
-        "env_var": "ZALANDO_MAVEN_TOKEN"
       },
       "jira": {
         "upstream": "https://jira.zalando.net",
@@ -524,17 +491,6 @@
         "inject_header": "Authorization",
         "credential_format": "{}",
         "env_var": "LINEAR_API_KEY"
-      },
-      "zalando_gradle": {
-        "upstream": "https://maven.zalando.net",
-        "credential_key": "cmd://zalando_nexus",
-        "inject_mode": "header",
-        "inject_header": "Authorization",
-        "credential_format": "Bearer {}",
-        "proxy": {
-          "inject_mode": "basic_auth"
-        },
-        "env_var": "ZALANDO_GRADLE_TOKEN"
       },
       "brave": {
         "upstream": "https://api.search.brave.com",
@@ -589,6 +545,19 @@
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
         "env_var": "DATABRICKS_TOKEN"
+      },
+      "zalando_nexus": {
+        "upstream": "https://maven.zalando.net",
+        "credential_key": "cmd://zalando_nexus",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "proxy": {
+          "inject_mode": "header",
+          "inject_header": "X-Nono-Token",
+          "credential_format": "{}"
+        },
+        "env_var": "ZALANDO_NEXUS_TOKEN"
       }
     },
     "approval_backends": {
