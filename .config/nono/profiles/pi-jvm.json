@@ -54,7 +54,6 @@
       "$HOME/.hunk/hunk-mcp"
     ],
     "allow_file": [
-      "$HOME/.databrickscfg",
       "$HOME/Library/Application Support/nakadictl/config.toml"
     ],
     "read_file": [
@@ -185,7 +184,8 @@
       "zalando_maven",
       "zalando_gradle",
       "zalando_npm",
-      "dash0"
+      "dash0",
+      "databricks"
     ],
     "custom_credentials": {
       "exa": {
@@ -581,6 +581,14 @@
           }
         ],
         "phantom_format": "dash0_at_{}"
+      },
+      "databricks": {
+        "upstream": "https://zalando-e2.cloud.databricks.com",
+        "credential_key": "cmd://databricks",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "env_var": "DATABRICKS_TOKEN"
       }
     },
     "approval_backends": {
@@ -668,7 +676,10 @@
       "GIT_CONFIG_KEY_0": "credential.helper",
       "DOCKER_HOST": "unix://$HOME/.colima/pi-docker/docker.sock",
       "GRADLE_RO_DEP_CACHE": "$HOME/.gradle/caches",
-      "DASH0_CONFIG_DIR": "$TMPDIR/nono-dash0"
+      "DASH0_CONFIG_DIR": "$TMPDIR/nono-dash0",
+      "DATABRICKS_AUTH_TYPE": "pat",
+      "DATABRICKS_CONFIG_FILE": "/dev/null",
+      "DATABRICKS_HOST": "https://zalando-e2.cloud.databricks.com"
     }
   },
   "credential_capture": {
@@ -733,6 +744,15 @@
       ],
       "timeout_secs": 30,
       "cache_ttl_secs": 240,
+      "stdin": "null",
+      "output": "text"
+    },
+    "databricks": {
+      "command": [
+        "/Users/fldietrich/.config/nono/bin/databricks-token"
+      ],
+      "timeout_secs": 30,
+      "cache_ttl_secs": 900,
       "stdin": "null",
       "output": "text"
     }

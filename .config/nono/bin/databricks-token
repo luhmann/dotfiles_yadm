@@ -1,0 +1,7 @@
+#!/bin/sh
+# nono credential command (runs on the host): prints a current Databricks access token from the host CLI login.
+# The CLI keeps the OAuth token in the Keychain and refreshes it here; the sandbox only sees a phantom.
+set -eu
+token=$(/opt/homebrew/bin/databricks auth token --profile zalando-e2 | jq -r '.access_token // empty')
+[ -n "$token" ] || { echo "databricks-token: no token; run 'databricks auth login --profile zalando-e2' on the host" >&2; exit 1; }
+printf '%s\n' "$token"
