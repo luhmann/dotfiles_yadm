@@ -1,0 +1,467 @@
+// pi-jvm: nono profile for running pi on Zalando JVM/Node projects (started via the `npj` alias).
+// Principle: real secrets stay on the host. The proxy injects them; the sandbox only sees phantom tokens,
+// short-lived session tokens (ztoken/Greyhound via the session hooks) or nothing.
+// Caution: accepting nono's "save profile" prompt ([g]/[s]) rewrites this file as plain JSON and drops all comments.
+// npj runs with --no-diagnostics so the prompt never appears; without it, always skip and add grants by hand.
+{
+  // pi-dev-signing: dedicated ssh-agent socket for commit signing (yadm alternate per machine).
+  // Not the 1Password agent, which would expose every SSH key incl. GitHub auth.
+  "extends": ["nolabs-ai/pi", "pi-dev-signing"],
+  "meta": {
+    "name": "pi-jvm",
+    "version": "1",
+    "description": "Pi Profile with sandboxed tooling for the Zalando stack",
+    "author": "jfd@daenen4.de"
+  },
+  "groups": {
+    "include": ["mise_manager", "java_runtime", "bun_runtime"],
+    // Excluded because it grants ~/.cache rw, incl. ~/.cache/zinit/completions which is in the host zsh $fpath
+    // (writing there = code that runs on host Tab). Replaced by ~/Library/{Caches,Logs} and XDG_CACHE_HOME below.
+    "exclude": ["user_caches_macos"]
+  },
+  "filesystem": {
+    "allow": [
+      "$HOME/dev",
+      "$HOME/jcloud",
+      "$HOME/.local/share/mem",
+      // Shared with the host on purpose (accepted risk: an agent could poison cached artifacts). ~/.m2/settings.xml
+      // is not granted; Maven uses the sandbox settings.xml (MAVEN_ARGS).
+      "$HOME/.m2/repository",
+      "$HOME/.m2/wrapper",
+      "$HOME/.m2/build-cache",
+      // Own Gradle home instead of ~/.gradle: no host credentials, no host init.d/gradle.properties writes,
+      // no reuse of host daemons. Host artifacts stay usable read-only via GRADLE_RO_DEP_CACHE.
+      "$HOME/.gradle-nono",
+      "$HOME/.npm",
+      "$HOME/.cache-nono",
+      // Re-added after excluding user_caches_macos; tools (mise, JDKs, Playwright) expect them writable.
+      "$HOME/Library/Caches",
+      "$HOME/Library/Logs",
+      "$HOME/.config/nobl9",
+      "$HOME/.config/sentry",
+      // zkubectl's writable state (token cache); its config in ~/.kube stays read-only.
+      "$HOME/Library/Application Support/zalando-kubectl"
+    ],
+    "read": [
+      // Read-only so tool configs work but an agent can't plant config that runs on the host. Secret stores
+      // below it are denied explicitly (see deny).
+      "$HOME/.config",
+      "$HOME/Library/Preferences",
+      // Read-only: writable would be a host escape (hooks, skills and settings run outside the sandbox).
+      "$HOME/.claude",
+      "$HOME/.agents",
+      "$HOME/.local/state/mise",
+      "$HOME/.local/share/uv/tools",
+      "$HOME/.local/pipx",
+      // Per-session ztoken/Greyhound tokens written by the before hook. Root dir is mode 0311, so a session can
+      // open only its own subdir, not list others.
+      "$HOME/.local/state/nono-tokens",
+      "$HOME/.kube",
+      "$HOME/.hunk",
+      "$HOME/Library/Application Support/com.superlogical.rex/RexServer",
+      "$HOME/Library/Application Support/CleanShot/media"
+    ],
+    "write": ["$HOME/.hunk/hunk-mcp"],
+    "allow_file": ["$HOME/Library/Application Support/nakadictl/config.toml"],
+    "read_file": [
+      "$HOME/AGENTS.md",
+      // Read-only: the host shell sources it, so writable = host code execution.
+      "$HOME/.aliases",
+      "$HOME/.editorconfig",
+      "$HOME/.gitignore",
+      "$HOME/.zmon-cli.yaml",
+      // yarn 1 always reads both and crashes if denied. Safe only because ~/.npmrc holds `${NPM_TOKEN}`
+      // (real token in 1Password via fnox); nono-jvm-env.sh sets NPM_TOKEN to the Nexus phantom.
+      "$HOME/.yarnrc",
+      "$HOME/.npmrc"
+    ],
+    "unix_socket": [
+      // Separate Colima VM without host mounts: OrbStack's socket would give the agent the whole host filesystem
+      // through `docker run -v`. Never grant ~/.colima itself (VM SSH key, colima.yaml mounts).
+      "$HOME/.colima/pi-docker/docker.sock",
+      "$HOME/Library/Application Support/rex/server.sock"
+    ],
+    // Sockets created by tests and tools: JVM attach (.java_pid), Gradle daemons, embedded servers.
+    "unix_socket_dir_bind": ["$TMPDIR", "/private/tmp"],
+    // ~/.config is readable, so secret stores inside it are denied one by one. Their CLIs don't work in npj.
+    "deny": [
+      "$HOME/.config/fnox",
+      "$HOME/.config/gdoc",
+      "$HOME/.config/gws",
+      "$HOME/.config/meridian",
+      "$HOME/.config/swamp"
+    ],
+    // nono's required deny_credentials group blocks both even when granted. This lifts only the deny;
+    // access stays read-only through the grants above (verified: zkubectl fails without it).
+    "bypass_protection": ["$HOME/.kube", "$HOME/.npmrc"]
+  },
+  "network": {
+    "block": false,
+    "allow_http2": false,
+    // nono preset (LLM APIs, package registries, GitHub, sigstore, docs), about 20 hosts we'd otherwise copy by hand.
+    "network_profile": "developer",
+    "allow_domain": [
+      "pi.dev",
+      "jira.zalando.net",
+      "api.exa.ai",
+      "api.search.brave.com",
+      "kagi.com",
+      "*.github.com",
+      "*.githubusercontent.com",
+      "stackoverflow.com",
+      "openpolicyagent.org",
+      "*.openpolicyagent.org",
+      "kubernetes.io",
+      "*.kubernetes.io",
+      "docs.aws.amazon.com",
+      "*.npmjs.com",
+      "*.scalyr.com",
+      "*.dataset.com",
+      "*.nobl9.com",
+      "endoflife.date",
+      "sentry.io",
+      "*.sentry.io",
+      "*.dash0.com",
+      "*.zalando.net",
+      "*.zalan.do",
+      "identity.zalando.com",
+      "sandbox.identity.zalando.com",
+      "*.auth.zalando.com",
+      "chatgpt.com",
+      "auth.openai.com",
+      "zllm.data.zalan.do",
+      // Not redundant with the preset: endpoint rules narrow github.com. Clone/fetch anywhere, push only to our
+      // orgs, everything else (web UI, other repos) gets 403. Verified in the sandbox.
+      {
+        "domain": "github.com",
+        "endpoints": [
+          { "method": "GET", "path": "/*/*/info/refs" },
+          { "method": "POST", "path": "/*/*/git-upload-pack" },
+          { "method": "POST", "path": "/zalando-partner/*/git-receive-pack" },
+          { "method": "POST", "path": "/zalando-build/*/git-receive-pack" },
+          { "method": "POST", "path": "/zalando-zcp/*/git-receive-pack" },
+          { "method": "POST", "path": "/zalando-engineering-community/*/git-receive-pack" },
+          // Gradle 9 wrappers download their distribution from GitHub releases.
+          { "method": "GET", "path": "/gradle/gradle-distributions/releases/download/**" }
+        ]
+      },
+      "api.linear.app",
+      // Google Chat webhooks (PR review / cluster access posts): posting only.
+      {
+        "domain": "chat.googleapis.com",
+        "endpoints": [{ "method": "POST", "path": "/v1/spaces/*/messages" }]
+      },
+      "api.business.githubcopilot.com",
+      "corporate.identity.zalando.com",
+      "services.gradle.org",
+      "downloads.gradle.org",
+      "plugins-artifacts.gradle.org"
+    ],
+    "credentials": [
+      "zllm", "github", "github_git", "brave", "exa", "jira", "linear", "dash0", "databricks",
+      "zalando_nexus", "zalando_gradle"
+    ],
+    // Each route puts a phantom into env_var (plus <NAME>_BASE_URL for the local proxy); the proxy swaps it for the
+    // real credential from credential_key. Tools reach a route either via its base URL (route picked by name) or
+    // directly via HTTPS_PROXY (route picked by host + endpoint rules).
+    "custom_credentials": {
+      "exa": {
+        "upstream": "https://api.exa.ai",
+        "credential_key": "env://EXA_API_KEY",
+        "inject_mode": "header",
+        "inject_header": "x-api-key",
+        "credential_format": "{}",
+        "env_var": "EXA_API_KEY"
+      },
+      // gh CLI. The rules aren't about restricting gh: without them the gh token was also injected into
+      // Copilot's /copilot_internal/v2/token and got 403. Paths not listed pass through without injection;
+      // if a gh command gets 401, its top-level path is missing here.
+      "github": {
+        "upstream": "https://api.github.com",
+        "credential_key": "cmd://gh_api",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "token {}",
+        "env_var": "GH_TOKEN",
+        "endpoint_rules": [
+          { "method": "*", "path": "/repos" }, { "method": "*", "path": "/repos/**" },
+          { "method": "*", "path": "/user" }, { "method": "*", "path": "/user/**" },
+          { "method": "*", "path": "/users" }, { "method": "*", "path": "/users/**" },
+          { "method": "*", "path": "/orgs" }, { "method": "*", "path": "/orgs/**" },
+          { "method": "*", "path": "/organizations" }, { "method": "*", "path": "/organizations/**" },
+          { "method": "*", "path": "/graphql" }, { "method": "*", "path": "/graphql/**" },
+          { "method": "*", "path": "/search" }, { "method": "*", "path": "/search/**" },
+          { "method": "*", "path": "/gists" }, { "method": "*", "path": "/gists/**" },
+          { "method": "*", "path": "/notifications" }, { "method": "*", "path": "/notifications/**" },
+          { "method": "*", "path": "/rate_limit" }, { "method": "*", "path": "/rate_limit/**" },
+          { "method": "*", "path": "/meta" }, { "method": "*", "path": "/meta/**" },
+          { "method": "*", "path": "/teams" }, { "method": "*", "path": "/teams/**" },
+          { "method": "*", "path": "/issues" }, { "method": "*", "path": "/issues/**" },
+          { "method": "*", "path": "/enterprises" }, { "method": "*", "path": "/enterprises/**" },
+          { "method": "*", "path": "/installation" }, { "method": "*", "path": "/installation/**" },
+          { "method": "*", "path": "/app" }, { "method": "*", "path": "/app/**" },
+          { "method": "*", "path": "/apps" }, { "method": "*", "path": "/apps/**" },
+          { "method": "*", "path": "/applications" }, { "method": "*", "path": "/applications/**" },
+          { "method": "*", "path": "/marketplace_listing" }, { "method": "*", "path": "/marketplace_listing/**" },
+          { "method": "*", "path": "/codespaces" }, { "method": "*", "path": "/codespaces/**" },
+          { "method": "*", "path": "/projects" }, { "method": "*", "path": "/projects/**" },
+          { "method": "*", "path": "/events" }, { "method": "*", "path": "/events/**" },
+          { "method": "*", "path": "/licenses" }, { "method": "*", "path": "/licenses/**" },
+          { "method": "*", "path": "/gitignore" }, { "method": "*", "path": "/gitignore/**" },
+          { "method": "*", "path": "/markdown" }, { "method": "*", "path": "/markdown/**" },
+          { "method": "*", "path": "/emojis" }, { "method": "*", "path": "/emojis/**" },
+          { "method": "*", "path": "/octocat" }, { "method": "*", "path": "/octocat/**" },
+          { "method": "*", "path": "/zen" }, { "method": "*", "path": "/zen/**" },
+          { "method": "*", "path": "/feeds" }, { "method": "*", "path": "/feeds/**" },
+          { "method": "*", "path": "/advisories" }, { "method": "*", "path": "/advisories/**" },
+          { "method": "*", "path": "/codes_of_conduct" }, { "method": "*", "path": "/codes_of_conduct/**" },
+          { "method": "*", "path": "/networks" }, { "method": "*", "path": "/networks/**" },
+          { "method": "*", "path": "/reactions" }, { "method": "*", "path": "/reactions/**" }
+        ]
+      },
+      "zllm": {
+        "upstream": "https://zllm.data.zalan.do",
+        "credential_key": "cmd://zllm",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "env_var": "ZLLM_TOKEN"
+      },
+      "jira": {
+        "upstream": "https://jira.zalando.net",
+        "credential_key": "env://JIRA_API_TOKEN",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "env_var": "JIRA_API_TOKEN"
+      },
+      "linear": {
+        "upstream": "https://api.linear.app",
+        "credential_key": "cmd://linear",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "{}",
+        "env_var": "LINEAR_API_KEY"
+      },
+      "brave": {
+        "upstream": "https://api.search.brave.com",
+        "credential_key": "env://BRAVE_API_KEY",
+        "inject_mode": "header",
+        "inject_header": "X-Subscription-Token",
+        "credential_format": "{}",
+        "env_var": "BRAVE_API_KEY"
+      },
+      // git over HTTPS: SSH can't pass nono's HTTP(S)-only proxy. The credential helper in GIT_CONFIG_VALUE_1
+      // sends the phantom as the Basic-auth password.
+      "github_git": {
+        "upstream": "https://github.com",
+        "credential_key": "cmd://gh_git",
+        "inject_mode": "basic_auth",
+        "inject_header": "Authorization",
+        "env_var": "GITHUB_GIT_TOKEN"
+      },
+      // dash0 CLI: reads plus the query endpoints that happen to be POST; no writes to dashboards/alerts.
+      "dash0": {
+        "upstream": "https://api.eu-central-1.aws.dash0.com",
+        "credential_key": "cmd://dash0",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "env_var": "DASH0_AUTH_TOKEN",
+        "endpoint_rules": [
+          { "method": "GET", "path": "/api/**" },
+          { "method": "POST", "path": "/api/spans" },
+          { "method": "POST", "path": "/api/logs" },
+          { "method": "POST", "path": "/api/alerting/failed-checks" },
+          { "method": "POST", "path": "/api/prometheus/api/v1/**" }
+        ],
+        // The dash0 CLI rejects tokens that don't look like dash0 tokens.
+        "phantom_format": "dash0_at_{}"
+      },
+      // Token comes from the host CLI's OAuth login (databricks-token), so ~/.databrickscfg isn't granted.
+      "databricks": {
+        "upstream": "https://zalando-e2.cloud.databricks.com",
+        "credential_key": "cmd://databricks",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "env_var": "DATABRICKS_TOKEN"
+      },
+      // Nexus accepts ztoken as Bearer for Maven, Gradle and npm, so no stored Nexus password is needed.
+      // This route serves Maven (via ZALANDO_NEXUS_BASE_URL; settings.xml sends the phantom as X-Nono-Token)
+      // and npm (direct to maven.zalando.net via HTTPS_PROXY).
+      "zalando_nexus": {
+        "upstream": "https://maven.zalando.net",
+        "credential_key": "cmd://zalando_nexus",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "proxy": { "inject_mode": "header", "inject_header": "X-Nono-Token", "credential_format": "{}" },
+        "env_var": "ZALANDO_NEXUS_TOKEN"
+      },
+      // Separate route because Gradle can only send Basic auth: most build scripts set PasswordCredentials on
+      // the Nexus repo and Gradle refuses to switch them to header credentials. A route reads the phantom from
+      // one place only. The endpoint rule is what keeps npm working: npm's direct requests would otherwise
+      // match two rule-less routes on the same host and get 403 "ambiguous"; with it they match only this
+      // route, which injects the same credential.
+      "zalando_gradle": {
+        "upstream": "https://maven.zalando.net",
+        "credential_key": "cmd://zalando_nexus",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "proxy": { "inject_mode": "basic_auth" },
+        "env_var": "ZALANDO_GRADLE_TOKEN",
+        "endpoint_rules": [{ "method": "*", "path": "/repository/**" }]
+      }
+    },
+    "approval_backends": { "prompt": { "type": "terminal", "timeout_secs": 120 } },
+    "approval_defaults": { "backend": "prompt" }
+  },
+  "linux": { "af_unix_mediation": "pathname" },
+  "environment": {
+    // Allow-list: only these host variables reach the sandbox.
+    "allow_vars": [
+      "PATH", "HOME", "USER", "LOGNAME", "SHELL", "PWD", "SHLVL", "TMPDIR", "LANG", "LC_*",
+      "__CF_USER_TEXT_ENCODING", "TERM", "TERM_PROGRAM", "TERM_PROGRAM_VERSION", "COLORTERM",
+      "NO_COLOR", "FORCE_COLOR", "EDITOR", "VISUAL", "XDG_*", "HOMEBREW_*", "MISE_*", "__MISE_*",
+      "JAVA_HOME", "GOROOT", "GOBIN", "GOPATH", "CARGO_HOME", "RUSTUP_HOME", "RUSTUP_TOOLCHAIN",
+      "REX_*",
+      // Real values, accepted for now: Scalyr's read token has no proxy route (the CLI signs requests itself),
+      // the webhooks are post-only URLs.
+      "scalyr_server", "scalyr_readlog_token", "KAGI_SESSION_TOKEN",
+      "PR_REVIEW_WEBHOOK_URL", "CLUSTER_ACCESS_WEBHOOK_URL"
+    ],
+    // Explicitly denied in case a parent profile or glob lets them through; routed ones get phantoms instead.
+    "deny_vars": [
+      "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY",
+      "PERPLEXITY_API_KEY", "JIRA_API_TOKEN", "BRAVE_API_KEY", "EXA_API_KEY"
+    ],
+    "case_insensitive_vars": false,
+    "set_vars": {
+      // Sourced by every bash in the sandbox: puts the ztoken/greyhound/docker-credential shims on PATH,
+      // points JVMs at the proxy with a per-session truststore containing nono's session CA, sets NPM_TOKEN.
+      // bash-only: zsh or a direct exec doesn't get these.
+      "BASH_ENV": "$HOME/.config/nono/bin/nono-jvm-env.sh",
+
+      // git: own global config instead of ~/.gitconfig (SSH remotes rewritten to HTTPS, signing via the
+      // dedicated agent), no system config (osxkeychain helper fails in the sandbox with -50), never prompt.
+      "GIT_CONFIG_GLOBAL": "$HOME/.config/git/nono-sandbox.gitconfig",
+      "GIT_CONFIG_SYSTEM": "/dev/null",
+      "GIT_TERMINAL_PROMPT": "0",
+      // Repo-level configs can't override these: 0 resets inherited helpers, 1 answers with the phantom,
+      // 2 disables interactive credential prompts.
+      "GIT_CONFIG_COUNT": "3",
+      "GIT_CONFIG_KEY_0": "credential.helper",
+      "GIT_CONFIG_VALUE_0": "",
+      "GIT_CONFIG_KEY_1": "credential.https://github.com.helper",
+      "GIT_CONFIG_VALUE_1": "!f() { if [ \"$1\" = get ]; then printf \"username=x-access-token\\npassword=%s\\n\" \"$GITHUB_GIT_TOKEN\"; fi; }; f",
+      "GIT_CONFIG_KEY_2": "credential.interactive",
+      "GIT_CONFIG_VALUE_2": "never",
+
+      // Maven: sandbox settings.xml (Nexus mirror via the proxy, phantom header) instead of ~/.m2/settings.xml.
+      // kotlin.compiler.daemon=false: the Kotlin daemon is shared across processes and would outlive the sandbox.
+      // reuseConnections=false: nono 0.82's reverse proxy closes connections without "connection: close" and
+      // Maven 3.9 reuses the dead socket ("failed to respond"). Fixed on nono main; drop after upgrading.
+      "MAVEN_ARGS": "--settings $HOME/.config/nono/maven/settings.xml -Dkotlin.compiler.daemon=false -Daether.connector.http.reuseConnections=false",
+      "MAVEN_CONFIG": "--settings $HOME/.config/nono/maven/settings.xml -Dkotlin.compiler.daemon=false -Daether.connector.http.reuseConnections=false",
+
+      // Gradle: see the ~/.gradle-nono grant. Its init.d script rewrites maven.zalando.net repos to
+      // ZALANDO_GRADLE_BASE_URL and sets the phantom as the Basic-auth password.
+      "GRADLE_USER_HOME": "$HOME/.gradle-nono",
+      "GRADLE_RO_DEP_CACHE": "$HOME/.gradle/caches",
+
+      // npm: sandbox npmrc that authenticates Nexus with the phantom; ~/.npmrc still applies for yarn.
+      "NPM_CONFIG_USERCONFIG": "$HOME/.config/nono/npm/npmrc",
+      // Host ~/.cache isn't visible (zinit, starship, uv, pre-commit caches live there).
+      "XDG_CACHE_HOME": "$HOME/.cache-nono",
+      "JITI_FS_CACHE": "false",
+
+      // Docker/Testcontainers against the sandbox-only Colima VM.
+      "DOCKER_HOST": "unix://$HOME/.colima/pi-docker/docker.sock",
+      // Sandbox Docker config: no host contexts or credHelpers; Zalando registries use the pierone shim (ztoken).
+      "DOCKER_CONFIG": "$HOME/.config/nono/docker",
+      // docker-maven-plugin otherwise lists ~/.docker for TLS certs and fails on the denied dir. Unused for a socket.
+      "DOCKER_CERT_PATH": "$HOME/.config/nono/docker",
+      // Ryuk runs inside the VM and must mount the VM-side socket, not the host path above.
+      "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE": "/var/run/docker.sock",
+
+      // dash0 CLI keeps its config/profile here instead of ~/.dash0 (denied, holds the real OAuth token).
+      "DASH0_CONFIG_DIR": "$TMPDIR/nono-dash0",
+      // Databricks CLI: use the phantom as a PAT and ignore ~/.databrickscfg.
+      "DATABRICKS_AUTH_TYPE": "pat",
+      "DATABRICKS_CONFIG_FILE": "/dev/null",
+      "DATABRICKS_HOST": "https://zalando-e2.cloud.databricks.com"
+    }
+  },
+  // Commands the proxy runs ON THE HOST to fetch real credentials, cached for cache_ttl_secs.
+  // Absolute paths where the supervisor's PATH may not resolve the tool (mise shims).
+  "credential_capture": {
+    "gh_git": {
+      // Basic-auth credential for github_git: "x-access-token:<gh token>".
+      "command": ["/bin/sh", "-c", "printf 'x-access-token:'; exec gh auth token"],
+      "timeout_secs": 5, "cache_ttl_secs": 900, "stdin": "null", "output": "text"
+    },
+    "gh_api": {
+      "command": ["gh", "auth", "token"],
+      "timeout_secs": 5, "cache_ttl_secs": 900, "stdin": "null", "output": "text"
+    },
+    "linear": {
+      "command": ["linear", "auth", "token"],
+      "timeout_secs": 5, "cache_ttl_secs": 900, "stdin": "null", "output": "text"
+    },
+    // ztoken lifetime is 1 h; a 5 min cache keeps it fresh without a host call per request.
+    "zllm": {
+      "command": ["/bin/sh", "-c", "/Users/fldietrich/.local/share/mise/installs/python/3.14.5/bin/ztoken token -n zllm &"],
+      "timeout_secs": 10, "cache_ttl_secs": 300, "stdin": "null", "output": "text"
+    },
+    "zalando_nexus": {
+      "command": ["/bin/sh", "-c", "/Users/fldietrich/.local/share/mise/installs/python/3.14.5/bin/ztoken token &"],
+      "timeout_secs": 10, "cache_ttl_secs": 300, "stdin": "null", "output": "text"
+    },
+    // dash0 OAuth tokens expire quickly; the script makes one cheap CLI call first so the host CLI refreshes it.
+    "dash0": {
+      "command": ["/Users/fldietrich/.config/nono/bin/dash0-token"],
+      "timeout_secs": 30, "cache_ttl_secs": 240, "stdin": "null", "output": "text"
+    },
+    "databricks": {
+      "command": ["/Users/fldietrich/.config/nono/bin/databricks-token"],
+      "timeout_secs": 30, "cache_ttl_secs": 900, "stdin": "null", "output": "text"
+    }
+  },
+  "workdir": { "access": "readwrite" },
+  // Run on the host ($NONO_CONFIG = ~/.config/nono, expanded by nono). "before" mints ztoken + Greyhound service
+  // token into a per-session dir and starts a renewer for up to 10 h, so tools that call `ztoken`/`greyhound -s`
+  // (not just HTTP clients the proxy can serve) work without the refresh token or Greyhound credentials.
+  "session_hooks": {
+    "before": { "script": "$NONO_CONFIG/bin/pi-jvm-session-before", "timeout_secs": 60 },
+    "after": { "script": "$NONO_CONFIG/bin/pi-jvm-session-after", "timeout_secs": 10 }
+  },
+  // Login pages the sandbox may open in the host browser (ztoken / agentic identity flows).
+  // Accepted risk: an agent could start an OAuth login in your browser; the tab is visible.
+  "open_urls": {
+    "allow_origins": [
+      "https://identity.zalando.com",
+      "https://corporate.identity.zalando.com",
+      "https://agentic-identity-broker.corporate-iam.zalan.do"
+    ],
+    "allow_localhost": false
+  },
+  "unsafe_macos_seatbelt_rules": [
+    // localhost only: test servers, Testcontainers port mappings, Gradle daemons, OAuth loopback callbacks.
+    "(allow network-bind (local udp \"localhost:*\"))",
+    "(allow network-inbound (local udp \"localhost:*\"))",
+    "(allow network-outbound (remote udp \"localhost:*\"))",
+    "(allow network-bind (local tcp \"localhost:*\"))",
+    "(allow network-inbound (local tcp \"localhost:*\"))",
+    "(allow network-outbound (remote tcp \"localhost:*\"))",
+    // These three together block reading argv/env of processes outside the sandbox: kern.procargs2 leaks the
+    // supervisor's secrets. Workaround for nolabs-ai/nono#1821 (same as agent-safehouse v0.12); remove once fixed.
+    "(deny process-info-pidinfo)",
+    "(allow process-info-pidinfo (target same-sandbox))",
+    "(deny sysctl-read (sysctl-name-regex #\"procargs\"))",
+    // SysV shared memory/semaphores for embedded Postgres (zonky), used by ~50 repos in ~/dev/z.
+    "(allow ipc-sysv-shm)",
+    "(allow ipc-sysv-sem)"
+  ]
+}
