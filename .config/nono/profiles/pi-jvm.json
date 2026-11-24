@@ -6,17 +6,8 @@
   "meta": {
     "name": "pi-jvm",
     "version": "1",
-    "description": "pi-dev + JVM/npm hardening: Nexus creds via proxy (Maven/Gradle/npm), isolated GRADLE_USER_HOME, session token broker, no host daemons",
+    "description": "Pi Profile with sandboxed tooling for the Zalando stack",
     "author": "jfd@daenen4.de"
-  },
-  "security": {
-    "signal_mode": null,
-    "process_info_mode": null,
-    "ipc_mode": null,
-    "capability_elevation": null,
-    "approval_backends": {},
-    "approval_defaults": null,
-    "wsl2_proxy_policy": null
   },
   "groups": {
     "include": [
@@ -29,10 +20,6 @@
     "exclude": [
       "user_caches_macos"
     ]
-  },
-  "commands": {
-    "allow": [],
-    "deny": []
   },
   "filesystem": {
     "allow": [
@@ -86,19 +73,14 @@
       "$HOME/.gitignore",
       "$HOME/.gitattributes"
     ],
-    "write_file": [],
     "unix_socket": [
       "$HOME/.colima/pi-docker/docker.sock",
       "$HOME/Library/Application Support/rex/server.sock"
     ],
-    "unix_socket_bind": [],
-    "unix_socket_dir": [],
     "unix_socket_dir_bind": [
       "$TMPDIR",
       "/private/tmp"
     ],
-    "unix_socket_subtree": [],
-    "unix_socket_subtree_bind": [],
     "deny": [
       "$HOME/.config/fnox",
       "$HOME/.config/gdoc",
@@ -114,8 +96,7 @@
     ],
     "bypass_protection": [
       "$HOME/.kube"
-    ],
-    "suppress_save_prompt": []
+    ]
   },
   "network": {
     "block": false,
@@ -208,7 +189,6 @@
       "downloads.gradle.org",
       "plugins-artifacts.gradle.org"
     ],
-    "deny_domain": [],
     "credentials": [
       "zllm",
       "github",
@@ -222,47 +202,21 @@
       "zalando_npm",
       "dash0"
     ],
-    "open_port": [],
-    "open_port_range": [],
-    "listen_port": [],
-    "listen_port_range": [],
-    "connect_port": [],
-    "no_proxy": [],
     "custom_credentials": {
       "exa": {
         "upstream": "https://api.exa.ai",
         "credential_key": "env://EXA_API_KEY",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "x-api-key",
         "credential_format": "{}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "EXA_API_KEY",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "EXA_API_KEY"
       },
       "github": {
         "upstream": "https://api.github.com",
         "credential_key": "cmd://gh_api",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "token {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
         "env_var": "GH_TOKEN",
         "endpoint_rules": [
           {
@@ -529,27 +483,14 @@
             "method": "*",
             "path": "/reactions/**"
           }
-        ],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        ]
       },
       "zalando_npm": {
         "upstream": "https://maven.zalando.net",
         "credential_key": "cmd://zalando_nexus",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
         "env_var": "NPM_TOKEN",
         "endpoint_rules": [
           {
@@ -560,195 +501,77 @@
             "method": "*",
             "path": "/repository/npm-internal/**"
           }
-        ],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        ]
       },
       "zllm": {
         "upstream": "https://zllm.data.zalan.do",
         "credential_key": "cmd://zllm",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "ZLLM_TOKEN",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "ZLLM_TOKEN"
       },
       "zalando_maven": {
         "upstream": "https://maven.zalando.net",
         "credential_key": "cmd://zalando_nexus",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
         "proxy": {
           "inject_mode": "header",
           "inject_header": "X-Nono-Token",
-          "credential_format": "{}",
-          "path_pattern": null,
-          "path_replacement": null,
-          "query_param_name": null
+          "credential_format": "{}"
         },
-        "env_var": "ZALANDO_MAVEN_TOKEN",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "ZALANDO_MAVEN_TOKEN"
       },
       "jira": {
         "upstream": "https://jira.zalando.net",
         "credential_key": "env://JIRA_API_TOKEN",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "JIRA_API_TOKEN",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "JIRA_API_TOKEN"
       },
       "linear": {
         "upstream": "https://api.linear.app",
         "credential_key": "cmd://linear",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "{}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "LINEAR_API_KEY",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "LINEAR_API_KEY"
       },
       "zalando_gradle": {
         "upstream": "https://maven.zalando.net",
         "credential_key": "cmd://zalando_nexus",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
         "proxy": {
-          "inject_mode": "basic_auth",
-          "inject_header": null,
-          "credential_format": null,
-          "path_pattern": null,
-          "path_replacement": null,
-          "query_param_name": null
+          "inject_mode": "basic_auth"
         },
-        "env_var": "ZALANDO_GRADLE_TOKEN",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "ZALANDO_GRADLE_TOKEN"
       },
       "brave": {
         "upstream": "https://api.search.brave.com",
         "credential_key": "env://BRAVE_API_KEY",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "X-Subscription-Token",
         "credential_format": "{}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "BRAVE_API_KEY",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "BRAVE_API_KEY"
       },
       "github_git": {
         "upstream": "https://github.com",
         "credential_key": "cmd://gh_git",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "basic_auth",
         "inject_header": "Authorization",
-        "credential_format": null,
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
-        "env_var": "GITHUB_GIT_TOKEN",
-        "endpoint_rules": [],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null
+        "env_var": "GITHUB_GIT_TOKEN"
       },
       "dash0": {
         "upstream": "https://api.eu-central-1.aws.dash0.com",
         "credential_key": "cmd://dash0",
-        "redeem_phantoms": [],
-        "auth": null,
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}",
-        "path_pattern": null,
-        "path_replacement": null,
-        "query_param_name": null,
-        "proxy": null,
         "env_var": "DASH0_AUTH_TOKEN",
         "endpoint_rules": [
           {
@@ -772,46 +595,22 @@
             "path": "/api/prometheus/api/v1/**"
           }
         ],
-        "endpoint_policy": null,
-        "tls_ca": null,
-        "tls_client_cert": null,
-        "tls_client_key": null,
-        "aws_auth": null,
-        "spiffe": null,
-        "rate_limit": null,
         "phantom_format": "dash0_at_{}"
       }
     },
-    "tls_intercept": null,
-    "upstream_proxy": null,
-    "upstream_bypass": [],
     "approval_backends": {
       "prompt": {
         "type": "terminal",
-        "url": null,
-        "auth": null,
-        "timeout_secs": 120,
-        "mode": null,
-        "backends": []
+        "timeout_secs": 120
       }
     },
     "approval_defaults": {
-      "backend": "prompt",
-      "timeout_secs": null
+      "backend": "prompt"
     }
   },
-  "diagnostics": {
-    "suppress_system_services": [],
-    "redaction": {
-      "extra_env_vars": []
-    },
-    "network_denial_audit": {}
-  },
   "linux": {
-    "af_unix_mediation": "pathname",
-    "sandbox_policy": null
+    "af_unix_mediation": "pathname"
   },
-  "env_credentials": {},
   "environment": {
     "allow_vars": [
       "PATH",
@@ -894,14 +693,10 @@
         "-c",
         "printf 'x-access-token:'; exec gh auth token"
       ],
-      "provider": null,
       "timeout_secs": 5,
-      "ttl_secs": null,
       "cache_ttl_secs": 900,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     },
     "zllm": {
       "command": [
@@ -909,14 +704,10 @@
         "-c",
         "/Users/fldietrich/.local/share/mise/installs/python/3.14.5/bin/ztoken token -n zllm &"
       ],
-      "provider": null,
       "timeout_secs": 10,
-      "ttl_secs": null,
       "cache_ttl_secs": 300,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     },
     "linear": {
       "command": [
@@ -924,14 +715,10 @@
         "auth",
         "token"
       ],
-      "provider": null,
       "timeout_secs": 5,
-      "ttl_secs": null,
       "cache_ttl_secs": 900,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     },
     "zalando_nexus": {
       "command": [
@@ -939,14 +726,10 @@
         "-c",
         "/Users/fldietrich/.local/share/mise/installs/python/3.14.5/bin/ztoken token &"
       ],
-      "provider": null,
       "timeout_secs": 10,
-      "ttl_secs": null,
       "cache_ttl_secs": 300,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     },
     "gh_api": {
       "command": [
@@ -954,35 +737,24 @@
         "auth",
         "token"
       ],
-      "provider": null,
       "timeout_secs": 5,
-      "ttl_secs": null,
       "cache_ttl_secs": 900,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     },
     "dash0": {
       "command": [
         "/Users/fldietrich/.config/nono/bin/dash0-token"
       ],
-      "provider": null,
       "timeout_secs": 30,
-      "ttl_secs": null,
       "cache_ttl_secs": 240,
-      "cache_path_regex": null,
       "stdin": "null",
-      "output": "text",
-      "interaction": null
+      "output": "text"
     }
   },
-  "credential_providers": {},
-  "credential_routes": [],
   "workdir": {
     "access": "readwrite"
   },
-  "hooks": {},
   "session_hooks": {
     "before": {
       "script": "$NONO_CONFIG/bin/pi-jvm-session-before",
@@ -993,10 +765,6 @@
       "timeout_secs": 10
     }
   },
-  "rollback": {
-    "exclude_patterns": [],
-    "exclude_globs": []
-  },
   "open_urls": {
     "allow_origins": [
       "https://identity.zalando.com",
@@ -1005,9 +773,6 @@
     ],
     "allow_localhost": false
   },
-  "skipdirs": [],
-  "packs": [],
-  "command_args": [],
   "unsafe_macos_seatbelt_rules": [
     "(allow network-bind (local udp \"localhost:*\"))",
     "(allow network-inbound (local udp \"localhost:*\"))",
