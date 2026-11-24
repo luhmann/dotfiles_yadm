@@ -127,7 +127,7 @@
   path = /Users/fldietrich/dev/jf/.gitconfig
 
 [includeIf "gitdir:/Users/fldietrich/dev/z/"]
-  path = /Users/fldietrich/dev/z/.gitconfig
+  path = /Users/fldietrich/.config/git/zalando.gitconfig
 
 [includeIf "gitdir:/Users/jfd/dev/z/"]
   path = /Users/jfd/dev/z/.gitconfig

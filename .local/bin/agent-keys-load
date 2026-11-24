@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Load this machine's agent SSH keys from 1Password (vault "agents") into the
+# Load this machine's agent signing key from 1Password (vault "agents") into the
 # dedicated agent socket used by sandboxed agents. Run once after each reboot.
 set -euo pipefail
 
 label="${1:-work-mac}"
-items=("agent-auth-$label" "agent-sign-$label")
+items=("agent-sign-$label")
 sock_dir="$HOME/.local/state/agent-ssh"
 export SSH_AUTH_SOCK="$sock_dir/agent.sock"
 
