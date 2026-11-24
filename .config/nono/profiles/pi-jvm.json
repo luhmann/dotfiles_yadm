@@ -61,7 +61,9 @@
       "$HOME/.aliases",
       "$HOME/.editorconfig",
       "$HOME/.gitignore",
-      "$HOME/.zmon-cli.yaml"
+      "$HOME/.zmon-cli.yaml",
+      "$HOME/.yarnrc",
+      "$HOME/.npmrc"
     ],
     "unix_socket": [
       "$HOME/.colima/pi-docker/docker.sock",
@@ -79,7 +81,8 @@
       "$HOME/.config/swamp"
     ],
     "bypass_protection": [
-      "$HOME/.kube"
+      "$HOME/.kube",
+      "$HOME/.npmrc"
     ]
   },
   "network": {

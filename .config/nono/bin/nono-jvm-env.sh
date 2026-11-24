@@ -1,5 +1,6 @@
 # Sourced via BASH_ENV inside the nono pi-jvm sandbox. Points JVMs at the per-session nono proxy and CA.
 [ -n "${DASH0_BASE_URL:-}" ] && export DASH0_API_URL="$DASH0_BASE_URL"
+[ -n "${ZALANDO_NEXUS_TOKEN:-}" ] && export NPM_TOKEN="$ZALANDO_NEXUS_TOKEN"
 case ":$PATH:" in
   *":$HOME/.config/nono/bin/shims:"*) ;;
   *) export PATH="$HOME/.config/nono/bin/shims:$PATH" ;;
