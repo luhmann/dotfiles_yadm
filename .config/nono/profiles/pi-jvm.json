@@ -102,16 +102,8 @@
       "*.openpolicyagent.org",
       "kubernetes.io",
       "*.kubernetes.io",
-      "sqlite.org",
-      "*.sqlite.org",
-      "*.jdx.dev",
-      "litestream.io",
-      "d2lang.com",
-      "deepwiki.com",
       "docs.aws.amazon.com",
       "*.npmjs.com",
-      "docs.syncthing.net",
-      "docs.warp.dev",
       "*.scalyr.com",
       "*.dataset.com",
       "*.nobl9.com",
@@ -186,7 +178,8 @@
       "linear",
       "dash0",
       "databricks",
-      "zalando_nexus"
+      "zalando_nexus",
+      "zalando_gradle"
     ],
     "custom_credentials": {
       "exa": {
@@ -561,6 +554,23 @@
           "credential_format": "{}"
         },
         "env_var": "ZALANDO_NEXUS_TOKEN"
+      },
+      "zalando_gradle": {
+        "upstream": "https://maven.zalando.net",
+        "credential_key": "cmd://zalando_nexus",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}",
+        "proxy": {
+          "inject_mode": "basic_auth"
+        },
+        "env_var": "ZALANDO_GRADLE_TOKEN",
+        "endpoint_rules": [
+          {
+            "method": "*",
+            "path": "/repository/**"
+          }
+        ]
       }
     },
     "approval_backends": {
