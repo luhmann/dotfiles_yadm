@@ -1,0 +1,11 @@
+#!/bin/sh
+# Sandbox wrapper for zmon: zmon gets its token via the zign library, which reads the host token file
+# (denied here). A config with an explicit token skips zign, so pass one with the session ztoken.
+real=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -vx "$(dirname "$0")" | paste -sd: -) command -v zmon) || {
+  echo "zmon (nono sandbox): real zmon not found on PATH" >&2; exit 127; }
+token=$(ztoken) || exit 1
+url=$(sed -n 's/^url:[[:space:]]*//p' "$HOME/.zmon-cli.yaml" 2>/dev/null | head -1)
+cfg=$(mktemp "${TMPDIR:-/tmp}/zmon-cli.XXXXXX") || exit 1
+trap 'rm -f "$cfg"' EXIT
+printf 'url: %s\ntoken: %s\n' "${url:-https://zmon.zalando.net}" "$token" > "$cfg"
+"$real" -c "$cfg" "$@"
