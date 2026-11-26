@@ -13,8 +13,10 @@
   },
   "groups": {
     "include": ["mise_manager", "java_runtime", "bun_runtime"],
-    // Excluded because it grants ~/.cache rw, incl. ~/.cache/zinit/completions which is in the host zsh $fpath
-    // (writing there = code that runs on host Tab). Replaced by ~/Library/{Caches,Logs} and XDG_CACHE_HOME below.
+    // Excluded because it grants ~/.cache rw, and the host executes from there: ~/.cache/zinit/completions is in
+    // the zsh $fpath (runs on Tab), pre-commit runs its hook envs from ~/.cache/pre-commit. The sandbox gets its own
+    // cache dir instead (XDG_CACHE_HOME=~/.cache-nono). ~/Library/{Caches,Logs} are re-added because sandboxed tools
+    // need them; they hold mostly passive app caches, but not nothing (e.g. colima images): accepted risk.
     "exclude": ["user_caches_macos"]
   },
   "filesystem": {
@@ -69,6 +71,8 @@
       "$HOME/.zmon-cli.yaml",
       // yarn 1 always reads both and crashes if denied. Safe only because ~/.npmrc holds `${NPM_TOKEN}`
       // (real token in 1Password via fnox); nono-jvm-env.sh sets NPM_TOKEN to the Nexus phantom.
+      // Only needed for yarn 1 (npm uses NPM_CONFIG_USERCONFIG). Without yarn 1 repos, remove both entries and
+      // ~/.npmrc from bypass_protection.
       "$HOME/.yarnrc",
       "$HOME/.npmrc"
     ],
