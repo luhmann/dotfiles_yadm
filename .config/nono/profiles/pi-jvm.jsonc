@@ -90,7 +90,14 @@
       "$HOME/.config/gdoc",
       "$HOME/.config/gws",
       "$HOME/.config/meridian",
-      "$HOME/.config/swamp"
+      "$HOME/.config/swamp",
+      // Host sockets. Already unreachable while the proxy is on (ProxyOnly = deny network* + explicit unix_socket
+      // grants); these denies also block connect() if the proxy is off (--allow-net, no allowlist/credential route).
+      // OrbStack's Docker socket = the whole host filesystem via `docker run -v`; the launchd SSH agent holds the
+      // host's SSH keys (path changes every boot, hence the glob). Deny dirs, not files, so recreated sockets match.
+      "$HOME/.orbstack",
+      "/private/var/run/docker.sock",
+      "/private/var/run/com.apple.launchd.*"
     ],
     // nono's required deny_credentials group blocks both even when granted. This lifts only the deny;
     // access stays read-only through the grants above (verified: zkubectl fails without it).
